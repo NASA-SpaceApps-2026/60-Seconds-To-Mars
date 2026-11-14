@@ -8,7 +8,6 @@ import {
   CircleCheck,
   ChevronDown,
   ChevronLeft,
-  ExternalLink,
   Minus,
   Monitor,
   Package,
@@ -29,7 +28,6 @@ import { ItemIcon, ResourceIcon, type ResourceKey } from './icons';
 import type { Effects, EventOption, ItemId, MinigameKind, RepairTarget, StationItem, VitalKey } from '../types/game';
 import { ITEMS_BY_ID, STATION_ITEMS } from '../data/stationItems';
 import { LOADING_MESSAGES } from '../data/fallbackNasaData';
-import { formatFlareDate } from '../services/nasaApi';
 import { COMPLICATIONS } from '../data/triviaQuestions';
 import {
   RADIATION_LABEL,
@@ -271,6 +269,7 @@ function LoadingTelemetry({ sol }: { sol: number }) {
 
 export default function Phase2Bunker() {
   const sol = useGameStore((s) => s.sol);
+  const missionDifficulty = useGameStore((s) => s.missionDifficulty);
   const vitals = useGameStore((s) => s.vitals);
   const science = useGameStore((s) => s.scienceScore);
   const inventory = useGameStore((s) => s.bunkerInventory);
@@ -361,8 +360,19 @@ export default function Phase2Bunker() {
   const radiation = event?.radiationLevel ?? 'moderate';
 
   const forecast = useMemo(
-    () => computeSolTick({ vitals, inventory, consumed, machineStates, seedGrowth, radiationLevel: radiation, complications, brokenMachines }),
-    [vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines],
+    () =>
+      computeSolTick({
+        vitals,
+        inventory,
+        consumed,
+        machineStates,
+        seedGrowth,
+        radiationLevel: radiation,
+        complications,
+        brokenMachines,
+        missionDifficulty,
+      }),
+    [vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines, missionDifficulty],
   );
 
   const leftOut = STATION_ITEMS.filter((i) => !inventory.includes(i.id));
@@ -864,33 +874,6 @@ export default function Phase2Bunker() {
                               <FlaskConical className="mr-1 inline h-4 w-4 align-[-2px]" strokeWidth={1.75} />
                               <b>Dato Real NASA ({event.radiationLevel === 'high' || event.radiationLevel === 'extreme' ? 'DONKI' : 'DONKI / OSDR'}) ·</b> {event.nasaFact}
                             </p>
-                            <div className="mt-3 border-t border-amber-200 pt-2 text-sm text-amber-950">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className="font-mono text-xs font-black tracking-[0.16em]">TRAZABILIDAD</span>
-                                <span
-                                  className={`rounded-md px-2 py-0.5 font-mono text-xs font-bold ${
-                                    nasaWeather?.isLive ? 'bg-emerald-600 text-white' : 'bg-amber-400 text-slate-950'
-                                  }`}
-                                >
-                                  {nasaWeather?.isLive ? 'DATO EN VIVO' : 'ARCHIVO REAL'}
-                                </span>
-                              </div>
-                              <p className="mt-1.5">
-                                {nasaWeather
-                                  ? `${nasaWeather.provider ?? 'NASA DONKI'} · llamarada ${nasaWeather.flareClass} · ${formatFlareDate(nasaWeather.peakTime)}`
-                                  : event.nasaSource}
-                              </p>
-                              {nasaWeather?.link && (
-                                <a
-                                  href={nasaWeather.link}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="mt-1 inline-flex items-center gap-1 font-semibold text-nasa-blue hover:underline"
-                                >
-                                  Ver registro de la llamarada <ExternalLink className="h-3.5 w-3.5" />
-                                </a>
-                              )}
-                            </div>
                           </div>
                         </div>
 
