@@ -269,7 +269,6 @@ function LoadingTelemetry({ sol }: { sol: number }) {
 
 export default function Phase2Bunker() {
   const sol = useGameStore((s) => s.sol);
-  const missionDifficulty = useGameStore((s) => s.missionDifficulty);
   const vitals = useGameStore((s) => s.vitals);
   const science = useGameStore((s) => s.scienceScore);
   const inventory = useGameStore((s) => s.bunkerInventory);
@@ -360,19 +359,8 @@ export default function Phase2Bunker() {
   const radiation = event?.radiationLevel ?? 'moderate';
 
   const forecast = useMemo(
-    () =>
-      computeSolTick({
-        vitals,
-        inventory,
-        consumed,
-        machineStates,
-        seedGrowth,
-        radiationLevel: radiation,
-        complications,
-        brokenMachines,
-        missionDifficulty,
-      }),
-    [vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines, missionDifficulty],
+    () => computeSolTick({ vitals, inventory, consumed, machineStates, seedGrowth, radiationLevel: radiation, complications, brokenMachines }),
+    [vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines],
   );
 
   const leftOut = STATION_ITEMS.filter((i) => !inventory.includes(i.id));
@@ -880,7 +868,16 @@ export default function Phase2Bunker() {
                         {/* Las decisiones */}
                         <div className="thin-scroll flex min-h-0 flex-col gap-2.5 overflow-y-auto overflow-x-hidden p-1">
                           {event.options.map((opt) => (
-                            <OptionButton key={opt.id} option={opt} inventory={available} loaded={inventory} onChoose={() => chooseOption(opt.id)} />
+                            <OptionButton
+                              key={opt.id}
+                              option={opt}
+                              inventory={available}
+                              loaded={inventory}
+                              onChoose={() => {
+                                closeOverlay();
+                                chooseOption(opt.id);
+                              }}
+                            />
                           ))}
                         </div>
                       </motion.div>
@@ -892,16 +889,41 @@ export default function Phase2Bunker() {
                         initial={{ opacity: 0, scale: 0.97 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0 }}
-                        className="flex h-full flex-col items-center justify-center gap-4 text-center"
+                        className="thin-scroll flex min-h-0 h-full flex-col items-center justify-start gap-4 overflow-y-auto px-1 pb-1 text-center"
                       >
-                        <h2 className="text-xl font-black text-slate-900">{report.optionLabel}</h2>
-                        <p className="max-w-lg text-base italic text-slate-700">“{report.ariaReaction}”</p>
+                        <div className="w-full max-w-3xl rounded-xl border border-slate-300 bg-slate-50 p-4 text-left shadow-sm">
+                          <p className="font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">INFORME DE TELEMETRÍA // SOL {sol}</p>
+                          <h2 className="mt-1 text-xl font-black text-slate-900">{report.optionLabel}</h2>
+                          <p className="mt-1 text-base italic leading-relaxed text-slate-600">“{report.ariaReaction}”</p>
+                        </div>
                         {report.harvested && (
-                          <p className="flex items-center gap-2 text-base font-bold text-emerald-700">
+                          <p className="w-full max-w-3xl rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-left text-sm font-bold text-emerald-700">
                             <Sprout className="h-5 w-5" strokeWidth={1.75} /> ¡Cosecha de lechuga roja! +20 Comida
                           </p>
                         )}
-                        <EffectNumbers effects={report.deltas} />
+                        <div className="w-full max-w-3xl rounded-xl border-2 border-slate-200 bg-white p-4 text-left shadow-sm">
+                          {report.breakdown[0] && (
+                            <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3">
+                              <p className="font-mono text-xs font-black tracking-[0.16em] text-nasa-blue">{report.breakdown[0].source}</p>
+                              <div className="mt-2 flex justify-end">
+                                <EffectNumbers effects={report.breakdown[0].effects} />
+                              </div>
+                            </div>
+                          )}
+                          {report.breakdown.length > 1 && (
+                            <>
+                              <p className="mt-4 border-t border-slate-200 pt-4 font-mono text-xs font-black tracking-[0.16em] text-slate-500">OTROS EFECTOS DEL SOL</p>
+                              {report.breakdown.slice(1).map((entry, index) => (
+                                <div key={`${entry.source}-${index}`} className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                                  <p className="text-sm font-semibold text-slate-700">{entry.source}</p>
+                                  <div className="ml-auto">
+                                    <EffectNumbers effects={entry.effects} />
+                                  </div>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                        </div>
                         <motion.button
                           type="button"
                           whileHover={{ scale: 1.04 }}
@@ -915,7 +937,7 @@ export default function Phase2Bunker() {
                             pendingOutcome === 'evacuation' ? 'bg-amber-500' : pendingOutcome === 'victory' ? 'bg-nasa-red' : 'bg-nasa-blue'
                           }`}
                         >
-                          {pendingOutcome === 'victory' ? 'Finalizar misión final' : pendingOutcome ? 'Finalizar misión (evacuación)' : `CONTINUAR AL SOL ${sol + 1}`} <ArrowRight size={18} />
+                          {pendingOutcome === 'victory' ? 'Finalizar misión final' : pendingOutcome ? 'Finalizar misión (evacuación)' : 'CONTINUAR AL SIGUIENTE SOL'} <ArrowRight size={18} />
                         </motion.button>
                       </motion.div>
                     )}

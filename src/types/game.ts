@@ -2,7 +2,7 @@
 // Contrato de tipos de "60 Seconds to Mars: The Solar Storm Protocol"
 // ============================================================
 
-export type GamePhase = 'MENU' | 'MISSION_SELECT' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'GAME_OVER';
+export type GamePhase = 'MENU' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'GAME_OVER';
 
 export type RoomId = 'greenhouse' | 'lab' | 'storage';
 
@@ -57,7 +57,6 @@ export type VitalKey = keyof Vitals;
 export type Phase1Stage = 'ready' | 'quiz' | 'summary';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
-export type MissionDifficulty = 'explorer' | 'commander';
 
 export interface TriviaQuestion {
   id: string;
@@ -223,6 +222,8 @@ export interface SolReport {
   ariaReaction: string;
   /** Diferencia real entre el inicio y el final del Sol. */
   deltas: Required<Effects>;
+  /** Desglose visible de la decisión y de los efectos automáticos del Sol. */
+  breakdown: { source: string; effects: Effects }[];
   harvested: boolean;
   radiationLevel: RadiationLevel;
 }

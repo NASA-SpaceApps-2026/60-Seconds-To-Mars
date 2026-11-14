@@ -16,7 +16,6 @@ import type {
   Effects,
   GamePhase,
   ItemId,
-  MissionDifficulty,
   MissionOutcome,
   NASAWeather,
   NasaStatus,
@@ -43,6 +42,7 @@ import {
   HOUSTON_DELAY_SOLS,
   HOUSTON_MIN_POWER,
   HOUSTON_PACKAGES,
+  BREAKDOWN_CHANCE,
   REPAIR_FAIL_POWER,
   repairKey,
 } from '../data/missionExtras';
@@ -86,41 +86,6 @@ export const BASE_DECAY = { oxygen: -14, food: -14, power: -3 } as const;
 
 /** Daño al escudo según la radiación del día. */
 export const RADIATION_DAMAGE: Record<RadiationLevel, number> = { low: 4, moderate: 7, high: 11, extreme: 16 };
-
-export const MISSION_DIFFICULTY_META: Record<MissionDifficulty, { label: string; description: string }> = {
-  explorer: { label: 'Modo Explorador', description: 'Más margen para aprender y probar estrategias.' },
-  commander: { label: 'Modo Comandante', description: 'Menos reservas y más presión en cada Sol.' },
-};
-
-const MISSION_PROFILES: Record<
-  MissionDifficulty,
-  {
-    initialVitals: Vitals;
-    baseDecay: { oxygen: number; food: number; power: number };
-    radiationMultiplier: number;
-    breakdownChance: number;
-    quizSeconds: number;
-  }
-> = {
-  explorer: {
-    initialVitals: { oxygen: 72, power: 85, food: 68, shield: 72, crewHealth: 100 },
-    baseDecay: { oxygen: -10, food: -10, power: -2 },
-    radiationMultiplier: 0.75,
-    breakdownChance: 0.1,
-    quizSeconds: 75,
-  },
-  commander: {
-    initialVitals: INITIAL_VITALS,
-    baseDecay: { ...BASE_DECAY },
-    radiationMultiplier: 1.25,
-    breakdownChance: 0.3,
-    quizSeconds: 60,
-  },
-};
-
-export function getMissionProfile(difficulty: MissionDifficulty) {
-  return MISSION_PROFILES[difficulty];
-}
 
 export const RADIATION_LABEL: Record<RadiationLevel, string> = {
   low: 'Baja',
@@ -186,7 +151,6 @@ export interface SolTickInput {
   complications?: VitalKey[];
   /** Máquinas con avería puntual (no funcionan hasta repararlas). */
   brokenMachines?: ItemId[];
-  missionDifficulty?: MissionDifficulty;
 }
 
 export interface SolTickResult {
@@ -199,7 +163,6 @@ export interface SolTickResult {
 
 /** Calcula lo que pasará al terminar el Sol: desgaste + máquinas + radiación + complicaciones + salud. */
 export function computeSolTick(input: SolTickInput): SolTickResult {
-  const profile = getMissionProfile(input.missionDifficulty ?? 'commander');
   const complications = input.complications ?? [];
   const items = availableItems(input.inventory, input.consumed);
   const has = (id: ItemId) => items.includes(id);
@@ -208,13 +171,13 @@ export function computeSolTick(input: SolTickInput): SolTickResult {
   const breakdown: SolTickResult['breakdown'] = [];
 
   // 1. Desgaste natural
-  d.oxygen += profile.baseDecay.oxygen;
-  d.food += profile.baseDecay.food;
-  d.power += profile.baseDecay.power;
-  breakdown.push({ source: 'Consumo de la tripulación', effects: { ...profile.baseDecay } });
+  d.oxygen += BASE_DECAY.oxygen;
+  d.food += BASE_DECAY.food;
+  d.power += BASE_DECAY.power;
+  breakdown.push({ source: 'Consumo de la tripulación', effects: { ...BASE_DECAY } });
 
   // 2. Radiación (protecciones pasivas restan; la Manta de Plomo divide entre 2)
-  let dmg = Math.max(1, Math.round(RADIATION_DAMAGE[input.radiationLevel] * profile.radiationMultiplier));
+  let dmg = RADIATION_DAMAGE[input.radiationLevel];
   const protections: string[] = [];
   for (const id of items) {
     const r = ITEMS_BY_ID[id].radiationReduction;
@@ -308,14 +271,10 @@ export function computeRank(outcome: MissionOutcome, science: number, vitals: Vi
 }
 
 /** Barras con las que se empezará la Fase 2 (suministros extra y complicaciones incluidas). */
-export function projectedStartVitals(
-  supplyBonus: Effects,
-  complications: VitalKey[],
-  missionDifficulty: MissionDifficulty = 'commander',
-): Vitals {
+export function projectedStartVitals(supplyBonus: Effects, complications: VitalKey[]): Vitals {
   const penalties: Effects = {};
   for (const c of complications) penalties[c] = (penalties[c] ?? 0) + COMPLICATIONS[c].startPenalty;
-  return applyEffects(applyEffects(getMissionProfile(missionDifficulty).initialVitals, supplyBonus), penalties);
+  return applyEffects(applyEffects(INITIAL_VITALS, supplyBonus), penalties);
 }
 
 /** Estadística de aciertos por rama en la trivia. */
@@ -361,7 +320,6 @@ export type SpinAvailability = Record<SpinKind, { ok: boolean; reason?: string }
 
 interface GameState {
   gamePhase: GamePhase;
-  missionDifficulty: MissionDifficulty;
 
   // NASA DONKI
   nasaWeather: NASAWeather | null;
@@ -458,9 +416,7 @@ interface GameActions {
   setVoiceMode: (mode: VoiceMode) => void;
 
   // Fase 1
-  enterMissionSelector: () => void;
   startGame: () => void;
-  setMissionDifficulty: (difficulty: MissionDifficulty) => void;
   beginQuiz: () => void;
   /** Responde la pregunta actual; si acierta, el objeto ganado entra en el inventario. */
   answerQuiz: (answer: string) => QuizAnswerRecord | null;
@@ -496,12 +452,12 @@ interface GameActions {
 
 export type GameStore = GameState & GameActions;
 
-const phase1Initial = (difficulty: MissionDifficulty = 'explorer') => ({
+const phase1Initial = () => ({
   phase1Stage: 'ready' as Phase1Stage,
   quizQueue: [] as TriviaQuestion[],
   quizIndex: 0,
   quizAnswers: [] as QuizAnswerRecord[],
-  timeLeft: getMissionProfile(difficulty).quizSeconds,
+  timeLeft: QUIZ_SECONDS,
   complications: [] as VitalKey[],
   supplyBonus: {} as Effects,
   freeSpins: 0,
@@ -511,9 +467,9 @@ const phase1Initial = (difficulty: MissionDifficulty = 'explorer') => ({
   bunkerInventory: [] as ItemId[],
 });
 
-const phase2Initial = (difficulty: MissionDifficulty = 'explorer') => ({
+const phase2Initial = () => ({
   sol: 1,
-  vitals: { ...getMissionProfile(difficulty).initialVitals },
+  vitals: { ...INITIAL_VITALS },
   scienceScore: 0,
   machineStates: {} as Partial<Record<ItemId, boolean>>,
   consumedItems: [] as ItemId[],
@@ -553,7 +509,6 @@ function defaultMachineStates(inventory: ItemId[], complications: VitalKey[]): P
 
 export const useGameStore = create<GameStore>()((set, get) => ({
   gamePhase: 'MENU',
-  missionDifficulty: 'explorer',
   nasaWeather: null,
   nasaStatus: 'idle',
   marsPhotos: [],
@@ -568,8 +523,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   requestId: 0,
   storyScene: null,
   badges: [],
-  ...phase1Initial('explorer'),
-  ...phase2Initial('explorer'),
+  ...phase1Initial(),
+  ...phase2Initial(),
   ...gameOverInitial(),
 
   // ---------------- NASA ----------------
@@ -619,23 +574,12 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   // ---------------- FASE 1: TRIVIA CONTRARRELOJ ----------------
-  setMissionDifficulty: (missionDifficulty) => {
-    if (get().gamePhase !== 'MENU' && get().gamePhase !== 'MISSION_SELECT') return;
-    set({ missionDifficulty, ...phase1Initial(missionDifficulty), ...phase2Initial(missionDifficulty) });
-  },
-
-  enterMissionSelector: () => {
-    if (get().gamePhase !== 'MENU') return;
-    set({ gamePhase: 'MISSION_SELECT' });
-  },
-
   startGame: () => {
-    const difficulty = get().missionDifficulty;
     set((s) => ({
       gamePhase: 'PHASE_1_SCAVENGE',
       requestId: s.requestId + 1,
-      ...phase1Initial(difficulty),
-      ...phase2Initial(difficulty),
+      ...phase1Initial(),
+      ...phase2Initial(),
       ...gameOverInitial(),
       quizQueue: buildQuizQueue(),
       storyScene: 'prologue',
@@ -650,7 +594,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   beginQuiz: () => {
     if (get().phase1Stage !== 'ready') return;
-    set({ phase1Stage: 'quiz', timeLeft: getMissionProfile(get().missionDifficulty).quizSeconds });
+    set({ phase1Stage: 'quiz', timeLeft: QUIZ_SECONDS });
     playAlarmBeep();
   },
 
@@ -725,8 +669,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     set((s) => ({
       gamePhase: 'PHASE_2_BUNKER',
       requestId: s.requestId + 1,
-      ...phase2Initial(s.missionDifficulty),
-      vitals: projectedStartVitals(s.supplyBonus, complications, s.missionDifficulty),
+      ...phase2Initial(),
+      vitals: projectedStartVitals(s.supplyBonus, complications),
       machineStates: defaultMachineStates(inventory, complications),
       storyScene: 'lockdown',
     }));
@@ -742,7 +686,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     set((s) => ({
       gamePhase: 'PHASE_1_SCAVENGE',
       requestId: s.requestId + 1,
-      ...phase1Initial(s.missionDifficulty),
+      ...phase1Initial(),
       ...gameOverInitial(),
       bunkerInventory: [...DEBUG_INVENTORY],
       complications: ['oxygen'],
@@ -839,7 +783,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     // --- Aplicar premio ---
     let complications = [...s.complications];
     let supplyBonus = { ...s.supplyBonus };
-    const startVitals = projectedStartVitals(supplyBonus, complications, s.missionDifficulty);
+    const startVitals = projectedStartVitals(supplyBonus, complications);
     const refVitals = inPhase1 ? startVitals : vitals;
     const lowest = lowestVital(refVitals);
     const items: ItemId[] = [];
@@ -1036,7 +980,6 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       radiationLevel: event.radiationLevel,
       complications: s.complications,
       brokenMachines: s.brokenMachines,
-      missionDifficulty: s.missionDifficulty,
     });
     vitals = applyEffects(vitals, tick.deltas);
     science = Math.max(0, science + tick.deltas.science);
@@ -1056,6 +999,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       optionLabel: option.label,
       ariaReaction: option.ariaReactionVoice,
       deltas,
+      breakdown: [{ source: 'Efecto de tu decisión', effects: option.effects }, ...tick.breakdown],
       harvested: tick.harvest,
       radiationLevel: event.radiationLevel,
     };
@@ -1090,6 +1034,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     } else {
       get().ariaSay(option.ariaReactionVoice + (tick.harvest ? ' ¡Y hoy hemos cosechado lechugas!' : ''));
     }
+    get().continueAfterReport();
   },
 
   continueAfterReport: () => {
@@ -1124,11 +1069,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (arrived.length) {
       playUnlock();
       get().awardBadge('deep_space_communicator');
-    } else if (
-      sol >= 2 &&
-      s.brokenMachines.length === 0 &&
-      Math.random() < getMissionProfile(s.missionDifficulty).breakdownChance
-    ) {
+    } else if (sol >= 2 && s.brokenMachines.length === 0 && Math.random() < BREAKDOWN_CHANCE) {
       // Avería puntual: una máquina encendida necesita mantenimiento (se repara con un minijuego)
       const st = get();
       const candidates = availableItems(st.bunkerInventory, st.consumedItems).filter(
@@ -1285,9 +1226,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     set((s) => ({
       gamePhase: 'MENU',
       requestId: s.requestId + 1,
-      ...phase1Initial('explorer'),
-      ...phase2Initial('explorer'),
-      missionDifficulty: 'explorer',
+      ...phase1Initial(),
+      ...phase2Initial(),
       ...gameOverInitial(),
       storyScene: null,
     }));
