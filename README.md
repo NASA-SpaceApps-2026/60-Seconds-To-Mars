@@ -53,30 +53,6 @@ Abre **http://localhost:5173**. Arriba del menú verás el diagnóstico:
 | Bloqueos | Las opciones que necesitan un objeto que dejaste fuera salen con 🔒. |
 | Búnker vacío | Sella sin coger nada: la evacuación llega hacia el Sol 3-4. |
 
-## 🎯 Modos de misión
-
-Antes de iniciar la trivia puedes elegir la dificultad desde el menú:
-
-### Modo Explorador
-
-- 75 segundos para responder la trivia.
-- Más reservas iniciales.
-- Menor desgaste diario.
-- 25 % menos daño de radiación.
-- Menor probabilidad de averías.
-
-### Modo Comandante
-
-- Mantiene el equilibrio original de la misión.
-- 60 segundos para responder la trivia.
-- Mayor desgaste diario.
-- Mayor presión de radiación.
-- Mayor probabilidad de averías.
-
-La dificultad elegida se mantiene durante toda la partida. El temporizador de la
-trivia y el resumen inicial del búnker muestran los valores correspondientes al
-modo seleccionado.
-
 ## 🛠️ Scripts
 
 | Comando | Qué hace |
@@ -84,14 +60,6 @@ modo seleccionado.
 | `npm run dev` | Servidor de desarrollo |
 | `npm run build` | Comprobación TypeScript + build de producción en `dist/` |
 | `npm run preview` | Sirve el build localmente |
-
-Al finalizar la misión, el informe de ingeniería muestra la causa de la
-evacuación o el resultado de la victoria, las lecciones aprendidas y el momento
-de mayor impacto de las decisiones tomadas.
-
-Después de cada decisión, el informe del Sol separa el efecto elegido de los
-efectos automáticos de la misión, como el consumo de la tripulación, las
-máquinas, las averías y la radiación. Las barras muestran el resultado final.
 
 ## 🔐 Seguridad de claves
 

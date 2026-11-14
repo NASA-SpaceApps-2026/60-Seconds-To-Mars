@@ -35,6 +35,7 @@ import {
   VITAL_META,
   VITAL_ORDER,
   availableItems,
+  applyEffects,
   computeSolTick,
   isMachineBroken,
   useGameStore,
@@ -57,6 +58,11 @@ import { REPAIR_FAIL_POWER, pickMinigame, repairKey } from '../data/missionExtra
 const EFFECT_ORDER: (keyof Effects)[] = ['oxygen', 'power', 'food', 'shield', 'crewHealth', 'science'];
 
 const RADIATION_DOT = { low: 'bg-emerald-500', moderate: 'bg-amber-400', high: 'bg-orange-500', extreme: 'bg-red-600' } as const;
+const VITAL_GROUPS: { label: string; keys: VitalKey[] }[] = [
+  { label: 'VIDA', keys: ['oxygen', 'food', 'crewHealth'] },
+  { label: 'ENERGÍA', keys: ['power'] },
+  { label: 'PROTECCIÓN', keys: ['shield'] },
+];
 
 /** Cifra + icono vectorial del recurso: "−14 [Zap]". */
 function Delta({ k, v, className = '' }: { k: ResourceKey; v: number; className?: string }) {
@@ -147,11 +153,13 @@ function OptionButton({
   inventory,
   loaded,
   onChoose,
+  projectedEffects,
 }: {
   option: EventOption;
   inventory: ItemId[];
   loaded: ItemId[];
   onChoose: () => void;
+  projectedEffects?: Effects;
 }) {
   const req = option.requiredItemId ? ITEMS_BY_ID[option.requiredItemId] : null;
   const available = !req || inventory.includes(req.id);
@@ -173,7 +181,7 @@ function OptionButton({
       }}
       aria-disabled={!available}
       title={option.description || undefined}
-      className={`box-border flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border-2 p-3 text-left transition-colors sm:flex-nowrap sm:p-4 ${
+      className={`box-border flex w-full min-w-0 flex-col gap-3 rounded-2xl border-2 p-3 text-left transition-colors sm:p-4 ${
         !available
           ? 'cursor-not-allowed border-slate-200 bg-slate-100 opacity-60'
           : advantage
@@ -181,20 +189,33 @@ function OptionButton({
             : 'border-slate-200 bg-white shadow-sm hover:border-nasa-blue hover:bg-blue-50/40'
       }`}
     >
-      <span className="min-w-0 flex-1">
-        <span className={`block text-base font-bold leading-snug sm:text-lg ${available ? 'text-slate-900' : 'text-slate-500'}`}>{option.label}</span>
-        {advantage && (
-          <span className="mt-0.5 flex items-center gap-1 text-base font-semibold text-emerald-700">
-            <Sparkles className="h-4 w-4" strokeWidth={1.75} /> Ventaja: <ItemIcon id={req.id} className="h-4 w-4" /> {req.shortName}
-          </span>
-        )}
-        {!available && (
-          <span className="mt-0.5 flex items-center gap-1 text-base font-semibold text-slate-500">
-            <Lock size={14} /> {lockReason}
-          </span>
-        )}
+      <span className="flex min-w-0 items-start justify-between gap-4">
+        <span className="min-w-0">
+          <span className={`block text-base font-bold leading-snug sm:text-lg ${available ? 'text-slate-900' : 'text-slate-500'}`}>{option.label}</span>
+          {advantage && (
+            <span className="mt-0.5 flex items-center gap-1 text-base font-semibold text-emerald-700">
+              <Sparkles className="h-4 w-4" strokeWidth={1.75} /> Ventaja: <ItemIcon id={req.id} className="h-4 w-4" /> {req.shortName}
+            </span>
+          )}
+          {!available && (
+            <span className="mt-0.5 flex items-center gap-1 text-base font-semibold text-slate-500">
+              <Lock size={14} /> {lockReason}
+            </span>
+          )}
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Decisión</span>
+          <EffectNumbers effects={option.effects} />
+        </span>
       </span>
-      <EffectNumbers effects={option.effects} />
+      {available && projectedEffects && (
+        <span className="ml-auto flex w-fit max-w-full flex-col items-end border-t border-slate-200 pt-2 text-right text-xs font-bold uppercase tracking-wide text-slate-500 sm:min-w-[20.4375rem]">
+          Al terminar el Sol
+          <span className="mt-1 block normal-case tracking-normal">
+            <EffectNumbers effects={projectedEffects} />
+          </span>
+        </span>
+      )}
     </motion.button>
   );
 }
@@ -269,7 +290,6 @@ function LoadingTelemetry({ sol }: { sol: number }) {
 
 export default function Phase2Bunker() {
   const sol = useGameStore((s) => s.sol);
-  const missionDifficulty = useGameStore((s) => s.missionDifficulty);
   const vitals = useGameStore((s) => s.vitals);
   const science = useGameStore((s) => s.scienceScore);
   const inventory = useGameStore((s) => s.bunkerInventory);
@@ -360,20 +380,35 @@ export default function Phase2Bunker() {
   const radiation = event?.radiationLevel ?? 'moderate';
 
   const forecast = useMemo(
-    () =>
-      computeSolTick({
-        vitals,
+    () => computeSolTick({ vitals, inventory, consumed, machineStates, seedGrowth, radiationLevel: radiation, complications, brokenMachines }),
+    [vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines],
+  );
+  const optionForecasts = useMemo(() => {
+    const forecasts: Record<string, Effects> = {};
+    if (!event) return forecasts;
+    for (const option of event.options) {
+      let optionVitals = applyEffects(vitals, option.effects);
+      let optionConsumed = consumed;
+      if (option.requiredItemId && ITEMS_BY_ID[option.requiredItemId].kind === 'consumable' && inventory.includes(option.requiredItemId)) {
+        optionConsumed = [...consumed, option.requiredItemId];
+      }
+      const optionTick = computeSolTick({
+        vitals: optionVitals,
         inventory,
-        consumed,
+        consumed: optionConsumed,
         machineStates,
         seedGrowth,
         radiationLevel: radiation,
         complications,
         brokenMachines,
-        missionDifficulty,
-      }),
-    [vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines, missionDifficulty],
-  );
+      });
+      optionVitals = applyEffects(optionVitals, optionTick.deltas);
+      forecasts[option.id] = Object.fromEntries(
+        VITAL_ORDER.map((key) => [key, optionVitals[key] - vitals[key]]),
+      ) as Effects;
+    }
+    return forecasts;
+  }, [event, vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines]);
 
   const leftOut = STATION_ITEMS.filter((i) => !inventory.includes(i.id));
   const activeItems = inventory.filter((id) => !consumed.includes(id)).map((id) => ITEMS_BY_ID[id]);
@@ -422,24 +457,31 @@ export default function Phase2Bunker() {
         </div>
 
         <div className="flex items-start justify-around gap-1">
-          {VITAL_ORDER.map((k, i) => (
-            <KidTooltip
-              key={k}
-              term={VITAL_GLOSSARY[k].term}
-              text={VITAL_GLOSSARY[k].text}
-              extra={`Ahora: ${Math.round(vitals[k])}/100 · al acabar el Sol: ${forecast.deltas[k] >= 0 ? '+' : ''}${forecast.deltas[k]}`}
-              align={i === 0 ? 'left' : 'center'}
-              className="cursor-help"
-            >
-              <GaugeMeter
-                label={VITAL_META[k].label}
-                resource={k}
-                value={vitals[k]}
-                forecast={forecast.deltas[k]}
-                nativeTitle={false}
-                className="w-[clamp(76px,11vw,140px)]"
-              />
-            </KidTooltip>
+          {VITAL_GROUPS.map((group) => (
+            <div key={group.label} className="flex min-w-0 flex-col items-center gap-1">
+              <span className="font-mono text-[10px] font-black tracking-[0.16em] text-slate-400">{group.label}</span>
+              <div className="flex items-start justify-center gap-1">
+                {group.keys.map((k, i) => (
+                  <KidTooltip
+                    key={k}
+                    term={VITAL_GLOSSARY[k].term}
+                    text={VITAL_GLOSSARY[k].text}
+                    extra={`Ahora: ${Math.round(vitals[k])}/100 · al acabar el Sol: ${forecast.deltas[k] >= 0 ? '+' : ''}${forecast.deltas[k]}`}
+                    align={i === 0 ? 'left' : 'center'}
+                    className="cursor-help"
+                  >
+                    <GaugeMeter
+                      label={VITAL_META[k].label}
+                      resource={k}
+                      value={vitals[k]}
+                      forecast={forecast.deltas[k]}
+                      nativeTitle={false}
+                      className="w-[clamp(76px,11vw,140px)]"
+                    />
+                  </KidTooltip>
+                ))}
+              </div>
+            </div>
           ))}
           <KidTooltip term={VITAL_GLOSSARY.science.term} text={VITAL_GLOSSARY.science.text} align="right" className="cursor-help self-center">
           <div className="flex w-[clamp(64px,8vw,100px)] flex-col items-center justify-center text-center">
@@ -880,7 +922,14 @@ export default function Phase2Bunker() {
                         {/* Las decisiones */}
                         <div className="thin-scroll flex min-h-0 flex-col gap-2.5 overflow-y-auto overflow-x-hidden p-1">
                           {event.options.map((opt) => (
-                            <OptionButton key={opt.id} option={opt} inventory={available} loaded={inventory} onChoose={() => chooseOption(opt.id)} />
+                            <OptionButton
+                              key={opt.id}
+                              option={opt}
+                              inventory={available}
+                              loaded={inventory}
+                              projectedEffects={optionForecasts[opt.id]}
+                              onChoose={() => chooseOption(opt.id)}
+                            />
                           ))}
                         </div>
                       </motion.div>

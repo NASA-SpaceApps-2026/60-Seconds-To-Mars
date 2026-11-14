@@ -29,20 +29,8 @@ export function SystemLabel({ cat, className = '' }: { cat: VitalKey; className?
 }
 
 /** Cabecera común de las sub-etapas de la Fase 1. */
-export function Phase1Header({
-  step,
-  title,
-  subtitle,
-  right,
-  triviaSeconds = 60,
-}: {
-  step: 1 | 2 | 3;
-  title: string;
-  subtitle: string;
-  right?: ReactNode;
-  triviaSeconds?: number;
-}) {
-  const steps = ['Preparados', `${triviaSeconds} s de Trivia`, 'Resumen'];
+export function Phase1Header({ step, title, subtitle, right }: { step: 1 | 2 | 3; title: string; subtitle: string; right?: ReactNode }) {
+  const steps = ['Preparados', '60 s de Trivia', 'Resumen'];
   return (
     <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b border-slate-300 bg-white px-4 py-2 shadow-sm md:grid-cols-[1fr_auto_1fr]">
       <div className="flex min-w-0 items-center gap-3">
