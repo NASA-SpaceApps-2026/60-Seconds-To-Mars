@@ -16,15 +16,9 @@ const FEEDBACK_MS = 1100;
 
 /** Dificultad solo con los colores oficiales: gris sobrio → Azul NASA → Rojo Misión. */
 const DIFFICULTY_CLS: Record<Difficulty, string> = {
-<<<<<<< HEAD
-  easy: 'border-slate-300 bg-slate-50 text-slate-700 shadow-sm',
-  medium: 'border-nasa-blue bg-white text-nasa-blue shadow-sm',
-  hard: 'border-nasa-red bg-nasa-red text-white shadow-sm',
-=======
   easy: 'border-slate-200 bg-slate-50 text-slate-700',
   medium: 'border-nasa-blue bg-nasa-blue text-white',
   hard: 'border-nasa-red bg-nasa-red text-white',
->>>>>>> origin/develop
 };
 
 /** Acabado de tarjeta del Selector de Modo (credencial): esquinas grandes, borde grueso y sombra suave. */
@@ -196,15 +190,11 @@ export default function Phase1Quiz() {
               </p>
               <div className="grid max-w-2xl gap-2 text-left text-base text-slate-700 sm:grid-cols-2">
                 {getReadyRules().map(({ Icon, title, text }) => (
-<<<<<<< HEAD
-                  <p key={title} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
-                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-nasa-blue" strokeWidth={1.75} />
-=======
                   <p key={title} className="flex items-start gap-2.5 rounded-xl bg-slate-50 p-3">
                     <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-600">
                       <Icon className="h-4 w-4" strokeWidth={2} />
                     </span>
->>>>>>> origin/develop
+
                     <span>
                       <b className="text-slate-900">{title}</b> → {text}
                     </span>
@@ -239,16 +229,6 @@ export default function Phase1Quiz() {
                 {/* Mitad superior (~40 %): etiquetas + pregunta grande centrada */}
                 <div className="flex basis-2/5 flex-col items-center justify-center gap-4 text-center">
                   <div className="flex flex-wrap items-center justify-center gap-2">
-<<<<<<< HEAD
-                    <span className={`rounded-xl border-2 px-3 py-1 text-sm font-bold ${DIFFICULTY_CLS[q.difficulty]}`}>
-                      {DIFFICULTY_META[q.difficulty].label}
-                    </span>
-                    <span className="rounded-xl border-2 border-slate-200 bg-slate-50 px-3 py-1 text-sm shadow-sm">
-                      <SystemLabel cat={q.category} />
-                    </span>
-                    <span className="flex items-center gap-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-1 text-sm font-bold text-slate-800 shadow-sm">
-                      <Check className="h-4 w-4 text-nasa-blue" /> {correctCount}
-=======
                     <span className={`rounded-full border-2 px-3.5 py-1 font-mono text-sm font-bold tracking-wider ${DIFFICULTY_CLS[q.difficulty]}`}>
                       {DIFFICULTY_META[q.difficulty].label}
                     </span>
@@ -266,7 +246,6 @@ export default function Phase1Quiz() {
                       title={tr('Fallos', 'Wrong answers')}
                     >
                       <X className="h-4 w-4" strokeWidth={3} /> {wrongCount}
->>>>>>> origin/develop
                     </span>
                   </div>
                   <h2 className="font-display max-w-3xl text-2xl font-black leading-snug text-slate-900 md:text-3xl">{q.question}</h2>
@@ -321,11 +300,7 @@ export default function Phase1Quiz() {
                         animate={result && picked && !isCorrect ? { x: [0, -8, 8, -5, 5, 0] } : {}}
                         disabled={Boolean(result)}
                         onClick={(e) => choose(ans, e)}
-<<<<<<< HEAD
-                        className={`relative flex min-h-[110px] items-center justify-center rounded-[1.25rem] border-2 p-6 text-center text-2xl font-bold shadow-md transition-all disabled:cursor-default ${cls}`}
-=======
                         className={`group relative flex min-h-[110px] items-center justify-center rounded-[1.5rem] border-[3px] p-6 text-center text-2xl font-bold transition-colors disabled:cursor-default ${cls}`}
->>>>>>> origin/develop
                       >
                         <span className={`absolute left-3 top-3 grid h-8 w-8 place-items-center rounded-full font-mono text-sm font-bold transition-colors ${letterCls}`}>
                           {'ABCD'[i]}
@@ -343,12 +318,10 @@ export default function Phase1Quiz() {
         </section>
 
         {/* ===== Inventario por ramas ===== */}
-<<<<<<< HEAD
-        <aside ref={inventoryRef} className="hw-panel flex w-full shrink-0 flex-col gap-2 rounded-[1.25rem] border-2 p-4 shadow-lg lg:w-80">
-=======
+
         <aside ref={inventoryRef} className={`${CARD} relative flex w-full shrink-0 flex-col gap-2 overflow-hidden p-4 pt-5 lg:w-80`}>
           <span className="pointer-events-none absolute inset-x-0 top-0 h-2 bg-nasa-blue" aria-hidden />
->>>>>>> origin/develop
+
           <p className="flex items-center gap-2 text-sm font-extrabold text-nasa-blue">
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-600">
               <Backpack className="h-4 w-4" strokeWidth={2} />
@@ -359,11 +332,8 @@ export default function Phase1Quiz() {
               const items = inventory.filter((id) => ITEMS_BY_ID[id].category === cat);
               const st = stats[cat];
               return (
-<<<<<<< HEAD
-                <div key={cat} className="rounded-xl border border-slate-200 bg-slate-50 p-2 shadow-sm">
-=======
                 <div key={cat} className="rounded-xl bg-slate-50 p-2.5">
->>>>>>> origin/develop
+
                   <div className="flex items-center justify-between text-xs">
                     <SystemLabel cat={cat} />
                     <span className={`font-extrabold ${st.answered > 0 && st.correct === 0 ? 'text-nasa-red' : 'text-slate-500'}`}>

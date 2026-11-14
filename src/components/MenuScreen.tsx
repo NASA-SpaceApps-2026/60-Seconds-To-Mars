@@ -8,7 +8,7 @@ import AriaAssistantWidget from './AriaAssistantWidget';
 import AriaCommandInput from './AriaCommandInput';
 import MissionPatch from './MissionPatchLogo';
 import LanguageToggle from './LanguageToggle';
-import { SpaceBackdrop } from './MissionSelector';
+import SpaceBackdrop from './SpaceBackdrop';
 import { useT } from '../i18n/useT';
 
 /**
