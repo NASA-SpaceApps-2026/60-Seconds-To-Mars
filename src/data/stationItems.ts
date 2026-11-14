@@ -1,4 +1,6 @@
 import type { ItemId, Rarity, RoomId, StationItem, VitalKey } from '../types/game';
+import { localizeRecord, withEnglish } from '../i18n/core';
+import { ITEMS_EN } from '../i18n/en/items';
 
 /**
  * Los 30 objetos de la base marciana, repartidos en las 5 ramas vitales
@@ -6,7 +8,7 @@ import type { ItemId, Rarity, RoomId, StationItem, VitalKey } from '../types/gam
  * En la Fase 1 se ganan acertando preguntas de su rama: cuanto más difícil, más raro.
  * Cada dato de ciencia está basado en investigaciones reales de la NASA.
  */
-export const STATION_ITEMS: StationItem[] = [
+const STATION_ITEMS_ES: StationItem[] = [
   // =================== OXÍGENO ===================
   {
     id: 'co2_scrubbers',
@@ -525,6 +527,9 @@ export const STATION_ITEMS: StationItem[] = [
   },
 ];
 
+/** Objetos en el idioma activo (las traducciones viven en i18n/en/items.ts). */
+export const STATION_ITEMS: StationItem[] = STATION_ITEMS_ES.map((item) => withEnglish<StationItem>(item, ITEMS_EN[item.id]));
+
 export const ITEMS_BY_ID: Record<ItemId, StationItem> = Object.fromEntries(
   STATION_ITEMS.map((item) => [item.id, item]),
 ) as Record<ItemId, StationItem>;
@@ -535,21 +540,24 @@ export const isItemId = (value: unknown): value is ItemId =>
   typeof value === 'string' && (ALL_ITEM_IDS as string[]).includes(value);
 
 export const ROOMS: { id: RoomId; label: string }[] = [
-  { id: 'greenhouse', label: 'Invernadero' },
-  { id: 'lab', label: 'Laboratorio' },
-  { id: 'storage', label: 'Almacén' },
+  withEnglish({ id: 'greenhouse' as RoomId, label: 'Invernadero' }, { label: 'Greenhouse' }),
+  withEnglish({ id: 'lab' as RoomId, label: 'Laboratorio' }, { label: 'Lab' }),
+  withEnglish({ id: 'storage' as RoomId, label: 'Almacén' }, { label: 'Storage' }),
 ];
 
 /** Capacidad de referencia (se mantiene por compatibilidad: la Fase 1 ya no limita huecos). */
 export const BUNKER_CAPACITY = 12;
 
-export const CATEGORY_META: Record<VitalKey, { label: string; color: string }> = {
-  oxygen: { label: 'Oxígeno', color: '#0ea5e9' },
-  power: { label: 'Energía', color: '#eab308' },
-  food: { label: 'Comida', color: '#16a34a' },
-  shield: { label: 'Blindaje', color: '#7c3aed' },
-  crewHealth: { label: 'Salud', color: '#e11d48' },
-};
+export const CATEGORY_META: Record<VitalKey, { label: string; color: string }> = localizeRecord(
+  {
+    oxygen: { label: 'Oxígeno', color: '#0ea5e9' },
+    power: { label: 'Energía', color: '#eab308' },
+    food: { label: 'Comida', color: '#16a34a' },
+    shield: { label: 'Blindaje', color: '#7c3aed' },
+    crewHealth: { label: 'Salud', color: '#e11d48' },
+  },
+  { oxygen: { label: 'Oxygen' }, power: { label: 'Power' }, food: { label: 'Food' }, shield: { label: 'Shielding' }, crewHealth: { label: 'Health' } },
+);
 
 export const itemsByCategory = (category: VitalKey): StationItem[] =>
   STATION_ITEMS.filter((i) => i.category === category);
@@ -562,13 +570,13 @@ export const POWER_ITEMS: ItemId[] = itemsByCategory('power').map((i) => i.id);
 
 export const RARITY_ORDER: Rarity[] = ['common', 'rare', 'epic', 'legendary'];
 
-export const RARITY_META: Record<Rarity, { label: string; badge: string; ring: string }> = {
+export const RARITY_META: Record<Rarity, { label: string; badge: string; ring: string }> = localizeRecord<Rarity, { label: string; badge: string; ring: string }>({
   common: { label: 'Común', badge: 'bg-slate-200 text-slate-700 border-slate-300', ring: 'border-slate-300' },
   // Paleta monocromática aeroespacial: gris → gris titanio → Azul NASA → Rojo Misión
   rare: { label: 'Raro', badge: 'bg-slate-700 text-white border-slate-700', ring: 'border-slate-600' },
   epic: { label: 'Épico', badge: 'bg-[#0B3D91] text-white border-[#0B3D91]', ring: 'border-[#0B3D91]' },
   legendary: { label: 'Legendario NASA', badge: 'bg-[#FC3D21] text-white border-[#FC3D21]', ring: 'border-[#FC3D21]' },
-};
+}, { common: { label: 'Common' }, rare: { label: 'Rare' }, epic: { label: 'Epic' }, legendary: { label: 'NASA Legendary' } });
 
 /** Inventario de prueba para el botón de depuración. */
 export const DEBUG_INVENTORY: ItemId[] = [

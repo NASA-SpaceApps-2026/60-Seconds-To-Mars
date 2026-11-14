@@ -2,7 +2,7 @@
 
 Juego web educativo para niños y niñas de **7 a 12 años** · NASA Space Apps Challenge — *Build a Junior Astronaut Mission Trainer*.
 
-¡Una tormenta solar real (datos de **NASA DONKI**) viaja hacia Marte! Tienes **60 segundos** para meter lo más importante en un búnker de **12 huecos** y después sobrevivir **10 Soles** equilibrando oxígeno, energía, comida, blindaje y salud. Cada objeto y cada dilema incluye ciencia real de **NASA OSDR**. Un Director de Juego con **Google Gemini** crea los retos de cada día (y si no hay IA, el juego sigue con eventos de respaldo).
+¡Una tormenta solar real (datos de **NASA DONKI**) viaja hacia Marte! Tienes **60 segundos** para meter lo más importante en una base espacial de **12 huecos** y después sobrevivir **10 Soles** equilibrando oxígeno, energía, comida, blindaje y salud. Cada objeto y cada dilema incluye ciencia real de **NASA OSDR**. Un Director de Juego con **Google Gemini** crea los retos de cada día (y si no hay IA, el juego sigue con eventos de respaldo).
 
 ---
 
@@ -48,10 +48,11 @@ Abre **http://localhost:5173**. Arriba del menú verás el diagnóstico:
 | Qué | Cómo |
 |---|---|
 | Fase 1 | Botón **INICIAR PROTOCOLO DE EMERGENCIA** → pestañas Invernadero/Laboratorio/Almacén → toca objetos para cargarlos (toca de nuevo para sacarlos). Si no cabe, la esclusa tiembla. **¡SELLAR COMPUERTAS YA!** o espera a 0 s. |
-| Fase 2 directa | En el menú: **Debug: Saltar a Fase 2 con inventario de prueba**. |
+| Fase 2 directa | Escribe o di **supervivencia** en la terminal de A.R.I.A. del menú (o teclea la palabra en cualquier pantalla). |
+| Pantalla final | Orden **final** (victoria) o **derrota** (evacuación con análisis de fallos). |
 | Trade-offs | Apaga/enciende máquinas en el Panel de Ingeniería y mira la previsión "mañana" de cada barra. |
 | Bloqueos | Las opciones que necesitan un objeto que dejaste fuera salen con 🔒. |
-| Búnker vacío | Sella sin coger nada: la evacuación llega hacia el Sol 3-4. |
+| Base espacial vacía | Sella sin coger nada: la evacuación llega hacia el Sol 3-4. |
 
 ## 🛠️ Scripts
 

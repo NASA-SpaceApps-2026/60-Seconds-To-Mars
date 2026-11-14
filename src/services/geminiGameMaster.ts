@@ -14,6 +14,7 @@ import type {
 } from '../types/game';
 import { ITEMS_BY_ID, isItemId, STATION_ITEMS } from '../data/stationItems';
 import { FALLBACK_EVENTS, type FallbackEvent } from '../data/fallbackNasaData';
+import { getLang, tr } from '../i18n/core';
 import {
   DEFAULT_GEMINI_MODEL,
   MAX_PROMPT_CHARS,
@@ -184,7 +185,15 @@ async function callDirect(kind: GeminiTaskKind, prompt: string): Promise<string>
 
 /** Llama a Gemini por el mejor transporte disponible. Lanza GeminiError si no se puede. */
 async function callGemini(kind: GeminiTaskKind, prompt: string): Promise<string> {
-  if (prompt.length > MAX_PROMPT_CHARS) prompt = prompt.slice(0, MAX_PROMPT_CHARS);
+  // Selector de idioma: en inglés, Gemini escribe TODOS los textos en inglés (la systemInstruction lo contempla).
+  // La instrucción va al final y se reserva su hueco antes de recortar (el proxy rechaza > MAX_PROMPT_CHARS).
+  const langSuffix =
+    kind !== 'ping' && getLang() === 'en'
+      ? '\n\nIDIOMA DE SALIDA: inglés. Write EVERY text value of your JSON answer in simple, friendly English for kids aged 7-12. Keep the JSON keys exactly as specified.'
+      : '';
+  const room = MAX_PROMPT_CHARS - langSuffix.length;
+  if (prompt.length > room) prompt = prompt.slice(0, room);
+  prompt += langSuffix;
   if (proxyState !== 'unavailable') {
     try {
       const text = await callProxy(kind, prompt);
@@ -231,11 +240,11 @@ export async function testGeminiConnection(): Promise<GeminiDiagnostics> {
 // Validación y sanitización estricta
 // ------------------------------------------------------------
 const VITAL_NAMES: Record<VitalKey, string> = {
-  oxygen: 'Oxígeno',
-  power: 'Energía',
-  food: 'Comida',
-  shield: 'Escudo',
-  crewHealth: 'Salud',
+  get oxygen() { return tr('Oxígeno', 'Oxygen'); },
+  get power() { return tr('Energía', 'Power'); },
+  get food() { return tr('Comida', 'Food'); },
+  get shield() { return tr('Escudo', 'Shield'); },
+  get crewHealth() { return tr('Salud', 'Health'); },
 };
 const RADIATION_LEVELS: RadiationLevel[] = ['low', 'moderate', 'high', 'extreme'];
 const VITAL_KEYS: VitalKey[] = ['oxygen', 'power', 'food', 'shield', 'crewHealth'];
@@ -246,7 +255,7 @@ const SCIENCE_MAX = 50;
 /** Palabras prohibidas para el público infantil (guardarraíl de salida). */
 // Lookarounds con \p{L} en vez de \b: \b no funciona con letras acentuadas (murió, cadáver).
 const UNSAFE_WORDS =
-  /(?<!\p{L})(muert[eoa]s?|morir|muere[ns]?|muri[óo]|matar|mata[ns]?|asesin\p{L}*|cad[áa]ver\p{L}*|sangr\p{L}*|fallec\p{L}*|suicid\p{L}*|tortur\p{L}*|armas?|disparo\p{L}*|terror\p{L}*|horror\p{L}*|monstruo\p{L}*)(?!\p{L})/iu;
+  /(?<!\p{L})(muert[eoa]s?|morir|muere[ns]?|muri[óo]|matar|mata[ns]?|asesin\p{L}*|cad[áa]ver\p{L}*|sangr\p{L}*|fallec\p{L}*|suicid\p{L}*|tortur\p{L}*|armas?|disparo\p{L}*|terror\p{L}*|horror\p{L}*|monstruo\p{L}*|death|deaths|dead|die[sd]?|dying|kill\p{L}*|murder\p{L}*|corpse\p{L}*|blood\p{L}*|bleed\p{L}*|suicid\p{L}*|tortur\p{L}*|weapons?|guns?|shoot\p{L}*|horror\p{L}*|monsters?)(?!\p{L})/iu;
 
 /** Texto seguro: tipo string, sin caracteres de control, con longitud máxima y sin lenguaje prohibido. */
 function safeText(value: unknown, fallback: string, maxLen: number): string {
@@ -303,11 +312,11 @@ export function ensurePlayable(event: DailyEvent, inventory: ItemId[], vitals: V
       ...options,
       {
         id: String.fromCharCode(97 + options.length),
-        label: 'Ahorrar energía y esperar',
-        description: 'No arriesgáis nada, pero la tripulación acumula fatiga espacial.',
+        label: tr('Ahorrar energía y esperar', 'Save power and wait'),
+        description: tr('No arriesgáis nada, pero la tripulación acumula fatiga espacial.', 'You risk nothing, but the crew builds up space fatigue.'),
         effects: { crewHealth: -6, power: -2 },
         requiredItemId: null,
-        ariaReactionVoice: 'Modo ahorro activado. Esperamos a mañana.',
+        ariaReactionVoice: tr('Modo ahorro activado. Esperamos a mañana.', 'Power-saving mode on. We will wait for tomorrow.'),
       },
     ];
   }
@@ -327,7 +336,7 @@ export interface EventContext {
   totalSols: number;
   vitals: Vitals;
   science: number;
-  /** Objetos disponibles ahora mismo en el búnker (sin los consumidos). */
+  /** Objetos disponibles ahora mismo en la base espacial (sin los consumidos). */
   inventory: ItemId[];
   machineStates: Partial<Record<ItemId, boolean>>;
   weather: NASAWeather | null;
@@ -380,7 +389,10 @@ export function getFallbackEvent(ctx: EventContext): DailyEvent {
   const warnings = VITAL_KEYS.filter((k) => ctx.vitals[k] < 30).map((k) => VITAL_NAMES[k]);
   const description =
     warnings.length > 0
-      ? `${rest.description} A.R.I.A. avisa: ¡Ojo, ${warnings.join(' y ')} ${warnings.length > 1 ? 'están' : 'está'} en la zona roja!`
+      ? tr(
+          `${rest.description} A.R.I.A. avisa: ¡Ojo, ${warnings.join(' y ')} ${warnings.length > 1 ? 'están' : 'está'} en la zona roja!`,
+          `${rest.description} A.R.I.A. warns: careful, ${warnings.join(' and ')} ${warnings.length > 1 ? 'are' : 'is'} in the red zone!`,
+        )
       : rest.description;
 
   // El primer Sol usa la intensidad real de la llamarada de NASA DONKI
@@ -416,11 +428,11 @@ function buildEventPrompt(ctx: EventContext): string {
     ? `Llamarada ${ctx.weather.flareClass} (${ctx.weather.isLive ? 'dato en vivo' : 'archivo'} NASA DONKI, ${ctx.weather.peakTime}), intensidad base ${ctx.weather.intensity}.`
     : 'Sin datos de llamarada.';
 
-  return `SITUACIÓN: Una tripulación está refugiada en un búnker en Marte durante una tormenta solar.
+  return `SITUACIÓN: Una tripulación está refugiada en una base espacial en Marte durante una tormenta solar.
 - Sol actual: ${ctx.sol} de ${ctx.totalSols}
 - Clima espacial: ${flare}
 - Barras (0-100): Oxígeno ${v.oxygen}, Energía ${v.power}, Comida ${v.food}, Escudo ${v.shield}, Salud ${v.crewHealth}. Ciencia: ${ctx.science}.
-- Objetos DENTRO del búnker:
+- Objetos DENTRO de la base espacial:
 ${have.join('\n') || '- (ninguno)'}
 - Objetos que DEJÓ FUERA en la Fase 1:
 ${missing.join('\n') || '- (ninguno)'}
@@ -447,7 +459,7 @@ function parseGeminiEvent(raw: string, ctx: EventContext): DailyEvent {
       description: safeText(opt.description, '', 160),
       effects: cleanEffects(opt.effects),
       requiredItemId: isItemId(opt.requiredItemId) ? opt.requiredItemId : null,
-      ariaReactionVoice: safeText(opt.ariaReactionVoice, 'Decisión registrada. ¡Seguimos adelante!', 160),
+      ariaReactionVoice: safeText(opt.ariaReactionVoice, tr('Decisión registrada. ¡Seguimos adelante!', 'Decision logged. Onward!'), 160),
     };
   });
   if (options.length === 0) throw new GeminiError('Gemini no devolvió opciones');
@@ -457,10 +469,10 @@ function parseGeminiEvent(raw: string, ctx: EventContext): DailyEvent {
   return ensurePlayable(
     {
       sol: ctx.sol,
-      title: safeText(data.title, 'Nuevo reto en el búnker', 70),
-      ariaVoiceAlert: safeText(data.ariaVoiceAlert, 'Atención, tripulación. Tenemos un nuevo reto.', 220),
-      description: safeText(data.description, 'Los sensores detectan un problema en el búnker. ¿Qué haces?', 420),
-      nasaFact: safeText(data.nasaFact, 'NASA DONKI vigila el clima espacial para proteger a los astronautas.', 320),
+      title: safeText(data.title, tr('Nuevo reto en la base espacial', 'New challenge at the space base'), 70),
+      ariaVoiceAlert: safeText(data.ariaVoiceAlert, tr('Atención, tripulación. Tenemos un nuevo reto.', 'Attention, crew. We have a new challenge.'), 220),
+      description: safeText(data.description, tr('Los sensores detectan un problema en la base espacial. ¿Qué haces?', 'The sensors detect a problem at the space base. What do you do?'), 420),
+      nasaFact: safeText(data.nasaFact, tr('NASA DONKI vigila el clima espacial para proteger a los astronautas.', 'NASA DONKI watches space weather to protect astronauts.'), 320),
       nasaSource: safeText(data.nasaSource, 'NASA', 90),
       radiationLevel,
       options,
@@ -500,7 +512,7 @@ export interface DebriefContext {
   history: SolReport[];
 }
 
-const ITEM_LESSONS: Partial<Record<ItemId, string>> = {
+const ITEM_LESSONS_ES: Partial<Record<ItemId, string>> = {
   lead_blanket: 'La Manta de Plomo protegía sin gastar energía: el blindaje pasivo es el mejor amigo en una tormenta solar.',
   hydro_recycler: 'El Reciclador ECLSS es el corazón de cualquier base: en la ISS recicla el 98 % del agua.',
   osdr_seeds: 'Las Semillas OSDR producen comida para siempre, mientras que las cajas se acaban. ¡Cultivar es clave para ir a Marte!',
@@ -511,15 +523,34 @@ const ITEM_LESSONS: Partial<Record<ItemId, string>> = {
   o2_tanks: 'Los Tanques de O2 son un seguro de emergencia, aunque ocupan mucho sitio.',
   med_kit: 'El Botiquín recupera la salud de golpe: muy útil cuando la radiación aprieta.',
   high_gain_antenna: 'La Antena Deep Space convierte cada Sol en ciencia para la Tierra.',
-  tool_printer_3d: 'La Impresora 3D fabricaba repuestos en el búnker: en la ISS se imprimió la primera pieza espacial en 2014.',
-  eva_suit: 'El Traje EVA es una nave en miniatura: protege incluso cuando el búnker sufre.',
+  tool_printer_3d: 'La Impresora 3D fabricaba repuestos en la base espacial: en la ISS se imprimió la primera pieza espacial en 2014.',
+  eva_suit: 'El Traje EVA es una nave en miniatura: protege incluso cuando la base espacial sufre.',
   magnetic_board_game: 'El Juego Magnético cuidaba la moral: la salud mental es tan importante como el oxígeno.',
   led_hydro_lamp: 'La Lámpara LED daba comida cada día con muy poca energía, como el invernadero Veggie de la ISS.',
   mini_rtg: 'El RTG Mini daba muchísima energía: así funcionan las sondas Voyager desde 1977.',
   mars_drone: 'El Dron Explorador sumaba ciencia cada Sol, como el helicóptero Ingenuity en Marte.',
 };
 
-const FAIL_LESSONS: Record<VitalKey, string> = {
+const ITEM_LESSONS_EN: Partial<Record<ItemId, string>> = {
+  lead_blanket: 'The Lead Blanket protected you without using power: passive shielding is your best friend in a solar storm.',
+  hydro_recycler: 'The ECLSS Recycler is the heart of any base: on the ISS it recycles 98% of the water.',
+  osdr_seeds: 'The OSDR Seeds make food forever, while the boxes run out. Growing food is key to going to Mars!',
+  lithium_battery: 'The Backup Battery gave extra power every Sol: without power, no machine works.',
+  co2_scrubbers: 'The CO2 Filters gave oxygen while using very little power: great value for the cost!',
+  mag_shield_booster: 'The Magnetic Coil protects a lot, but you have to watch the battery while it is on.',
+  space_duct_tape: 'Kapton Tape takes up just 1 slot and solves lots of problems, just like on Apollo 13.',
+  o2_tanks: 'The O2 Tanks are emergency insurance, even though they take up a lot of space.',
+  med_kit: 'The Med Kit restores health all at once: very useful when the radiation gets tough.',
+  high_gain_antenna: 'The Deep Space Antenna turns every Sol into science for Earth.',
+  tool_printer_3d: 'The 3D Printer made spare parts in the space base: the first part was printed in space on the ISS in 2014.',
+  eva_suit: 'The EVA Suit is a tiny spacecraft: it protects you even when the space base is struggling.',
+  magnetic_board_game: 'The Magnetic Game kept morale up: mental health is as important as oxygen.',
+  led_hydro_lamp: 'The LED Lamp gave food every day with very little power, like the Veggie greenhouse on the ISS.',
+  mini_rtg: 'The Mini RTG gave loads of power: that is how the Voyager probes have worked since 1977.',
+  mars_drone: 'The Watch Drone added science every Sol, like the Ingenuity helicopter on Mars.',
+};
+
+const FAIL_LESSONS_ES: Record<VitalKey, string> = {
   oxygen: 'El oxígeno se acabó. En una base real, el soporte vital (reciclador y filtros de CO2) es siempre lo primero que se carga.',
   power: 'La energía se agotó. Cada máquina encendida gasta batería: apagar lo que no hace falta es un superpoder de ingeniero.',
   food: 'La comida se terminó. Las cajas se acaban, pero las semillas producen comida nueva cada pocos Soles.',
@@ -527,7 +558,18 @@ const FAIL_LESSONS: Record<VitalKey, string> = {
   crewHealth: 'La tripulación acumuló demasiada fatiga espacial. Mantener las barras fuera de la zona roja evita que la salud se resienta.',
 };
 
+const FAIL_LESSONS_EN: Record<VitalKey, string> = {
+  oxygen: 'The oxygen ran out. In a real base, life support (recycler and CO2 filters) is always the first thing to pack.',
+  power: 'The power ran out. Every machine that is on uses battery: switching off what you do not need is an engineering superpower.',
+  food: 'The food ran out. The boxes run out, but seeds make new food every few Sols.',
+  shield: 'The shield went down. During a solar storm, shielding (lead blanket or magnetic coil) protects the crew.',
+  crewHealth: 'The crew built up too much space fatigue. Keeping the bars out of the red zone stops health from suffering.',
+};
+
 export function getFallbackDebrief(ctx: DebriefContext): Debrief {
+  const en = getLang() === 'en';
+  const ITEM_LESSONS = en ? ITEM_LESSONS_EN : ITEM_LESSONS_ES;
+  const FAIL_LESSONS = en ? FAIL_LESSONS_EN : FAIL_LESSONS_ES;
   const loaded = ctx.loadedItems.map((id) => ITEMS_BY_ID[id].shortName);
   const leftOut = STATION_ITEMS.filter((i) => !ctx.loadedItems.includes(i.id)).map((i) => i.shortName);
   const victory = ctx.outcome === 'victory';
@@ -544,23 +586,32 @@ export function getFallbackDebrief(ctx: DebriefContext): Debrief {
     if (l && lessons.length < 3) lessons.push(l);
   }
   if (!ctx.loadedItems.some((id) => ITEMS_BY_ID[id].category === 'oxygen'))
-    lessons.push('No cargaste ninguna fuente de oxígeno. ¡En el espacio el aire es lo primero!');
-  lessons.push('En el espacio ninguna decisión es gratis: cada hueco y cada kilovatio cuenta.');
+    lessons.push(tr('No cargaste ninguna fuente de oxígeno. ¡En el espacio el aire es lo primero!', 'You did not pack any oxygen source. In space, air comes first!'));
+  lessons.push(tr('En el espacio ninguna decisión es gratis: cada hueco y cada kilovatio cuenta.', 'In space no decision is free: every slot and every kilowatt counts.'));
 
   return {
     headline: victory
-      ? '¡La tripulación superó la tormenta solar!'
-      : `Evacuación médica a la órbita en el Sol ${ctx.solsSurvived + 1}`,
+      ? tr('¡La tripulación superó la tormenta solar!', 'The crew made it through the solar storm!')
+      : tr(`Evacuación médica a la órbita en el Sol ${ctx.solsSurvived + 1}`, `Medical evacuation to orbit on Sol ${ctx.solsSurvived + 1}`),
     report: victory
-      ? `Has mantenido el búnker funcionando durante ${ctx.totalSols} Soles completos. Elegiste cargar ${loaded.join(', ') || 'muy pocas cosas'}, y gracias a esa estrategia la tripulación está sana y salva. Además conseguiste ${ctx.science} puntos de ciencia para la NASA.`
-      : `La tripulación resistió ${ctx.solsSurvived} Soles antes de que la nave de rescate la llevara a la órbita sana y salva. Cargaste ${loaded.join(', ') || 'muy pocas cosas'} y dejaste fuera ${leftOut.join(', ') || 'nada'}. Cada misión es un experimento: ¡ahora sabes qué cambiar!`,
+      ? tr(
+          `Has mantenido la base espacial funcionando durante ${ctx.totalSols} Soles completos. Elegiste cargar ${loaded.join(', ') || 'muy pocas cosas'}, y gracias a esa estrategia la tripulación está sana y salva. Además conseguiste ${ctx.science} puntos de ciencia para la NASA.`,
+          `You kept the space base running for ${ctx.totalSols} full Sols. You chose to pack ${loaded.join(', ') || 'very few things'}, and thanks to that strategy the crew is safe and sound. You also earned ${ctx.science} science points for NASA.`,
+        )
+      : tr(
+          `La tripulación resistió ${ctx.solsSurvived} Soles antes de que la nave de rescate la llevara a la órbita sana y salva. Cargaste ${loaded.join(', ') || 'muy pocas cosas'} y dejaste fuera ${leftOut.join(', ') || 'nada'}. Cada misión es un experimento: ¡ahora sabes qué cambiar!`,
+          `The crew held out for ${ctx.solsSurvived} Sols before the rescue ship took them safely to orbit. You packed ${loaded.join(', ') || 'very few things'} and left out ${leftOut.join(', ') || 'nothing'}. Every mission is an experiment: now you know what to change!`,
+        ),
     lessons: lessons.slice(0, 4),
     bestDecision: best
-      ? `Sol ${best.sol}: "${best.optionLabel}" en el evento "${best.eventTitle}".`
-      : 'Sellar las compuertas a tiempo y mantener la calma.',
+      ? tr(`Sol ${best.sol}: "${best.optionLabel}" en el evento "${best.eventTitle}".`, `Sol ${best.sol}: "${best.optionLabel}" in the "${best.eventTitle}" event.`)
+      : tr('Sellar las compuertas a tiempo y mantener la calma.', 'Sealing the hatches in time and keeping calm.'),
     improvementTip: ctx.failedVital
-      ? `La próxima vez, deja hueco para algo que proteja tu ${VITAL_NAMES[ctx.failedVital].toLowerCase()}.`
-      : 'Prueba otra combinación de carga para conseguir más puntos de ciencia.',
+      ? tr(
+          `La próxima vez, deja hueco para algo que proteja tu ${VITAL_NAMES[ctx.failedVital].toLowerCase()}.`,
+          `Next time, make room for something that protects your ${VITAL_NAMES[ctx.failedVital].toLowerCase()}.`,
+        )
+      : tr('Prueba otra combinación de carga para conseguir más puntos de ciencia.', 'Try a different set of supplies to earn more science points.'),
     source: 'fallback',
   };
 }
@@ -595,19 +646,27 @@ const normalize = (s: string) =>
 const VITAL_ADVICE: Record<Exclude<VitalKey, 'crewHealth'>, { items: ItemId[]; tip: string }> = {
   oxygen: {
     items: ['hydro_recycler', 'co2_scrubbers', 'o2_tanks'],
-    tip: 'En la ISS el aire se recicla sin parar. Elige opciones que no gasten oxígeno hoy.',
+    get tip() {
+      return tr('En la ISS el aire se recicla sin parar. Elige opciones que no gasten oxígeno hoy.', 'On the ISS the air is recycled non-stop. Pick options that do not use oxygen today.');
+    },
   },
   power: {
     items: ['lithium_battery', 'mini_rtg'],
-    tip: 'Apaga las máquinas que no necesites hoy: cada kilovatio ahorrado es un Sol más de vida para la base.',
+    get tip() {
+      return tr('Apaga las máquinas que no necesites hoy: cada kilovatio ahorrado es un Sol más de vida para la base.', 'Switch off the machines you do not need today: every kilowatt saved is one more Sol for the base.');
+    },
   },
   food: {
     items: ['osdr_seeds', 'freeze_food_a', 'freeze_food_b', 'led_hydro_lamp'],
-    tip: 'Las semillas dan comida nueva cada 2 Soles si tienen luz. Las cajas se acaban, ¡guárdalas para una emergencia!',
+    get tip() {
+      return tr('Las semillas dan comida nueva cada 2 Soles si tienen luz. Las cajas se acaban, ¡guárdalas para una emergencia!', 'The seeds give new food every 2 Sols if they have light. The boxes run out, so save them for an emergency!');
+    },
   },
   shield: {
     items: ['lead_blanket', 'mag_shield_booster', 'eva_suit', 'tool_printer_3d'],
-    tip: 'Durante una tormenta solar el blindaje es lo primero. Las opciones que suben el escudo protegen la salud.',
+    get tip() {
+      return tr('Durante una tormenta solar el blindaje es lo primero. Las opciones que suben el escudo protegen la salud.', 'During a solar storm, shielding comes first. Options that raise the shield protect health.');
+    },
   },
 };
 
@@ -619,32 +678,58 @@ export function getFallbackAriaAnswer(question: string, gameState: AriaGameState
   const lowest = keys.reduce((a, b) => (v[b] < v[a] ? b : a));
 
   // 1. Dato de la NASA
-  if (currentEvent && /(dato|nasa|ciencia|por que|explica)/.test(q)) {
+  if (currentEvent && /(dato|nasa|ciencia|por que|explica|fact|science|why|explain)/.test(q)) {
     const firstSentence = currentEvent.nasaFact.split(/(?<=[.!?])\s/)[0] ?? currentEvent.nasaFact;
-    return limitWords(`¡Claro! ${firstSentence} Lo sabemos gracias a ${currentEvent.nasaSource}.`);
+    return limitWords(tr(`¡Claro! ${firstSentence} Lo sabemos gracias a ${currentEvent.nasaSource}.`, `Sure! ${firstSentence} We know this thanks to ${currentEvent.nasaSource}.`));
   }
 
   // 2. ¿Qué máquina apagar?
-  if (/(apag|maquina|encend|energia|bateria)/.test(q)) {
+  if (/(apag|maquina|encend|energia|bateria|switch|machine|turn off|power|battery)/.test(q)) {
     const onMachines = gameState.inventory.filter((id) => ITEMS_BY_ID[id].kind === 'machine' && gameState.machineStates[id]);
-    if (onMachines.length === 0) return limitWords('Ahora mismo no hay máquinas encendidas. ¡La batería descansa! Recuerda que sin máquinas no se produce oxígeno ni comida.');
+    if (onMachines.length === 0)
+      return limitWords(
+        tr(
+          'Ahora mismo no hay máquinas encendidas. ¡La batería descansa! Recuerda que sin máquinas no se produce oxígeno ni comida.',
+          'No machines are on right now. The battery is resting! Remember that without machines, no oxygen or food gets made.',
+        ),
+      );
     const protects = (id: ItemId) => VITAL_ADVICE[lowest].items.includes(id);
     const candidate = [...onMachines]
       .filter((id) => !protects(id))
       .sort((a, b) => ITEMS_BY_ID[a].powerPerSol - ITEMS_BY_ID[b].powerPerSol)[0];
     if (v.power >= 50) {
-      return limitWords(`La energía está en ${v.power}, ¡vamos bien! Si baja de 30, apaga primero ${candidate ? ITEMS_BY_ID[candidate].shortName : 'la máquina que más gaste'}.`);
+      return limitWords(
+        tr(
+          `La energía está en ${v.power}, ¡vamos bien! Si baja de 30, apaga primero ${candidate ? ITEMS_BY_ID[candidate].shortName : 'la máquina que más gaste'}.`,
+          `Power is at ${v.power}, we are doing fine! If it drops below 30, switch off ${candidate ? ITEMS_BY_ID[candidate].shortName : 'the hungriest machine'} first.`,
+        ),
+      );
     }
     return candidate
-      ? limitWords(`Con la energía en ${v.power}, yo apagaría ${ITEMS_BY_ID[candidate].shortName} (${ITEMS_BY_ID[candidate].powerPerSol} kW por Sol). Así protegemos lo que más importa: ${VITAL_NAMES[lowest].toLowerCase()}.`)
-      : limitWords(`Todas las máquinas encendidas protegen ${VITAL_NAMES[lowest].toLowerCase()}, que es lo más bajo. Mejor busca opciones del evento que no gasten energía.`);
+      ? limitWords(
+          tr(
+            `Con la energía en ${v.power}, yo apagaría ${ITEMS_BY_ID[candidate].shortName} (${ITEMS_BY_ID[candidate].powerPerSol} kW por Sol). Así protegemos lo que más importa: ${VITAL_NAMES[lowest].toLowerCase()}.`,
+            `With power at ${v.power}, I would switch off ${ITEMS_BY_ID[candidate].shortName} (${ITEMS_BY_ID[candidate].powerPerSol} kW per Sol). That way we protect what matters most: ${VITAL_NAMES[lowest].toLowerCase()}.`,
+          ),
+        )
+      : limitWords(
+          tr(
+            `Todas las máquinas encendidas protegen ${VITAL_NAMES[lowest].toLowerCase()}, que es lo más bajo. Mejor busca opciones del evento que no gasten energía.`,
+            `All the machines that are on protect ${VITAL_NAMES[lowest].toLowerCase()}, your lowest bar. Better look for event options that do not use power.`,
+          ),
+        );
   }
 
   // 3. Mayor peligro / consejo general: la barra más baja
   const advice = VITAL_ADVICE[lowest];
   const owned = advice.items.filter((id) => gameState.inventory.includes(id)).map((id) => ITEMS_BY_ID[id].shortName);
-  const help = owned.length ? ` Tienes ${owned.join(' y ')} para ayudarte.` : '';
-  return limitWords(`El mayor peligro hoy es ${VITAL_NAMES[lowest].toLowerCase()}: está en ${v[lowest]}. ${advice.tip}${help}`);
+  const help = owned.length ? tr(` Tienes ${owned.join(' y ')} para ayudarte.`, ` You have ${owned.join(' and ')} to help you.`) : '';
+  return limitWords(
+    tr(
+      `El mayor peligro hoy es ${VITAL_NAMES[lowest].toLowerCase()}: está en ${v[lowest]}. ${advice.tip}${help}`,
+      `The biggest danger today is ${VITAL_NAMES[lowest].toLowerCase()}: it is at ${v[lowest]}. ${advice.tip}${help}`,
+    ),
+  );
 }
 
 /**
@@ -657,7 +742,7 @@ export async function askAriaQuestion(
   currentEvent: DailyEvent | null,
 ): Promise<string> {
   const q = safeText(question, '', MAX_QUESTION_CHARS);
-  if (!q) return '¿Puedes repetir la pregunta con otras palabras? Estoy aquí para ayudarte.';
+  if (!q) return tr('¿Puedes repetir la pregunta con otras palabras? Estoy aquí para ayudarte.', 'Can you ask that again in other words? I am here to help.');
   const fallback = getFallbackAriaAnswer(q, gameState, currentEvent);
   if (!isGeminiActive()) return fallback;
 
@@ -683,7 +768,7 @@ Opciones: ${currentEvent.options
         .join(' | ')}`
     : 'Ahora mismo no hay dilema activo.';
 
-  const prompt = `Eres A.R.I.A., el ordenador de a bordo del búnker en Marte. Un niño o niña de 7-12 años te hace una pregunta.
+  const prompt = `Eres A.R.I.A., el ordenador de a bordo de la base espacial en Marte. Un niño o niña de 7-12 años te hace una pregunta.
 ESTADO: Sol ${gameState.sol}/${gameState.totalSols}. Oxígeno ${v.oxygen}, Energía ${v.power}, Comida ${v.food}, Escudo ${v.shield}, Salud ${v.crewHealth} (0-100). Ciencia ${gameState.science}.
 Inventario: ${inv || 'vacío'}.
 ${eventText}

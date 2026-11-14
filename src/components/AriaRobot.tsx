@@ -4,8 +4,10 @@ import { X } from 'lucide-react';
 import { useGameStore } from '../store/useGameStore';
 import { useAriaTypedText, useAriaVoiceState } from '../utils/useAriaVoiceState';
 import { playButtonClick } from '../utils/soundEffects';
+import { useT } from '../i18n/useT';
 import AriaAssistantWidget from './AriaAssistantWidget';
 import AriaConsole from './AriaConsole';
+import AriaCommandInput from './AriaCommandInput';
 
 /** Tiempo que el bocadillo se queda visible si nadie lo cierra. */
 const BUBBLE_MS = 15000;
@@ -67,6 +69,7 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
   const typed = useAriaTypedText(message);
   const speaking = voice.speaking && voiceMode !== 'silent';
   const [hiddenFor, setHiddenFor] = useState<string | null>(null);
+  const t = useT();
 
   // El bocadillo se oculta solo tras un rato (vuelve a salir con el siguiente mensaje)
   useEffect(() => {
@@ -91,8 +94,8 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
         whileTap={{ scale: 0.94 }}
         className="relative h-24 w-[5.5rem] shrink-0 rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-nasa-blue/50"
         aria-expanded={open}
-        aria-label={open ? 'Plegar el panel de A.R.I.A.' : 'Abrir A.R.I.A.: preguntas y voz'}
-        title="A.R.I.A.: pregúntale lo que quieras"
+        aria-label={open ? t('Plegar el panel de A.R.I.A.', 'Collapse the A.R.I.A. panel') : t('Abrir A.R.I.A.: preguntas y voz', 'Open A.R.I.A.: questions and voice')}
+        title={t('A.R.I.A.: pregúntale lo que quieras', 'A.R.I.A.: ask her anything')}
       >
         <RobotSvg speaking={speaking} />
         {speaking && <span className="absolute inset-0 animate-ping rounded-full border-2 border-sky-300/50" aria-hidden />}
@@ -120,7 +123,7 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
                 type="button"
                 onClick={() => setHiddenFor(message)}
                 className="-mr-1 -mt-1 rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Cerrar aviso"
+                aria-label={t('Cerrar aviso', 'Close message')}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -140,21 +143,22 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
             style={{ transformOrigin: 'top right' }}
             className="thin-scroll mt-3 max-h-[min(82vh,calc(100dvh-14rem))] w-[min(28rem,92vw)] overflow-y-auto rounded-2xl border-2 border-slate-300 bg-white/95 p-3 shadow-2xl backdrop-blur-md"
             role="dialog"
-            aria-label="A.R.I.A.: preguntas y voz"
+            aria-label={t('A.R.I.A.: preguntas y voz', 'A.R.I.A.: questions and voice')}
           >
             <div className="mb-2 flex items-center justify-between">
-              <p className="font-mono text-xs font-bold tracking-[0.25em] text-nasa-blue">A.R.I.A. // ORDENADOR DE A BORDO</p>
+              <p className="font-mono text-xs font-bold tracking-[0.25em] text-nasa-blue">A.R.I.A. // {t('ORDENADOR DE A BORDO', 'ONBOARD COMPUTER')}</p>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
                 className="rounded-lg border border-slate-300 p-1.5 text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
-                aria-label="Plegar A.R.I.A."
+                aria-label={t('Plegar A.R.I.A.', 'Collapse A.R.I.A.')}
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="grid gap-3">
               <AriaAssistantWidget compact />
+              <AriaCommandInput />
               <AriaConsole />
             </div>
           </motion.div>

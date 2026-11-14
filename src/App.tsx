@@ -4,7 +4,9 @@ import { useGameStore } from './store/useGameStore';
 import { unlockAudio } from './utils/soundEffects';
 import { runDevQaScenario } from './utils/devQa';
 import MenuScreen from './components/MenuScreen';
+import MissionSelector from './components/MissionSelector';
 import ScreenErrorBoundary from './components/ScreenErrorBoundary';
+import { tr } from './i18n/core';
 
 // Las pantallas de juego se cargan bajo demanda (bundle inicial más ligero)
 const Phase1Scavenge = lazy(() => import('./components/Phase1Scavenge'));
@@ -15,7 +17,7 @@ const StoryComicModal = lazy(() => import('./components/StoryComicModal'));
 function ScreenLoader() {
   return (
     <div className="grid h-dvh place-items-center bg-slate-100">
-      <p className="font-display animate-pulse text-sm font-bold tracking-[0.3em] text-nasa-blue">CARGANDO MÓDULO...</p>
+      <p className="font-display animate-pulse text-sm font-bold tracking-[0.3em] text-nasa-blue">{tr('CARGANDO MÓDULO...', 'LOADING MODULE...')}</p>
     </div>
   );
 }
@@ -35,6 +37,27 @@ export default function App() {
   // Solo en desarrollo: #qa-quiz, #qa-summary, #qa-bunker, #qa-gameover saltan a esa pantalla (revisión responsive)
   useEffect(() => {
     runDevQaScenario();
+  }, []);
+
+  // Órdenes rápidas de presentación: teclear "final", "supervivencia" o "derrota" en cualquier pantalla
+  // (fuera de un campo de texto) equivale a decírselo a A.R.I.A.
+  useEffect(() => {
+    let buffer = '';
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+      buffer = (buffer + e.key.toLowerCase()).slice(-20);
+      for (const cmd of ['supervivencia', 'survival', 'final', 'derrota', 'defeat']) {
+        if (buffer.endsWith(cmd)) {
+          buffer = '';
+          useGameStore.getState().runAriaCommand(cmd);
+          return;
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // Los navegadores exigen un gesto del usuario para activar el audio
@@ -61,6 +84,7 @@ export default function App() {
         <ScreenErrorBoundary onHome={() => useGameStore.getState().resetToMenu()}>
           <Suspense fallback={<ScreenLoader />}>
             {gamePhase === 'MENU' && <MenuScreen />}
+            {gamePhase === 'MISSION_SELECT' && <MissionSelector />}
             {gamePhase === 'PHASE_1_SCAVENGE' && <Phase1Scavenge />}
             {gamePhase === 'PHASE_2_BUNKER' && <Phase2Bunker />}
             {gamePhase === 'GAME_OVER' && <GameOverScreen />}

@@ -1,4 +1,7 @@
 import { useGameStore } from '../store/useGameStore';
+import { buildFieldNote } from '../data/fieldNotes';
+import { HOUSTON_PACKAGES } from '../data/missionExtras';
+import { getFallbackMarsPhotos } from '../services/nasaApi';
 
 /**
  * Atajos de QA SOLO en desarrollo (`npm run dev`): abrir la app con un hash salta a una pantalla
@@ -6,15 +9,20 @@ import { useGameStore } from '../store/useGameStore';
  *   #qa-quiz     → trivia en marcha
  *   #qa-summary  → resumen de la trivia (con aciertos, fallos y una avería)
  *   #qa-capsule  → resumen con la Cápsula Orbital ya abierta
- *   #qa-bunker   → búnker (inventario de depuración)
- *   #qa-bunker-systems / #qa-bunker-decision → búnker con ese panel ya abierto
+ *   #qa-bunker   → base espacial (inventario de depuración)
+ *   #qa-bunker-systems / #qa-bunker-decision → base espacial con ese panel ya abierto
  *   #qa-gameover → pantalla final (victoria)
+ *   #qa-selector → selector de modo · #qa-transmission → carta de Houston con foto
  * En producción no hace nada (se elimina del bundle con import.meta.env.DEV).
  */
 export function runDevQaScenario(): void {
   if (!import.meta.env.DEV) return;
   const scenario = window.location.hash.replace('#', '');
   if (!scenario.startsWith('qa-')) return;
+  if (scenario === 'qa-selector') {
+    useGameStore.getState().enterMissionSelector();
+    return;
+  }
   const store = useGameStore;
   const s = () => store.getState();
 
@@ -36,9 +44,24 @@ export function runDevQaScenario(): void {
     }
     return;
   }
-  if (scenario.startsWith('qa-bunker') || scenario === 'qa-gameover') {
+  if (scenario.startsWith('qa-bunker') || scenario === 'qa-gameover' || scenario === 'qa-transmission') {
     s().debugSkipToPhase2();
     s().closeStory();
+    if (scenario === 'qa-transmission') {
+      // Carta de Houston con foto real (local) y suministro entregado
+      const photo = getFallbackMarsPhotos()[0] ?? null;
+      store.setState((st) => ({
+        marsPhotos: photo ? [photo, ...st.marsPhotos.filter((p) => p.id !== photo.id)] : st.marsPhotos,
+        fieldNote: {
+          key: Date.now(),
+          photoId: photo?.id ?? null,
+          source: 'houston',
+          sol: 3,
+          ...buildFieldNote(photo, 'houston', st.vitals, 0),
+          delivered: [{ label: HOUSTON_PACKAGES.oxygen_reserve.label, vital: 'oxygen', amount: HOUSTON_PACKAGES.oxygen_reserve.amount }],
+        },
+      }));
+    }
     if (scenario === 'qa-gameover') {
       store.setState((st) => ({
         gamePhase: 'GAME_OVER',
@@ -52,7 +75,7 @@ export function runDevQaScenario(): void {
   }
 }
 
-/** Panel del búnker que debe abrirse al entrar (solo en desarrollo, para revisar el diseño). */
+/** Panel de la base espacial que debe abrirse al entrar (solo en desarrollo, para revisar el diseño). */
 export function devInitialOverlay(): 'none' | 'systems' | 'decision' {
   if (!import.meta.env.DEV) return 'none';
   const h = window.location.hash;

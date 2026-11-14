@@ -9,7 +9,7 @@ Juego web educativo para niños de **7 a 12 años**, en **español**. Dos fases:
    - 60 s para responder preguntas del banco de 45 (`data/triviaQuestions.ts`: 9 por rama vital, fácil/media/difícil, dificultad progresiva con `buildQuizQueue`).
    - Acierto ⇒ objeto **de la misma rama** directo al `bunkerInventory` (fácil→común, media→raro, difícil→épico/legendario). Sin límite de huecos.
    - Rama con 0 aciertos (o <1/3 con ≥3 intentos) ⇒ **complicación** (`COMPLICATIONS`): −20 inicial, −4/Sol extra y máquinas de esa rama **averiadas** (`isMachineBroken`).
-   - Resumen de 4 s; si fue muy mal (≤3 aciertos o ≥3 complicaciones) ⇒ `freeSpins = 1` en la Cápsula de Salvación.
+   - Resumen SIN avance automático (se entra a la base solo con el botón); si fue muy mal (≤3 aciertos o ≥3 complicaciones) ⇒ `freeSpins = 1` en la Cápsula de Salvación.
    - 30 objetos (`data/stationItems.ts`), cada uno con `category` (rama vital) y `rarity` (`common | rare | epic | legendary`).
 2. **Cápsula de Salvación** (`SalvageRouletteModal`, `data/salvagePrizes.ts`): ruleta a pantalla completa en Fase 2 (y en el resumen de Fase 1 con giro gratis).
    Giros: emergencia (gratis 1 vez con barra <30), energético (−20 ⚡), científico (−15 📡 o −20 🌱), trueque de chatarra (desmonta 1 objeto). Acción `salvageSpin(kind, scrapItemId?)`.
@@ -41,7 +41,7 @@ src/
 │                              GaugeMeter (velocímetros SVG), MissionPatchLogo (emblema ORIGINAL, no logo NASA)
 │   ├── SalvageRouletteModal   Cápsula de Salvación a pantalla completa
 │   ├── NasaLogo               Logo de cabecera (ver config/branding.ts)
-│   └── phase1/                Phase1Quiz (trivia 60 s), Phase1Summary (resumen 4 s), Phase1Shared
+│   └── phase1/                Phase1Quiz (trivia 60 s), Phase1Summary (resumen sin temporizador), Phase1Shared
 ├── config/branding.ts         Interruptor del logo oficial de la NASA
 ├── data/salvagePrizes.ts      Premios, ruedas y costes de la Cápsula de Salvación
 └── App.tsx                    Orquestador por gamePhase
@@ -79,7 +79,7 @@ type MissionOutcome = 'victory' | 'evacuation';
 | `PHASE1_SECONDS` | 60 | |
 | `TOTAL_SOLS` | 10 | |
 | `INITIAL_VITALS` | O2 60 · ⚡75 · 🌱50 · 🛡️60 · ❤️100 | |
-| `BASE_DECAY` | O2 −14 · 🌱 −14 · ⚡ −3 por Sol | Búnker vacío ⇒ evacuación ~Sol 3-4 |
+| `BASE_DECAY` | O2 −14 · 🌱 −14 · ⚡ −3 por Sol | Base espacial vacía ⇒ evacuación ~Sol 3-4 |
 | `RADIATION_DAMAGE` | low 4 · moderate 7 · high 11 · extreme 16 | Manta de plomo ⇒ ÷2 |
 | `SEED_HARVEST` / `SEED_SOLS_TO_HARVEST` | +20 / cada 2 Soles ON | |
 | Salud por Sol | −8 si escudo<30 · −6 si O2<25 · −6 si comida<25 · si no +3 | en `computeSolTick` |
@@ -92,7 +92,7 @@ type MissionOutcome = 'victory' | 'evacuation';
 | Acción | Qué hace |
 |---|---|
 | `loadNasaWeather()` | DONKI en vivo → `nasaStatus: 'live' \| 'fallback'` |
-| `testGemini()` | Ping real a Gemini → `aiDiagnostics` (badge del Menú) |
+| `testGemini()` | Ping real a Gemini → `aiDiagnostics` (se lanza en segundo plano al abrir el Menú; sin píldora visible) |
 | `ariaSay(text)` | Mensaje + voz/pitidos de A.R.I.A. según `voiceMode` |
 | `setVoiceMode(mode)` / `toggleVoice()` | `voiceMode: 'beeps' (por defecto) \| 'natural' \| 'silent'`; voz/tono/velocidad en `ariaVoice.setVoice/setPitch/setRate/setGender` (localStorage `aria-voice-settings-v2`) |
 | `startGame()` | → `PHASE_1_SCAVENGE` en `phase1Stage: 'ready'`, resetea todo y construye la cola de preguntas |
@@ -103,7 +103,8 @@ type MissionOutcome = 'victory' | 'evacuation';
 | `setActiveRoom`, `addItem(id): boolean`, `removeItem` | Fase 1 (addItem suena error y hace temblar si no cabe) |
 | `tickTimer()` | −1 s y avisos de A.R.I.A. en 40/20/10 s |
 | `sealBunker()` | → `PHASE_2_BUNKER`, máquinas ON por defecto |
-| `debugSkipToPhase2()` | Fase 2 con `DEBUG_INVENTORY` |
+| `debugSkipToPhase2()` | Fase 2 con `DEBUG_INVENTORY` (sin botón en pantalla; lo usan las órdenes y `devQa`) |
+| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación (ES / EN): **supervivencia / survival** → base espacial, **final / end** → pantalla final (victoria), **derrota / defeat** → evacuación. También en el panel del robot A.R.I.A. de la base. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
 | `toggleMachine`, `useConsumable` | Panel de ingeniería |
 | `loadSolEvent()` | Gemini/fallback, mínimo 700 ms de animación, ignora resultados obsoletos (`requestId`) |
 | `chooseOption(id)` | Aplica opción → `computeSolTick` → `solStage: 'report'` |
@@ -123,7 +124,7 @@ type MissionOutcome = 'victory' | 'evacuation';
    - Textos: longitud máxima, sin caracteres de control y filtro de palabras prohibidas (`UNSAFE_WORDS`).
 4. **Guardarraíl infantil:** `SYSTEM_INSTRUCTION` en `geminiSchemas.ts`. Nunca "muerte": se dice **"evacuación médica a la órbita"** o **"fatiga espacial"**.
 5. **Secretos:** la clave de Gemini **nunca** en el bundle de producción. `VITE_GEMINI_API_KEY` solo se lee si `import.meta.env.DEV`. En producción → `/api/gemini`. No importes `import.meta.env.VITE_GEMINI_API_KEY` en ningún otro archivo.
-6. **Voz:** `ariaVoice.speak()` siempre hace `speechSynthesis.cancel()` antes. Audio se desbloquea con `unlockAudio()` en el primer clic.
+6. **Voz:** en voz natural `ariaVoice.speak()` **nunca corta a mitad de frase**: trocea el texto en frases (≤160 caracteres), deja terminar la frase en curso y pasa al mensaje nuevo (descarta el resto del anterior). Ignora el mismo texto repetido en <2,5 s, velocidad máx. 1,2 y `cancel()` solo al parar o si el navegador se cuelga (con 180 ms de respiro). **Sincronía con pantallas:** cada cambio de `gamePhase` corta el audio (`ariaVoice.interrupt()`) y lo retiene (`hold("screen")`) hasta que la pantalla nueva llama a `useAriaScreenReady()` (tras su fundido de entrada); con una historia abierta (`hold("story")`) solo hablan sus viñetas (`ariaSay(text, { story: true })`) y el último mensaje del juego se dice al cerrarla. Toda pantalla principal nueva debe llamar a `useAriaScreenReady()`. Audio se desbloquea con `unlockAudio()` en el primer clic.
 7. Fase 1 es **point-and-click**: sin WASD ni físicas.
 8. `BunkerDiorama` no toca el store: recibe props (vitals, inventario, máquinas, radiación, averías, envío de Houston) y avisa de los clics con callbacks.
    Umbrales de expresión: O2<35 mareo · comida<35 hambre · energía<30 penumbra+frío · escudo<35 o radiación alta/extrema alarma · salud<35 fatiga · todo>50 sonrisas.
@@ -136,7 +137,7 @@ type MissionOutcome = 'victory' | 'evacuation';
     `ITEM_ICONS` (30 objetos), `RESOURCE_ICONS` (5 barras + ciencia), `PRIZE_ICONS` (premios) y los componentes `ItemIcon`/`ResourceIcon`/`PrizeIcon`.
     Los tipos `StationItem` y `SalvagePrize` ya **no tienen campo `emoji`**; `VITAL_META`/`CATEGORY_META` tampoco. Un objeto nuevo necesita su entrada en `ITEM_ICONS`.
     Dentro de un SVG, los iconos lucide se anidan con `x`, `y` y `size` (ver `BunkerDiorama`).
-    **Cápsula Orbital** (`SalvageRouletteModal`): carrusel horizontal tipo "case opening" de 50 tarjetas (ganadora en la 42), 4,5 s con `ease [0.12, 0.8, 0.18, 1]`, en un panel `w-[95vw] max-w-6xl min-h-[80vh]` (cabecera con recursos y cápsula · carrusel a todo el ancho · botón y premio centrados),
+    **Cápsula Orbital** (`SalvageRouletteModal`): carrusel horizontal tipo "case opening" de 50 tarjetas (ganadora en la 42), 4,5 s con `ease [0.12, 0.8, 0.18, 1]`, en un panel `w-[95vw] max-w-6xl min-h-[min(80dvh,42rem)]` (carrusel, iconos y botón escalan con `dvh`; la lista "Contenido de la cápsula" se oculta con alto < 680 px) (cabecera con recursos y cápsula · carrusel a todo el ancho · botón y premio centrados),
     `playCaseTick()` cada vez que una tarjeta cruza el láser. Grados (`SUPPLY_TIER_META`): Estándar `#3b82f6` · Avanzado `#8b5cf6` · Prototipo `#ec4899` · Legendario NASA `#f59e0b`.
     **Responsive real, SIN zoom artificial** (nada de `zoom`, `scale-[...]` ni `html.ui-zoom`): tipografía base fluida en `index.css`
     (`html { font-size: clamp(15px, 0.35vw + 11px, 18px) }`), todo en `rem`, alturas con `dvh` (`h-dvh`, `min-h-dvh`) y tamaños con `clamp()` + breakpoints.
@@ -172,15 +173,15 @@ fallback local `getFallbackAriaAnswer` (barra más baja / qué máquina apagar /
 - **Lore:** año 2038, base Ares-IV (Cráter Jezero). Los adultos se fueron en el rover a 40 km; la tormenta solar (DONKI) les corta el paso. Leo, Vega, Max y A.R.I.A. aguantan 10 Soles.
 - **Modo Historia** (`StoryComicModal`, montado en `App.tsx` con carga diferida): lee `storyScene` del store (`'prologue' | 'lockdown' | 'radio_sol4' | 'radio_sol8'`).
   `startGame` → prólogo · `sealBunker` → compuertas · `continueAfterReport` al llegar a los Soles 4 y 8 → radio del rover. `closeStory()` la cierra ("Saltar historia").
-- **Deep Space Network** (`DeepSpaceLink`, `data/missionExtras.ts`): `orderHoustonPackage(id)` cuesta −10 Energía hoy, 1 pedido por Sol, llega en 2 Soles (`houstonOrders`; se entrega en `continueAfterReport`).
+  **Sin saltos de layout:** raíz `h-dvh overflow-hidden`; único scroll en la zona de viñetas (`[scrollbar-gutter:stable]`); cada celda reserva el tamaño final de su viñeta con una copia invisible (`PanelFrame reserve`) y usa `overflow-clip` para que la animación de entrada no cree barra de scroll.- **Deep Space Network** (`DeepSpaceLink`, `data/missionExtras.ts`): `orderHoustonPackage(id)` cuesta −10 Energía hoy, 1 pedido por Sol, **máx. 3 pedidos por partida** (`HOUSTON_MAX_ORDERS`, contador `houstonOrdersPlaced`) y **solo 1 en camino a la vez** (`HOUSTON_MAX_IN_TRANSIT = 1`: hasta que no llega a la base no se puede pedir otro), llega en 2 Soles (`houstonOrders`; se entrega en `continueAfterReport`).
 - **Insignias** (`BADGES`, `awardBadge`, `badges`): Ingeniero Solar, Botánico GeneLab, Maestro del Trueque, Comunicador Deep Space, Héroe de Ares-IV. Se ven en el Periscopio (`PeriscopeModal`) y en la pantalla final.
-- **Avisos** flotantes del búnker: `notice` + `dismissNotice` (`MissionNoticeToast`).
+- **Avisos** flotantes de la base espacial: `notice` + `dismissNotice` (`MissionNoticeToast`).
 - **Distancia Tierra-Marte**: `utils/marsEphemeris.ts` (aproximación orbital; también da el retraso de la luz).
 - **Contenedor de Houston:** cada paquete que llega suma +25 y un `houstonCrates`; `houstonLanding` hace que `Phase2Bunker` abra sola
   `SalvageRouletteModal` con `initialKind="houston"` + `autoSpin` (tirada gratis, `SpinKind 'houston'`, rueda `WHEELS.houston`).
   Si se cierra antes de abrirla, queda el botón "ABRIR CONTENEDOR DE HOUSTON" en el módulo Deep Space.
 
-## 10 bis. Layout del búnker: escena exterior point-and-click a pantalla completa
+## 10 bis. Layout de la base espacial: escena exterior point-and-click a pantalla completa
 - Barra superior intacta (SOL X/10, Periscopio, 5 velocímetros, Ciencia). Debajo, `BunkerDiorama` ocupa **todo** el resto de la pantalla.
 - `BunkerDiorama` = paisaje del Cráter Jezero (cielo con auroras y partículas si la radiación DONKI es alta/extrema, montañas, dunas, rocas)
   con el **hábitat Ares-IV** grande en el centro (`BODY` 594×252): cúpula rebajada y **paneles curvos de cerámica lisa** (degradados `hab-body`,
@@ -193,7 +194,7 @@ fallback local `getFallbackAriaAnswer` (barra más baja / qué máquina apagar /
   - **Casa** (clic → Sistemas e Inventario): brillo cian al pasar el ratón + tooltip. **Luces LED alargadas en el bisel** (`LedStrip`): verdes OK, rojas parpadeantes con averías.
   - **Antena** (clic → Enlace Houston): siempre con resplandor cian y ondas concéntricas; tooltip con el estado del envío solo al pasar el ratón.
 - **Avisos agrupados** (HTML, arriba a la izquierda): ALERTA RADIACIÓN (clase DONKI), MODO AHORRO, "N averías — Toca la base", envío de Houston.
-- **Leyenda interactiva** (abajo a la izquierda): "Búnker: Sistemas/Averías" (nº averías) · "Antena: Enlace Houston" (Disponible / En camino / Envío recibido) · "Robot A.R.I.A.".
+- **Leyenda interactiva** (abajo a la izquierda): "Base espacial: Sistemas/Averías" (nº averías) · "Antena: Enlace Houston" (Disponible / En camino / Envío recibido) · "Robot A.R.I.A.".
 - **Estado único de paneles** en `Phase2Bunker`: `activeOverlay: 'none' | 'systems' | 'houston' | 'aria' | 'decision' | 'periscope'`.
   Abrir uno cierra el anterior; un **fondo único clicable** o **ESC** lo cierran. `AriaRobot` es controlado (`open`/`onOpenChange`); su bocadillo va bajo el robot.
 - **Botón "Resolver Misión Sol N"** (abajo a la derecha): abre el ordenador (`'decision'`) con el evento, el Dato Real NASA y las decisiones.
@@ -215,12 +216,14 @@ fallback local `getFallbackAriaAnswer` (barra más baja / qué máquina apagar /
   Store: `fieldNote` (`photoId` puede ser null si la NASA no respondió), `unlockedPhotoIds`, `lastFieldNoteSol`, `dismissFieldNote()`. Las fotos forman el **álbum** del Periscopio.
 - **Sistemas e Inventario** (panel centrado, apilado en vertical): arriba la franja de **averías activas** con botones **"Reparar Averías"**;
   debajo el inventario en cuadrícula compacta (`grid-cols-2 sm:3 md:4 lg:6`) con icono, nombre, efecto e interruptor/USAR; desglose a todo el ancho.
-  El Enlace Houston sigue siendo un cajón lateral (sección **"Pedir Suministros"**).
-- **Fase 1 · Manifiesto de Carga** (`Phase1Summary`): marcador (aciertos, preparación del búnker, rango), aciertos por sistema, cuadrícula de
-  suministros (`grid-cols-2 sm:3 md:4`) y franja de diagnóstico de averías antes del botón de entrar al búnker.
+  El Enlace Houston es un panel **centrado en la pantalla** (sección **"Pedir Suministros"**, con pedidos restantes y envíos en camino).
+- **Trivia por dificultad** (`MISSION_PROFILES`): 60 s en ambos modos; Explorador (fácil) muestra **2 respuestas** (la correcta + 1 al azar), Comandante 4 (`answerOptions`).
+- **Pantalla final:** columnas a la misma altura (Insignias e Informe con `flex-1`). En derrota, recuadro **"Análisis de la evacuación"** (`defeatAnalysis`): qué falló / qué mejorar, máx. 3 puntos cada uno.
+- **Fase 1 · Manifiesto de Carga** (`Phase1Summary`): marcador (aciertos, preparación de la base espacial, rango), aciertos por sistema, cuadrícula de
+  suministros (`grid-cols-2 sm:3 md:4`) y franja de diagnóstico de averías antes del botón de entrar a la base espacial.
 - **Debriefing final** (`GameOverScreen`): cabecera `ARES-IV // DEBRIEFING` con el emblema y el estado de Leo, Vega y Max; columnas equilibradas
   (izquierda: rango, instrumentos, insignias · derecha: informe y suministros). El informe se acorta a su primera frase + puntos de ciencia
-  (`shortReport`) y solo se listan los objetos que SÍ entraron en el búnker.
+  (`shortReport`) y solo se listan los objetos que SÍ entraron en la base espacial.
 
 ## 11. Minijuegos de reparación (SOLO para averías)
 - El ciclo de cada Sol es el original: desgaste, radiación, complicaciones y el dilema diario con trade-offs ocurren **siempre**, sin minijuego previo.
@@ -235,13 +238,13 @@ fallback local `getFallbackAriaAnswer` (barra más baja / qué máquina apagar /
   `repairResult(target, false)`: sigue averiada ese Sol, −5 Energía, 1 intento por avería y Sol (`repairTried`).
 - Cada minijuego muestra en su cabecera la telemetría/dato real (llamarada DONKI, InSight/Perseverance, distancia y retraso DSN, presión de Marte, basura espacial de la ISS).
 - Radio: 12 s, margen ±20 %, basta 1,2 s acumulados y el progreso baja despacio al salirse (no se reinicia).
-- **Cápsula Orbital en el búnker: SOLO al aterrizar un envío de Houston** (se abre sola con `initialKind="houston"` + `autoSpin`). No hay botón libre en la cabecera.
+- **Cápsula Orbital en la base espacial: SOLO al aterrizar un envío de Houston** (se abre sola con `initialKind="houston"` + `autoSpin`). No hay botón libre en la cabecera.
   En la Fase 1 solo aparece el giro de rescate (`emergency`) del resumen.
 
 ## 12. Criterios del reto: glosario y verificación científica
 - **Glosario contextual** (`data/glossary.ts` + `KidTooltip`): tooltips para niños al pasar el ratón (o enfocar/tocar) en `SOL X/10`,
   `ALERTA RADIACIÓN` (radiación y CME + la llamarada real de DONKI), los 5 velocímetros y Ciencia. Términos: Sol, radiación/CME, llamarada, microgravedad.
-- **"Datos Abiertos NASA Utilizados"** (`NasaDataSourcesModal`, botón en el Menú y en el Periscopio): los 3 datasets reales, su estado en la sesión
+- **"Datos Abiertos NASA Utilizados"** (`NasaDataSourcesModal`, botón en el Periscopio; la portada ya no lo muestra): los 3 datasets reales, su estado en la sesión
   (`LIVE API` / `CURATED ARCHIVE`), qué mecánica alimentan, dónde están en el código y enlaces oficiales comprobados:
   1. **NASA DONKI** (endpoint FLR) → radiación, blindaje, alertas, minijuego de cables, eventos de Gemini. Cadena en vivo: api.nasa.gov 90 días
      (si no hay llamaradas, mayo-oct 2024) → servicio web CCMC → espejo **NOAA SWPC/GOES** (etiquetado como NOAA en `provider`) → archivo curado.
@@ -256,3 +259,26 @@ fallback local `getFallbackAriaAnswer` (barra más baja / qué máquina apagar /
 - [`DOCS_ARQUITECTURA.md`](./DOCS_ARQUITECTURA.md): documentación funcional (historia, objetivo STEM, flujo y mecánicas) y técnica (stack, carpetas, APIs NASA, Gemini, seguridad, responsive).
 - [`PITCH_SCRIPT.md`](./PITCH_SCRIPT.md): guion de 4 min 30 s para 4 ponentes + chuleta de preguntas del jurado.
 Si cambias una mecánica o un texto visible que aparece en estos documentos, actualízalos también.
+
+## 14. Portada y terminología
+- **Portada** (`MenuScreen`): `h-dvh` sin scroll a 100 % de zoom; tamaños con `clamp(..., min(vw, dvh), ...)` para que escale también con el ALTO. Solo emblema, título, botón COMENZAR MISIÓN, A.R.I.A. y la terminal de órdenes (sin píldoras de estado ni de datos).
+- **Terminología:** en textos visibles, prompts de Gemini y documentación se dice **"base espacial"** (femenino: "la base espacial", "a la base espacial"), nunca "búnker". Los identificadores de código (`Phase2Bunker`, `bunkerInventory`, `sealBunker`...) no se renombran para no romper otras ramas.
+- **Pantallas que deben caber al 100 % de zoom incluso en ~1100×540** (portátil con escalado de Windows al 125-150 %): terminal de decisión (`max-h-[min(85dvh,…)]`, sin altura mínima fija), `ArrivalTransmission` (md+: foto a la izquierda y texto a la derecha; el botón de acción va FUERA de la zona con scroll) y la Cápsula Orbital. Velocímetros de la cabecera: `w-[clamp(64px,min(11vw,15dvh),140px)]`. Para comprobarlo: `#qa-bunker-decision`, `#qa-transmission`, `#qa-capsule`.
+- **Resumen post-quiz** (`Phase1Summary`): SIN avance automático; solo se entra a la base con el botón "ENTRAR A LA BASE ESPACIAL".
+- **Selector de modo** (`MissionSelector`, `#qa-selector`): credenciales ilustradas (casco de cadete / insignia de comandante, SVG propios), medidor de reto (estrellas + barras), datos reales de cada perfil (`answerOptions`, reservas, averías) y fondo animado (órbitas, estrellas, cohete, base en Marte). Botón INICIAR MISIÓN en una barra fija abajo. Excepción a la paleta monocromática del Menú: aquí se usa naranja para dar un toque infantil.
+  La **Trivia** (`Phase1Quiz`) y la cabecera `Phase1Header` comparten este lenguaje visual: fondo `SpaceBackdrop` (`components/SpaceBackdrop.tsx`, común con el Selector), tarjetas `rounded-[1.75rem] border-[3px] shadow-lg` con cinta superior, píldoras `rounded-full` y acentos naranja Marte (hover de respuestas, iconos de reglas). La tarjeta de la pregunta lleva una cinta superior en degradado Azul NASA → azul claro → Rojo Misión. Contadores dentro de la tarjeta: aciertos en verde (`emerald`) y fallos en rojo (`nasa-red`). Las respuestas acertadas o falladas siguen en Azul NASA / Rojo Misión.
+
+## 15. Idioma (ES / EN)
+- **Selector** `LanguageToggle` arriba a la derecha de la portada; también `?lang=en` / `?lang=es` en la URL. Se guarda en `localStorage` (`ares-iv-language-v1`).
+- **Núcleo** `src/i18n/core.ts` (sin dependencias): `getLang()`, `tr(es, en)`, `withEnglish(obj, en)` y `localizeRecord(base, en)` (getters que devuelven el idioma activo).
+  Store: `language` + `setLanguage()` (cambia también la voz de A.R.I.A. a una voz del idioma). Componentes del Menú: hook `useT()` / `useLang()` (`src/i18n/useT.ts`).
+  El idioma solo se cambia en la portada, así que en las pantallas de juego basta con `tr()`.
+- **Traducciones de datos** en `src/i18n/en/` por id: `trivia.ts` (45 preguntas), `items.ts` (30 objetos), `events.ts` (10 eventos + mensajes de carga).
+  Metadatos (`VITAL_META`, `CATEGORY_META`, `RARITY_META`, `COMPLICATIONS`, `BADGES`, `HOUSTON_PACKAGES`, `SALVAGE_PRIZES`, `SPIN_META`, glosario, cartas) con `localizeRecord`.
+  Rango: el valor interno `Rank` sigue en español; se muestra con `RANK_LABEL[rank]`. Fotos de Marte: campos `summaryEn/whoEn/cameraEn/topicEn` y helper `photoText()`.
+- **Gemini**: en inglés se añade al prompt "IDIOMA DE SALIDA: inglés..." (reservando hueco antes de recortar a `MAX_PROMPT_CHARS`); la `SYSTEM_INSTRUCTION` lo contempla y `UNSAFE_WORDS` filtra también palabras inglesas.
+- **Regla:** todo texto visible nuevo va con `tr('español', 'English')` (o en el diccionario de `src/i18n/en/`).
+
+## 16. Cápsula Orbital: tirada ponderada por rareza
+`pickWeightedPrize(kind)` (`data/salvagePrizes.ts`) con `TIER_WEIGHTS`: Estándar 50 · Avanzado 26 · Prototipo 12 · Legendario 3 (antes era uniforme).
+El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" muestra el % real de cada premio (`prizeOdds`).

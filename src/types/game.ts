@@ -2,7 +2,7 @@
 // Contrato de tipos de "60 Seconds to Mars: The Solar Storm Protocol"
 // ============================================================
 
-export type GamePhase = 'MENU' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'GAME_OVER';
+export type GamePhase = 'MENU' | 'MISSION_SELECT' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'GAME_OVER';
 
 export type RoomId = 'greenhouse' | 'lab' | 'storage';
 
@@ -42,7 +42,7 @@ export type ItemId =
 /** Rareza del objeto: cuanto más difícil la pregunta acertada, más rara la recompensa. */
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 
-/** Las 5 constantes vitales del búnker (0-100). */
+/** Las 5 constantes vitales de la base espacial (0-100). */
 export interface Vitals {
   oxygen: number;
   power: number;
@@ -53,10 +53,11 @@ export interface Vitals {
 
 export type VitalKey = keyof Vitals;
 
-/** Sub-etapas de la Fase 1: preparado → 60 s de trivia → resumen de 4 s. */
+/** Sub-etapas de la Fase 1: preparado → 60 s de trivia → resumen (sin límite de tiempo). */
 export type Phase1Stage = 'ready' | 'quiz' | 'summary';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export type MissionDifficulty = 'explorer' | 'commander';
 
 export interface TriviaQuestion {
   id: string;
@@ -127,7 +128,7 @@ export interface SalvageSpinResult {
 export type Effects = Partial<Vitals> & { science?: number };
 
 /**
- * Cómo se comporta un objeto dentro del búnker (Fase 2):
+ * Cómo se comporta un objeto dentro de la base espacial (Fase 2):
  * - machine: interruptor ON/OFF, gasta energía cada Sol.
  * - passive: siempre activo, sin interruptor.
  * - consumable: se gasta una sola vez (botón USAR).
@@ -222,6 +223,8 @@ export interface SolReport {
   ariaReaction: string;
   /** Diferencia real entre el inicio y el final del Sol. */
   deltas: Required<Effects>;
+  /** Desglose visible de la decisión y de los efectos automáticos del Sol. */
+  breakdown: { source: string; effects: Effects }[];
   harvested: boolean;
   radiationLevel: RadiationLevel;
 }
@@ -255,7 +258,7 @@ export interface HoustonOrder {
 // ---------------- Insignias coleccionables ----------------
 export type BadgeId = 'solar_engineer' | 'genelab_botanist' | 'barter_master' | 'deep_space_communicator' | 'ares_hero';
 
-/** Aviso flotante en el búnker (paquete recibido o insignia nueva). */
+/** Aviso flotante en la base espacial (paquete recibido o insignia nueva). */
 export interface MissionNotice {
   key: number;
   kind: 'badge' | 'delivery' | 'alert';
@@ -308,6 +311,11 @@ export interface MarsPhoto {
   cameraEs: string;
   /** Qué muestra, p. ej. "un remolino de polvo marciano" (null si no se sabe). */
   topicEs: string | null;
+  /** Versión en inglés de los textos anteriores (selector de idioma). */
+  summaryEn?: string;
+  whoEn?: string;
+  cameraEn?: string;
+  topicEn?: string | null;
   /** Descripción oficial original (inglés). */
   originalDescription: string;
   /** Página oficial de la foto. */

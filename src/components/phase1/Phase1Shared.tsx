@@ -6,6 +6,7 @@ import { CATEGORY_META, ITEMS_BY_ID, RARITY_META } from '../../data/stationItems
 import AriaAssistantWidget from '../AriaAssistantWidget';
 import MissionPatch from '../MissionPatchLogo';
 import { ItemIcon, RESOURCE_ICONS } from '../icons';
+import { tr } from '../../i18n/core';
 
 /** Identidad monocromática de cada sistema: icono vectorial + código técnico (sin colores por rama). */
 export const SYSTEM_META: Record<VitalKey, { code: string; Icon: LucideIcon }> = {
@@ -29,10 +30,25 @@ export function SystemLabel({ cat, className = '' }: { cat: VitalKey; className?
 }
 
 /** Cabecera común de las sub-etapas de la Fase 1. */
-export function Phase1Header({ step, title, subtitle, right }: { step: 1 | 2 | 3; title: string; subtitle: string; right?: ReactNode }) {
-  const steps = ['Preparados', '60 s de Trivia', 'Resumen'];
+export function Phase1Header({
+  step,
+  title,
+  subtitle,
+  right,
+  triviaSeconds = 60,
+}: {
+  step: 1 | 2 | 3;
+  title: string;
+  subtitle: string;
+  right?: ReactNode;
+  triviaSeconds?: number;
+}) {
+  const steps = [tr('Preparados', 'Ready'), tr(`${triviaSeconds} s de Trivia`, `${triviaSeconds} s Trivia`), tr('Resumen', 'Summary')];
   return (
-    <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b border-slate-300 bg-white px-4 py-2 shadow-sm md:grid-cols-[1fr_auto_1fr]">
+    <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b-2 border-slate-200 bg-white/90 px-4 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl md:grid-cols-[1fr_auto_1fr]">
+      {/* Franjas Azul NASA + Rojo Misión, como en el Selector de Modo */}
+      <span className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-nasa-blue" aria-hidden />
+      <span className="pointer-events-none absolute inset-x-0 top-1 h-0.5 bg-nasa-red" aria-hidden />
       <div className="flex min-w-0 items-center gap-3">
         <MissionPatch size={60} />
         <div className="min-w-0">
@@ -45,17 +61,17 @@ export function Phase1Header({ step, title, subtitle, right }: { step: 1 | 2 | 3
           steps.map((label, i) => (
             <div key={label} className="flex items-center gap-1.5">
               <span
-                className={`flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-extrabold ${
+                className={`flex items-center gap-1 rounded-full border-2 px-3 py-1 font-mono text-xs font-bold tracking-wider ${
                   i + 1 === step
-                    ? 'border-nasa-blue bg-nasa-blue text-white'
+                    ? 'border-nasa-blue bg-nasa-blue text-white shadow-[0_8px_18px_-10px_rgba(11,61,145,0.8)]'
                     : i + 1 < step
-                      ? 'border-nasa-blue bg-white text-nasa-blue'
-                      : 'border-slate-300 bg-white text-slate-400'
+                      ? 'border-orange-300 bg-orange-50 text-orange-700'
+                      : 'border-slate-200 bg-white text-slate-400'
                 }`}
               >
-                {i + 1 < step ? <Check className="h-3.5 w-3.5" /> : `${i + 1}.`} {label}
+                {i + 1 < step ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : `${i + 1}.`} {label}
               </span>
-              {i < steps.length - 1 && <span className="h-px w-3 bg-slate-300" />}
+              {i < steps.length - 1 && <span className="h-0.5 w-3 rounded-full border-t-2 border-dashed border-slate-300" />}
             </div>
           ))}
       </div>
@@ -107,7 +123,7 @@ export function RewardReveal({ id }: { id: ItemId }) {
       </span>
       <div className="relative min-w-0">
         <p className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-nasa-blue">
-          <Gift className="h-3.5 w-3.5" strokeWidth={1.75} /> Equipo conseguido
+          <Gift className="h-3.5 w-3.5" strokeWidth={1.75} /> {tr('Equipo conseguido', 'Equipment obtained')}
         </p>
         <p className="text-base font-black leading-tight text-slate-900">{item.name}</p>
         <span className={`mt-1 inline-block rounded border px-1.5 text-xs font-extrabold ${meta.badge}`}>{meta.label}</span>

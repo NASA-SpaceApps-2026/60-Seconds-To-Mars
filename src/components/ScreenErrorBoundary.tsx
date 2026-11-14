@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { House, RotateCcw, TriangleExclamationPoint } from 'lucide-react';
+import { tr } from '../i18n/core';
 
 /**
  * Red de seguridad: si una pantalla falla al dibujarse, en vez de dejar la página en blanco
@@ -28,9 +29,10 @@ export default class ScreenErrorBoundary extends Component<
           <span className="grid h-14 w-14 place-items-center rounded-xl bg-red-50 text-nasa-red">
             <TriangleExclamationPoint className="h-8 w-8" strokeWidth={1.75} />
           </span>
-          <h2 className="font-display text-2xl font-black text-nasa-blue">Interferencia en la pantalla</h2>
+          <h2 className="font-display text-2xl font-black text-nasa-blue">{tr('Interferencia en la pantalla', 'Screen interference')}</h2>
           <p className="text-base text-slate-700">
-            Una ráfaga de la tormenta solar ha desconectado este panel. Tu partida sigue guardada: pulsa <b>Reintentar</b>.
+            {tr('Una ráfaga de la tormenta solar ha desconectado este panel. Tu partida sigue guardada: pulsa', 'A gust from the solar storm has disconnected this panel. Your game is still saved: press')}{' '}
+            <b>{tr('Reintentar', 'Retry')}</b>.
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-3">
             <button
@@ -38,7 +40,7 @@ export default class ScreenErrorBoundary extends Component<
               onClick={() => this.setState({ error: null })}
               className="flex items-center gap-2 rounded-xl bg-nasa-blue px-5 py-3 font-bold text-white shadow-lg"
             >
-              <RotateCcw className="h-5 w-5" /> Reintentar
+              <RotateCcw className="h-5 w-5" /> {tr('Reintentar', 'Retry')}
             </button>
             <button
               type="button"
@@ -48,7 +50,7 @@ export default class ScreenErrorBoundary extends Component<
               }}
               className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-bold text-slate-700"
             >
-              <House className="h-5 w-5" /> Menú principal
+              <House className="h-5 w-5" /> {tr('Menú principal', 'Main menu')}
             </button>
           </div>
         </div>
