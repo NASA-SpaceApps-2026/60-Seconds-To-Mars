@@ -1,0 +1,23 @@
+import { motion } from 'framer-motion';
+import { useGameStore } from '../store/useGameStore';
+import Phase1Quiz from './phase1/Phase1Quiz';
+import Phase1Summary from './phase1/Phase1Summary';
+
+/**
+ * Fase 1: "60 segundos de trivia contrarreloj y asignación automática".
+ *  'ready'   → pantalla de "¿Listos?"
+ *  'quiz'    → 60 s de preguntas; cada acierto manda un objeto de su rama al búnker
+ *  'summary' → 4 s de resumen (objetos + complicaciones) y giro de rescate si fue mal
+ */
+export default function Phase1Scavenge() {
+  const stage = useGameStore((s) => s.phase1Stage);
+  const isSummary = stage === 'summary';
+  // Sin AnimatePresence mode="wait": si la animación de salida de la trivia se quedaba a medias
+  // (pestaña en segundo plano, equipo lento), el resumen no llegaba a montarse y la pantalla quedaba en blanco.
+  // Ahora el resumen se monta al instante y solo anima su entrada (empieza visible al 60 %).
+  return (
+    <motion.div key={isSummary ? 'summary' : 'quiz'} initial={{ opacity: 0.6, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}>
+      {isSummary ? <Phase1Summary /> : <Phase1Quiz />}
+    </motion.div>
+  );
+}

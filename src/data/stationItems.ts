@@ -1,0 +1,581 @@
+import type { ItemId, Rarity, RoomId, StationItem, VitalKey } from '../types/game';
+
+/**
+ * Los 30 objetos de la base marciana, repartidos en las 5 ramas vitales
+ * (oxygen, power, food, shield, crewHealth) y 4 rarezas (common, rare, epic, legendary).
+ * En la Fase 1 se ganan acertando preguntas de su rama: cuanto más difícil, más raro.
+ * Cada dato de ciencia está basado en investigaciones reales de la NASA.
+ */
+export const STATION_ITEMS: StationItem[] = [
+  // =================== OXÍGENO ===================
+  {
+    id: 'co2_scrubbers',
+    category: 'oxygen',
+    rarity: 'common',
+    name: 'Cartuchos de Hidróxido de Litio (CO2)',
+    shortName: 'Filtros de CO2',
+    room: 'greenhouse',
+    slots: 2,
+    powerPerSol: -1,
+    kind: 'machine',
+    effectPerSol: { oxygen: 10 },
+    description: 'Mantiene el aire limpio: +10 de Oxígeno cada Sol con muy poco consumo.',
+    nasaFact:
+      'El hidróxido de litio atrapa el CO2 que exhalamos. Estos cartuchos se usaron en las naves Apolo y todavía son el plan B en los trajes espaciales.',
+    nasaSource: 'NASA – Sistemas de soporte vital Apolo / EMU',
+    color: 'bg-teal-400',
+  },
+  {
+    id: 'o2_tanks',
+    category: 'oxygen',
+    rarity: 'common',
+    name: 'Tanques de Oxígeno Presurizado',
+    shortName: 'Tanques de O2',
+    room: 'storage',
+    slots: 3,
+    powerPerSol: 0,
+    kind: 'consumable',
+    useEffect: { oxygen: 30 },
+    description: 'Emergencia pura: +30 de Oxígeno al abrirlos.',
+    nasaFact:
+      'La Estación Espacial guarda oxígeno de reserva en tanques a alta presión que llegan en naves de carga, por si falla el generador principal.',
+    nasaSource: 'NASA ISS – Oxygen Supply',
+    color: 'bg-cyan-300',
+  },
+  {
+    id: 'oxygen_candle',
+    category: 'oxygen',
+    rarity: 'common',
+    name: 'Vela Química de Oxígeno',
+    shortName: 'Vela de O2',
+    room: 'storage',
+    slots: 1,
+    powerPerSol: 0,
+    kind: 'consumable',
+    useEffect: { oxygen: 20 },
+    description: 'Al encenderla libera oxígeno durante horas: +20 de Oxígeno al usarla.',
+    nasaFact:
+      'Las "velas de oxígeno" son cilindros químicos que, al calentarse, liberan oxígeno. La ISS las lleva como respaldo de emergencia.',
+    nasaSource: 'NASA ISS – Solid Fuel Oxygen Generators',
+    color: 'bg-orange-200',
+  },
+  {
+    id: 'algae_bioreactor',
+    category: 'oxygen',
+    rarity: 'rare',
+    name: 'Biorreactor de Algas Verdes',
+    shortName: 'Biorreactor',
+    room: 'lab',
+    slots: 3,
+    powerPerSol: -2,
+    kind: 'machine',
+    effectPerSol: { oxygen: 12 },
+    description: 'Algas que hacen la fotosíntesis dentro de tubos: +12 de Oxígeno cada Sol.',
+    nasaFact:
+      'Las algas y las cianobacterias convierten CO2 en oxígeno con luz. La NASA las estudia como "fábricas vivas" de aire para bases lejanas.',
+    nasaSource: 'NASA Ames – Soporte vital biológico',
+    color: 'bg-green-400',
+  },
+  {
+    id: 'hydro_recycler',
+    category: 'oxygen',
+    rarity: 'epic',
+    name: 'Reciclador de Agua y O2 (ECLSS)',
+    shortName: 'Reciclador ECLSS',
+    room: 'lab',
+    slots: 4,
+    powerPerSol: -3,
+    kind: 'machine',
+    effectPerSol: { oxygen: 15 },
+    description: 'Genera +15 de Oxígeno cada Sol si está encendido, pero consume mucha energía.',
+    nasaFact:
+      'En 2023 el sistema ECLSS de la Estación Espacial Internacional logró reciclar el 98 % del agua, ¡incluido el sudor y la orina de los astronautas!',
+    nasaSource: 'NASA ECLSS – Estación Espacial Internacional',
+    color: 'bg-sky-500',
+  },
+  {
+    id: 'moxie_unit',
+    category: 'oxygen',
+    rarity: 'legendary',
+    name: 'Fábrica de Oxígeno MOXIE 2.0',
+    shortName: 'MOXIE 2.0',
+    room: 'lab',
+    slots: 3,
+    powerPerSol: -3,
+    kind: 'machine',
+    effectPerSol: { oxygen: 20 },
+    description: 'Saca oxígeno del aire marciano: +20 de Oxígeno cada Sol.',
+    nasaFact:
+      'El experimento MOXIE del rover Perseverance fabricó oxígeno a partir del CO2 de Marte: ¡122 gramos, suficiente para que un perro respire 10 horas!',
+    nasaSource: 'NASA Mars 2020 – MOXIE',
+    color: 'bg-sky-300',
+  },
+
+  // =================== ENERGÍA ===================
+  {
+    id: 'fuel_cell',
+    category: 'power',
+    rarity: 'common',
+    name: 'Pila de Combustible de Hidrógeno',
+    shortName: 'Pila de Combustible',
+    room: 'storage',
+    slots: 1,
+    powerPerSol: 0,
+    kind: 'consumable',
+    useEffect: { power: 30 },
+    description: 'Mezcla hidrógeno y oxígeno para hacer electricidad: +30 de Energía al usarla.',
+    nasaFact:
+      'Las naves Apolo usaban pilas de combustible que, además de electricidad, fabricaban el agua que bebían los astronautas.',
+    nasaSource: 'NASA – Programa Apolo',
+    color: 'bg-yellow-200',
+  },
+  {
+    id: 'solar_panel_roll',
+    category: 'power',
+    rarity: 'rare',
+    name: 'Panel Solar Enrollable (ROSA)',
+    shortName: 'Panel Enrollable',
+    room: 'storage',
+    slots: 2,
+    powerPerSol: 10,
+    kind: 'passive',
+    effectPerSol: { power: 10 },
+    description: 'Se despliega como una alfombra: +10 de Energía cada Sol.',
+    nasaFact:
+      'Los paneles ROSA se desenrollan solos como una cinta métrica. Desde 2021 la ISS tiene paneles nuevos de este tipo (iROSA).',
+    nasaSource: 'NASA ISS – Roll-Out Solar Array',
+    color: 'bg-amber-300',
+  },
+  {
+    id: 'lithium_battery',
+    category: 'power',
+    rarity: 'rare',
+    name: 'Batería Auxiliar de Estado Sólido',
+    shortName: 'Batería Auxiliar',
+    room: 'storage',
+    slots: 3,
+    powerPerSol: 15,
+    kind: 'passive',
+    effectPerSol: { power: 15 },
+    description: 'Reserva crítica: aporta +15 de Energía cada Sol durante noches y tormentas.',
+    nasaFact:
+      'El rover Perseverance usa un generador nuclear (MMRTG) que carga baterías de iones de litio: así tiene energía extra para los momentos de más trabajo.',
+    nasaSource: 'NASA Mars 2020 – Perseverance',
+    color: 'bg-yellow-400',
+  },
+  {
+    id: 'mini_rtg',
+    category: 'power',
+    rarity: 'epic',
+    name: 'Batería Nuclear RTG Mini',
+    shortName: 'RTG Mini',
+    room: 'storage',
+    slots: 4,
+    powerPerSol: 25,
+    kind: 'passive',
+    effectPerSol: { power: 25 },
+    description: 'Fuente de energía potentísima: +25 de Energía cada Sol, de día y de noche.',
+    nasaFact:
+      'Los generadores RTG convierten el calor del plutonio en electricidad. Gracias a ellos las sondas Voyager siguen enviando datos desde 1977.',
+    nasaSource: 'NASA Radioisotope Power Systems',
+    color: 'bg-lime-400',
+  },
+  {
+    id: 'kilopower_reactor',
+    category: 'power',
+    rarity: 'legendary',
+    name: 'Reactor Kilopower de Superficie',
+    shortName: 'Reactor Kilopower',
+    room: 'storage',
+    slots: 4,
+    powerPerSol: 30,
+    kind: 'passive',
+    effectPerSol: { power: 30 },
+    description: 'Un mini reactor para bases lunares y marcianas: +30 de Energía cada Sol.',
+    nasaFact:
+      'En 2018 la NASA probó con éxito el reactor Kilopower (experimento KRUSTY), pensado para dar energía a bases en la Luna y en Marte.',
+    nasaSource: 'NASA – Kilopower / Fission Surface Power',
+    color: 'bg-emerald-300',
+  },
+
+  // =================== COMIDA ===================
+  {
+    id: 'freeze_food_a',
+    category: 'food',
+    rarity: 'common',
+    name: 'Caja de Raciones Liofilizadas A',
+    shortName: 'Raciones A',
+    room: 'storage',
+    slots: 2,
+    powerPerSol: 0,
+    kind: 'consumable',
+    useEffect: { food: 25 },
+    description: 'Comida segura: +25 de Comida al abrirla. No se regenera.',
+    nasaFact:
+      'La comida liofilizada pierde casi toda su agua, así pesa poco. Para ir a Marte, la NASA investiga alimentos que aguanten hasta 5 años sin estropearse.',
+    nasaSource: 'NASA Human Research Program – Space Food Systems',
+    color: 'bg-orange-400',
+  },
+  {
+    id: 'freeze_food_b',
+    category: 'food',
+    rarity: 'common',
+    name: 'Caja de Raciones Liofilizadas B',
+    shortName: 'Raciones B',
+    room: 'greenhouse',
+    slots: 2,
+    powerPerSol: 0,
+    kind: 'consumable',
+    useEffect: { food: 25 },
+    description: 'Reserva extra de comida: +25 de Comida al abrirla.',
+    nasaFact:
+      'En el espacio el sentido del gusto se apaga un poco porque los fluidos suben a la cabeza. ¡Por eso a los astronautas les encantan las salsas picantes!',
+    nasaSource: 'NASA Space Food Systems Laboratory',
+    color: 'bg-amber-500',
+  },
+  {
+    id: 'space_tortilla_pack',
+    category: 'food',
+    rarity: 'common',
+    name: 'Paquete de Tortillas Espaciales',
+    shortName: 'Tortillas',
+    room: 'storage',
+    slots: 1,
+    powerPerSol: 0,
+    kind: 'consumable',
+    useEffect: { food: 20 },
+    description: 'Sin migas que floten: +20 de Comida al abrirlas.',
+    nasaFact:
+      'Los astronautas usan tortillas en vez de pan desde los años 80: no sueltan migas que podrían flotar y meterse en los aparatos.',
+    nasaSource: 'NASA Space Food Systems',
+    color: 'bg-yellow-300',
+  },
+  {
+    id: 'led_hydro_lamp',
+    category: 'food',
+    rarity: 'rare',
+    name: 'Lámpara LED Hidro-Boost',
+    shortName: 'Lámpara LED',
+    room: 'greenhouse',
+    slots: 2,
+    powerPerSol: -1,
+    kind: 'machine',
+    effectPerSol: { food: 6 },
+    description: 'Brotes de crecimiento rápido bajo luz LED: +6 de Comida cada Sol si está encendida.',
+    nasaFact:
+      'El invernadero Veggie de la ISS usa LEDs rojos, azules y verdes. Las plantas crecen sobre todo con luz roja y azul, ¡por eso se ve de color rosa!',
+    nasaSource: 'NASA Veggie – Vegetable Production System',
+    color: 'bg-fuchsia-400',
+  },
+  {
+    id: 'mushroom_farm',
+    category: 'food',
+    rarity: 'epic',
+    name: 'Granja de Setas Marcianas',
+    shortName: 'Granja de Setas',
+    room: 'greenhouse',
+    slots: 2,
+    powerPerSol: -1,
+    kind: 'machine',
+    effectPerSol: { food: 9 },
+    description: 'Las setas crecen en la oscuridad: +9 de Comida cada Sol si está encendida.',
+    nasaFact:
+      'Los hongos son tan útiles que la NASA estudia "cultivar" casas con ellos en Marte: se llama micoarquitectura.',
+    nasaSource: 'NASA Ames – Myco-architecture (NIAC)',
+    color: 'bg-rose-300',
+  },
+  {
+    id: 'osdr_seeds',
+    category: 'food',
+    rarity: 'legendary',
+    name: 'Semillas Espaciales OSDR (Lechuga Roja)',
+    shortName: 'Semillas OSDR',
+    room: 'greenhouse',
+    slots: 2,
+    powerPerSol: -2,
+    kind: 'machine',
+    description: 'Con su luz UV encendida, dan una cosecha de +20 de Comida cada 2 Soles.',
+    nasaFact:
+      'En 2015 los astronautas de la ISS se comieron la primera lechuga roja cultivada en el espacio (experimento Veggie). Sus datos están en el NASA Open Science Data Repository.',
+    nasaSource: 'NASA OSDR – Experimento Veggie (VEG-01)',
+    color: 'bg-emerald-500',
+  },
+
+  // =================== BLINDAJE ===================
+  {
+    id: 'space_duct_tape',
+    category: 'shield',
+    rarity: 'common',
+    name: 'Kit de Reparación y Cinta Kapton',
+    shortName: 'Cinta Kapton',
+    room: 'storage',
+    slots: 1,
+    powerPerSol: 0,
+    kind: 'tool',
+    description: 'Ocupa muy poco y desbloquea reparaciones baratas cuando algo se rompe.',
+    nasaFact:
+      'En el Apolo 13 los astronautas salvaron la misión uniendo filtros de CO2 cuadrados y redondos con cinta adhesiva, cartón y una bolsa de plástico.',
+    nasaSource: 'NASA – Misión Apolo 13 (1970)',
+    color: 'bg-stone-400',
+  },
+  {
+    id: 'tool_printer_3d',
+    category: 'shield',
+    rarity: 'common',
+    name: 'Impresora 3D de Herramientas',
+    shortName: 'Impresora 3D',
+    room: 'lab',
+    slots: 2,
+    powerPerSol: -2,
+    kind: 'machine',
+    effectPerSol: { shield: 5 },
+    description: 'Imprime piezas para tapar grietas del blindaje: +5 Escudo cada Sol si está encendida.',
+    nasaFact:
+      'En 2014 se imprimió en 3D la primera pieza en el espacio, a bordo de la ISS. Fabricar repuestos allí evita esperar meses a una nave de carga.',
+    nasaSource: 'NASA – 3D Printing in Zero-G (ISS, 2014)',
+    color: 'bg-zinc-300',
+  },
+  {
+    id: 'mars_drone',
+    category: 'shield',
+    rarity: 'rare',
+    name: 'Dron Vigía de Tormentas',
+    shortName: 'Dron Vigía',
+    room: 'lab',
+    slots: 2,
+    powerPerSol: -1,
+    kind: 'machine',
+    effectPerSol: { science: 15, shield: 2 },
+    description: 'Vigila el cielo y toma fotos: +15 de Ciencia y +2 de Escudo cada Sol si está encendido.',
+    nasaFact:
+      'El helicóptero Ingenuity fue la primera aeronave en volar en otro planeta (2021). ¡Planeó para 5 vuelos y llegó a hacer 72!',
+    nasaSource: 'NASA JPL – Ingenuity Mars Helicopter',
+    color: 'bg-red-400',
+  },
+  {
+    id: 'water_wall',
+    category: 'shield',
+    rarity: 'rare',
+    name: 'Muro de Bolsas de Agua',
+    shortName: 'Muro de Agua',
+    room: 'storage',
+    slots: 3,
+    powerPerSol: 0,
+    kind: 'passive',
+    radiationReduction: 4,
+    description: 'El agua frena las partículas solares: la radiación hace 4 puntos menos de daño cada Sol.',
+    nasaFact:
+      'En la nave Orion, durante una tormenta solar, los astronautas se refugian rodeándose de las bolsas de carga y agua que llevan a bordo.',
+    nasaSource: 'NASA Artemis – Orion radiation shelter',
+    color: 'bg-blue-300',
+  },
+  {
+    id: 'eva_suit',
+    category: 'shield',
+    rarity: 'epic',
+    name: 'Traje EVA Presurizado',
+    shortName: 'Traje EVA',
+    room: 'storage',
+    slots: 3,
+    powerPerSol: 0,
+    kind: 'passive',
+    radiationReduction: 3,
+    description: 'Protección personal extra: la radiación hace 3 puntos menos de daño al escudo cada Sol.',
+    nasaFact:
+      'Un traje espacial es como una nave en miniatura: tiene oxígeno, control de temperatura y capas que frenan micrometeoritos.',
+    nasaSource: 'NASA – Trajes espaciales Artemis',
+    color: 'bg-slate-100',
+  },
+  {
+    id: 'lead_blanket',
+    category: 'shield',
+    rarity: 'epic',
+    name: 'Manta de Plomo Antirradiación',
+    shortName: 'Manta de Plomo',
+    room: 'storage',
+    slots: 4,
+    powerPerSol: 0,
+    kind: 'passive',
+    description: 'Reduce a la mitad el daño de la radiación al escudo cada Sol, sin gastar batería.',
+    nasaFact:
+      'Contra los rayos cósmicos, los materiales con mucho hidrógeno (agua, polietileno) protegen incluso mejor que el plomo. ¡Por eso los ingenieros de la NASA estudian paredes llenas de agua!',
+    nasaSource: 'NASA Space Radiation Analysis Group',
+    color: 'bg-slate-400',
+  },
+  {
+    id: 'mag_shield_booster',
+    category: 'shield',
+    rarity: 'legendary',
+    name: 'Bobina de Escudo Magnético',
+    shortName: 'Escudo Magnético',
+    room: 'lab',
+    slots: 3,
+    powerPerSol: -4,
+    kind: 'machine',
+    effectPerSol: { shield: 20 },
+    description: 'Sube +20 el Escudo cada Sol si está encendida, pero drena la batería muy rápido.',
+    nasaFact:
+      'La Tierra tiene un escudo magnético natural. Marte lo perdió hace unos 4.000 millones de años, y la misión MAVEN estudia cómo el viento solar le arrancó la atmósfera.',
+    nasaSource: 'NASA MAVEN',
+    color: 'bg-violet-500',
+  },
+
+  // =================== SALUD ===================
+  {
+    id: 'med_kit',
+    category: 'crewHealth',
+    rarity: 'common',
+    name: 'Botiquín Biológico Espacial',
+    shortName: 'Botiquín',
+    room: 'lab',
+    slots: 2,
+    powerPerSol: 0,
+    kind: 'consumable',
+    useEffect: { crewHealth: 25 },
+    description: 'Basado en dosimetría de astronautas: recupera +25 de Salud de la tripulación.',
+    nasaFact:
+      'Los astronautas llevan dosímetros, pequeños aparatos que miden cuánta radiación reciben cada día, para que los médicos de la NASA cuiden su salud.',
+    nasaSource: 'NASA Human Research Program – Dosimetría',
+    color: 'bg-rose-500',
+  },
+  {
+    id: 'vitamin_pack',
+    category: 'crewHealth',
+    rarity: 'common',
+    name: 'Pastillero de Vitamina D',
+    shortName: 'Vitamina D',
+    room: 'lab',
+    slots: 1,
+    powerPerSol: 0,
+    kind: 'consumable',
+    useEffect: { crewHealth: 20 },
+    description: 'Sin luz del Sol el cuerpo la necesita: +20 de Salud al usarla.',
+    nasaFact:
+      'Nuestra piel fabrica vitamina D con la luz del Sol. Como en la ISS casi no les da, los astronautas toman suplementos para cuidar sus huesos.',
+    nasaSource: 'NASA Human Research Program – Nutrición',
+    color: 'bg-yellow-100',
+  },
+  {
+    id: 'magnetic_board_game',
+    category: 'crewHealth',
+    rarity: 'common',
+    name: 'Juego de Mesa Magnético (Moral)',
+    shortName: 'Juego Magnético',
+    room: 'greenhouse',
+    slots: 1,
+    powerPerSol: 0,
+    kind: 'passive',
+    effectPerSol: { crewHealth: 3 },
+    description: 'Jugar juntos sube el ánimo: +3 de Salud cada Sol. ¡Las fichas son imanes para que no floten!',
+    nasaFact:
+      'La NASA estudia la salud mental de las tripulaciones en misiones de aislamiento como CHAPEA, que simula un año viviendo en Marte. Divertirse en equipo es parte del entrenamiento.',
+    nasaSource: 'NASA CHAPEA – Crew Health and Performance Exploration Analog',
+    color: 'bg-pink-400',
+  },
+  {
+    id: 'exercise_bike',
+    category: 'crewHealth',
+    rarity: 'rare',
+    name: 'Bicicleta Estática Espacial',
+    shortName: 'Bici Espacial',
+    room: 'lab',
+    slots: 2,
+    powerPerSol: -1,
+    kind: 'machine',
+    effectPerSol: { crewHealth: 5 },
+    description: 'Pedalear mantiene fuertes músculos y huesos: +5 de Salud cada Sol si está encendida.',
+    nasaFact:
+      'En la ISS los astronautas hacen unas 2 horas de ejercicio al día en bicicleta, cinta de correr y máquinas de pesas para no perder músculo ni hueso.',
+    nasaSource: 'NASA ISS – Exercise countermeasures',
+    color: 'bg-sky-200',
+  },
+  {
+    id: 'high_gain_antenna',
+    category: 'crewHealth',
+    rarity: 'epic',
+    name: 'Antena de Alta Ganancia (Deep Space)',
+    shortName: 'Antena Deep Space',
+    room: 'lab',
+    slots: 3,
+    powerPerSol: -2,
+    kind: 'machine',
+    effectPerSol: { science: 25, crewHealth: 2 },
+    description: 'Envía datos a la Tierra y deja hablar con casa: +25 Ciencia y +2 Salud cada Sol.',
+    nasaFact:
+      'Un mensaje de radio tarda entre 3 y 22 minutos en viajar de Marte a la Tierra. Las antenas gigantes de la Deep Space Network de la NASA lo escuchan.',
+    nasaSource: 'NASA Deep Space Network',
+    color: 'bg-indigo-500',
+  },
+  {
+    id: 'robo_dog',
+    category: 'crewHealth',
+    rarity: 'legendary',
+    name: 'Robot Compañero Flotante',
+    shortName: 'Robo-Compañero',
+    room: 'lab',
+    slots: 2,
+    powerPerSol: 0,
+    kind: 'passive',
+    effectPerSol: { crewHealth: 5, science: 5 },
+    description: 'Ayuda con las tareas y cuenta chistes: +5 de Salud y +5 de Ciencia cada Sol.',
+    nasaFact:
+      'Los robots Astrobee de la NASA flotan por la ISS ayudando a los astronautas con inventarios y experimentos.',
+    nasaSource: 'NASA Ames – Astrobee',
+    color: 'bg-cyan-200',
+  },
+];
+
+export const ITEMS_BY_ID: Record<ItemId, StationItem> = Object.fromEntries(
+  STATION_ITEMS.map((item) => [item.id, item]),
+) as Record<ItemId, StationItem>;
+
+export const ALL_ITEM_IDS: ItemId[] = STATION_ITEMS.map((i) => i.id);
+
+export const isItemId = (value: unknown): value is ItemId =>
+  typeof value === 'string' && (ALL_ITEM_IDS as string[]).includes(value);
+
+export const ROOMS: { id: RoomId; label: string }[] = [
+  { id: 'greenhouse', label: 'Invernadero' },
+  { id: 'lab', label: 'Laboratorio' },
+  { id: 'storage', label: 'Almacén' },
+];
+
+/** Capacidad de referencia (se mantiene por compatibilidad: la Fase 1 ya no limita huecos). */
+export const BUNKER_CAPACITY = 12;
+
+export const CATEGORY_META: Record<VitalKey, { label: string; color: string }> = {
+  oxygen: { label: 'Oxígeno', color: '#0ea5e9' },
+  power: { label: 'Energía', color: '#eab308' },
+  food: { label: 'Comida', color: '#16a34a' },
+  shield: { label: 'Blindaje', color: '#7c3aed' },
+  crewHealth: { label: 'Salud', color: '#e11d48' },
+};
+
+export const itemsByCategory = (category: VitalKey): StationItem[] =>
+  STATION_ITEMS.filter((i) => i.category === category);
+
+/** Listas por rama (compatibilidad con código anterior). */
+export const OXYGEN_ITEMS: ItemId[] = itemsByCategory('oxygen').map((i) => i.id);
+export const SHIELD_ITEMS: ItemId[] = itemsByCategory('shield').map((i) => i.id);
+export const FOOD_ITEMS: ItemId[] = itemsByCategory('food').map((i) => i.id);
+export const POWER_ITEMS: ItemId[] = itemsByCategory('power').map((i) => i.id);
+
+export const RARITY_ORDER: Rarity[] = ['common', 'rare', 'epic', 'legendary'];
+
+export const RARITY_META: Record<Rarity, { label: string; badge: string; ring: string }> = {
+  common: { label: 'Común', badge: 'bg-slate-200 text-slate-700 border-slate-300', ring: 'border-slate-300' },
+  // Paleta monocromática aeroespacial: gris → gris titanio → Azul NASA → Rojo Misión
+  rare: { label: 'Raro', badge: 'bg-slate-700 text-white border-slate-700', ring: 'border-slate-600' },
+  epic: { label: 'Épico', badge: 'bg-[#0B3D91] text-white border-[#0B3D91]', ring: 'border-[#0B3D91]' },
+  legendary: { label: 'Legendario NASA', badge: 'bg-[#FC3D21] text-white border-[#FC3D21]', ring: 'border-[#FC3D21]' },
+};
+
+/** Inventario de prueba para el botón de depuración. */
+export const DEBUG_INVENTORY: ItemId[] = [
+  'lithium_battery',
+  'hydro_recycler',
+  'osdr_seeds',
+  'space_duct_tape',
+  'med_kit',
+  'water_wall',
+];

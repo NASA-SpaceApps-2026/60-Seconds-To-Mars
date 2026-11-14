@@ -1,0 +1,117 @@
+import type { BadgeId, HoustonPackageId, MinigameKind, RepairTarget, VitalKey } from '../types/game';
+
+/** Coste y retraso del Enlace Deep Space Network (Paquete de Ayuda de Houston). */
+export const HOUSTON_COST_POWER = 10;
+export const HOUSTON_MIN_POWER = 15;
+export const HOUSTON_DELAY_SOLS = 2;
+
+export const HOUSTON_PACKAGES: Record<HoustonPackageId, { label: string; vital: VitalKey; amount: number }> = {
+  oxygen_reserve: { label: 'Inyección de Oxígeno de Reserva', vital: 'oxygen', amount: 25 },
+  battery_patch: { label: 'Parche de Software de Baterías', vital: 'power', amount: 25 },
+  emergency_rations: { label: 'Raciones de Emergencia', vital: 'food', amount: 25 },
+};
+export const HOUSTON_ORDER: HoustonPackageId[] = ['oxygen_reserve', 'battery_patch', 'emergency_rations'];
+
+/** 5 insignias de misión coleccionables (texto corto para el aro del parche + condición para niños). */
+export const BADGES: Record<BadgeId, { name: string; patchText: string; how: string }> = {
+  solar_engineer: { name: 'Ingeniero Solar', patchText: 'INGENIERO SOLAR', how: 'Termina un Sol con la Energía en 70 o más.' },
+  genelab_botanist: { name: 'Botánico GeneLab', patchText: 'BOTÁNICO GENELAB', how: 'Cosecha lechuga roja con las Semillas OSDR.' },
+  barter_master: { name: 'Mecánico de Ares-IV', patchText: 'MECÁNICO ARES', how: 'Repara una avería superando un minijuego.' },
+  deep_space_communicator: { name: 'Comunicador Deep Space', patchText: 'DEEP SPACE', how: 'Recibe un paquete de Houston por la Deep Space Network.' },
+  ares_hero: { name: 'Héroe de Ares-IV', patchText: 'HÉROE ARES-IV', how: 'Sobrevive los 10 Soles de la tormenta solar.' },
+};
+export const BADGE_ORDER: BadgeId[] = ['solar_engineer', 'genelab_botanist', 'barter_master', 'deep_space_communicator', 'ares_hero'];
+
+/** Telemetría real del Cráter Jezero (Perseverance / MEDA) para el Periscopio. */
+export const JEZERO_TELEMETRY = [
+  { label: 'Temperatura exterior', value: '−65 °C', note: 'Media diaria medida por la estación MEDA de Perseverance.' },
+  { label: 'Presión atmosférica', value: '6,1 mbar', note: 'Menos del 1 % de la presión de la Tierra (1013 mbar).' },
+  { label: 'Composición del aire', value: '95 % CO₂', note: 'Casi todo dióxido de carbono: MOXIE lo convierte en oxígeno.' },
+  { label: 'Gravedad', value: '0,38 g', note: 'Si pesas 40 kg en la Tierra, en Marte pesarías unos 15 kg.' },
+] as const;
+
+// ---------------- Minijuegos de emergencia ----------------
+
+export const MINIGAME_META: Record<MinigameKind, { title: string; code: string; vital: VitalKey; seconds: number; instructions: string }> = {
+  cables: {
+    title: 'Reconectar Cables del Escudo',
+    code: 'SYS-RAD',
+    vital: 'shield',
+    seconds: 10,
+    instructions: 'Une cada terminal de la izquierda con su conector de la derecha (clic o arrastrar).',
+  },
+  dust: {
+    title: 'Limpiar Polvo de los Paneles Solares',
+    code: 'SYS-PWR',
+    vital: 'power',
+    seconds: 9,
+    instructions: 'Pasa el ratón (o el dedo) por encima del panel como si fuera un cepillo hasta quitar todo el polvo.',
+  },
+  radio: {
+    title: 'Sintonizar la Frecuencia con el Satélite NASA',
+    code: 'SYS-COM',
+    vital: 'oxygen',
+    seconds: 12,
+    instructions: 'Mueve Frecuencia y Amplitud hasta que tu onda se acerque a la del satélite (se pone verde) y aguanta un momento.',
+  },
+  leak: {
+    title: 'Tapar Fugas de Oxígeno en la Tubería',
+    code: 'SYS-O2',
+    vital: 'oxygen',
+    seconds: 9,
+    instructions: 'Haz clic rápido encima de cada grieta que suelta vapor para ponerle un parche de Cinta Kapton.',
+  },
+  debris: {
+    title: 'Destruir Basura Espacial en el Radar',
+    code: 'SYS-RAD',
+    vital: 'shield',
+    seconds: 9,
+    instructions: 'Haz clic encima de cada roca que se acerca al centro para dispararle con el láser defensivo.',
+  },
+};
+
+/** Dato real (NASA) para el minijuego de las fugas. */
+export const LEAK_FACT =
+  'Dato real NASA: fuera del hábitat la presión de Marte es de solo 6,1 mbar (menos del 1 % de la Tierra). Por eso una fuga de aire es tan peligrosa y hay que taparla rápido.';
+/** Dato real (NASA) para el minijuego de la basura espacial. */
+export const DEBRIS_FACT =
+  'Dato real NASA: la Estación Espacial Internacional ha tenido que maniobrar decenas de veces para esquivar basura espacial, y su blindaje aguanta impactos de micrometeoritos.';
+
+/** Dato real de NASA sobre el polvo marciano (InSight / Perseverance). */
+export const DUST_FACT =
+  'Dato real NASA: el polvo marciano cubrió los paneles del módulo InSight y su energía cayó de unos 5.000 a menos de 500 vatios-hora por Sol. Por eso Perseverance usa un generador nuclear (MMRTG).';
+
+/** Minijuego que repara cada sistema: Blindaje → cables · Energía/Comida → paneles solares · Oxígeno/Salud → radio. */
+/** Los 5 minijuegos de reparación. */
+export const ALL_MINIGAMES: MinigameKind[] = ['cables', 'dust', 'radio', 'leak', 'debris'];
+
+/** Minijuegos que encajan con cada sistema averiado (se elige uno distinto del último que salió). */
+export const MINIGAME_OPTIONS_FOR_VITAL: Record<VitalKey, MinigameKind[]> = {
+  shield: ['cables', 'debris'],
+  power: ['dust', 'cables'],
+  food: ['dust', 'leak'],
+  oxygen: ['leak', 'radio'],
+  crewHealth: ['radio', 'leak'],
+};
+
+/**
+ * Rotación real entre los 5: normalmente uno que encaje con el sistema averiado y a veces cualquiera,
+ * pero NUNCA el último jugado (así no sale siempre el de las ondas).
+ */
+export function pickMinigame(vital: VitalKey, last: MinigameKind | null, exclude: MinigameKind[] = []): MinigameKind {
+  const avoid = new Set<MinigameKind>([...exclude, ...(last ? [last] : [])]);
+  const preferred = MINIGAME_OPTIONS_FOR_VITAL[vital].filter((k) => !avoid.has(k));
+  const any = ALL_MINIGAMES.filter((k) => !avoid.has(k));
+  // 60 % uno propio del sistema averiado, 40 % cualquiera de los 5 (más variedad); nunca el último
+  const pool = preferred.length && Math.random() < 0.6 ? preferred : any;
+  const list = pool.length ? pool : ALL_MINIGAMES;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+/** Probabilidad de una avería puntual de máquina al empezar cada Sol (desde el Sol 2, máx. 1 a la vez). */
+export const BREAKDOWN_CHANCE = 0.2;
+/** Energía que se gasta si falla el intento de reparación (se puede reintentar al Sol siguiente). */
+export const REPAIR_FAIL_POWER = 5;
+
+/** Clave única de un objetivo de reparación (para "un intento por Sol"). */
+export const repairKey = (t: RepairTarget) => (t.type === 'complication' ? `c:${t.vital}` : `m:${t.id}`);

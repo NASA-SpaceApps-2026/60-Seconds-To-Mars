@@ -1,0 +1,35 @@
+name: CI
+
+# Compila el proyecto en cada push y Pull Request hacia main y develop.
+# Si `npm run build` falla (TypeScript o Vite), el check sale en rojo y no se debe fusionar.
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (tsc + vite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias (exactas del package-lock)
+        run: npm ci
+
+      - name: Compilar (npm run build)
+        run: npm run build
+        # No hace falta ninguna API key: sin clave el juego usa los eventos de respaldo.

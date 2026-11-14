@@ -1,0 +1,185 @@
+@import 'tailwindcss';
+
+/* Variante "big": monitores de escritorio grandes (≥1280 px de ancho Y ≥896 px de alto: 1920×1080, 2560×1440...).
+   Agranda pantallas como el Manifiesto de Carga sin tocar portátiles 1366×768 / 1280×720 (sin zoom artificial). */
+@custom-variant big (@media (min-width: 80rem) and (min-height: 56rem));
+
+/* ============================================================
+   Estética "NASA White Apollo / Artemis"
+   Blanco aeroespacial + Azul NASA #0B3D91 + Rojo insignia #FC3D21
+   ============================================================ */
+@theme {
+  --font-display: 'Orbitron', 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --color-nasa-blue: #0b3d91;
+  --color-nasa-blue-light: #1e5bc6;
+  --color-nasa-red: #fc3d21;
+  --color-titanium: #8a96a8;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: #0f172a;
+  background: #f1f5f9;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tipografía base FLUIDA (sin zoom artificial): 15 px en portátiles de 1280-1366 px, 16 px a 1440 px
+   y hasta 18 px en monitores grandes. Tailwind v4 mide textos y espaciados en rem, así que toda la
+   interfaz escala de forma proporcional al ancho de la pantalla. En móvil se queda en 15 px. */
+html {
+  font-size: clamp(15px, 0.35vw + 11px, 18px);
+}
+
+/* Clases propias en la capa "components" para que las utilidades de Tailwind puedan sobrescribirlas */
+@layer components {
+/* Rejilla técnica tipo plano de ingeniería */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(11, 61, 145, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 61, 145, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Módulo de hardware de la ISS: panel blanco con bisel */
+.hw-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #cbd5e1;
+  border-radius: 1rem;
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    inset 0 -2px 0 #e2e8f0,
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 6px 16px -10px rgba(15, 23, 42, 0.25);
+}
+
+/* Etiqueta impresa estilo placa técnica */
+.tech-label {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+/* Líneas de escaneo muy sutiles */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(11, 61, 145, 0.025) 0px,
+    rgba(11, 61, 145, 0.025) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Estrellas (para fondos oscuros puntuales) */
+.starfield {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #0b3d91, transparent),
+    radial-gradient(1px 1px at 120px 80px, #94a3b8, transparent),
+    radial-gradient(1.5px 1.5px at 200px 160px, #0b3d91, transparent),
+    radial-gradient(1px 1px at 320px 40px, #94a3b8, transparent),
+    radial-gradient(1px 1px at 400px 220px, #0b3d91, transparent),
+    radial-gradient(1.5px 1.5px at 60px 260px, #cbd5e1, transparent),
+    radial-gradient(1px 1px at 260px 300px, #0b3d91, transparent);
+  background-size: 440px 340px;
+  animation: drift 120s linear infinite;
+}
+
+@keyframes drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: -440px 340px;
+  }
+}
+
+/* Barras de onda de voz de A.R.I.A. */
+.aria-wave span {
+  display: inline-block;
+  width: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  height: 4px;
+  transition: height 0.2s;
+}
+.aria-wave.speaking span {
+  animation: wave 0.9s ease-in-out infinite;
+}
+.aria-wave.speaking span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.aria-wave.speaking span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.aria-wave.speaking span:nth-child(4) {
+  animation-delay: 0.45s;
+}
+.aria-wave.speaking span:nth-child(5) {
+  animation-delay: 0.6s;
+}
+@keyframes wave {
+  0%,
+  100% {
+    height: 4px;
+  }
+  50% {
+    height: 18px;
+  }
+}
+
+.glow-blue {
+  box-shadow:
+    0 0 0 1px rgba(11, 61, 145, 0.35),
+    0 8px 24px -8px rgba(11, 61, 145, 0.55);
+}
+.glow-red {
+  box-shadow:
+    0 0 0 1px rgba(252, 61, 33, 0.5),
+    0 8px 28px -8px rgba(252, 61, 33, 0.65);
+}
+.glow-amber {
+  box-shadow:
+    0 0 0 1px rgba(245, 158, 11, 0.5),
+    0 8px 24px -8px rgba(245, 158, 11, 0.6);
+}
+/* Compatibilidad con estilos antiguos */
+.glow-cyan {
+  box-shadow:
+    0 0 0 1px rgba(11, 61, 145, 0.35),
+    0 8px 24px -8px rgba(11, 61, 145, 0.5);
+}
+.text-glow {
+  text-shadow: 0 0 18px currentColor;
+}
+}
+
+/* Scroll fino dentro de paneles */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 61, 145, 0.35) transparent;
+}
+
+input[type='range'] {
+  accent-color: #0b3d91;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}

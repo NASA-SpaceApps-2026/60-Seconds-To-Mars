@@ -1,0 +1,8 @@
+Fotografías reales de Marte usadas como respaldo local (sin conexión).
+Todas son de dominio público: NASA/JPL-Caltech (y ASU/MSSS para Mastcam-Z).
+Fuente: NASA Image and Video Library (https://images.nasa.gov)
+
+mars-1.jpg  PIA26479  Perseverance Views Slippery Terrain        (Sol 1326, Navcam)
+mars-2.jpg  PIA26511  Perseverance's View From 'Lookout Hill'    (Sol 1354, Navcam)
+mars-3.jpg  PIA26572  Dust Devil Whirls by Perseverance Coring   (Sol 1490, Hazcam)
+mars-4.jpg  PIA25917  Perseverance Finds a Hollowed-Out Rock     (Sol 836, Mastcam-Z)
