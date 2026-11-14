@@ -1,10 +1,12 @@
 import type { Complication, Difficulty, TriviaQuestion, VitalKey } from '../types/game';
+import { localizeRecord, withEnglish } from '../i18n/core';
+import { TRIVIA_EN } from '../i18n/en/trivia';
 
 /**
  * Banco de 45 preguntas para 7-12 años: 9 por rama vital (3 fáciles, 3 medias, 3 difíciles).
  * La PRIMERA respuesta es siempre la correcta (la interfaz las baraja).
  */
-export const TRIVIA_QUESTIONS: TriviaQuestion[] = [
+const TRIVIA_QUESTIONS_ES: TriviaQuestion[] = [
   // ======================= OXÍGENO =======================
   { id: 'ox_e1', category: 'oxygen', difficulty: 'easy', question: '¿Qué gas necesitamos respirar para vivir?', answers: ['Oxígeno', 'Helio', 'Dióxido de carbono', 'Hidrógeno'], fact: 'En la ISS el oxígeno se fabrica a bordo para que los astronautas puedan respirar.' },
   { id: 'ox_e2', category: 'oxygen', difficulty: 'easy', question: '¿Hay aire para respirar en la Luna?', answers: ['No, casi no tiene atmósfera', 'Sí, igual que en la Tierra', 'Solo por la noche', 'Solo dentro de los cráteres'], fact: 'Por eso los astronautas del Apolo necesitaban trajes con su propio oxígeno.' },
@@ -61,11 +63,17 @@ export const TRIVIA_QUESTIONS: TriviaQuestion[] = [
   { id: 'hp_h3', category: 'crewHealth', difficulty: 'hard', question: '¿Qué misión de la NASA simula vivir un año en Marte para estudiar la salud de la tripulación?', answers: ['CHAPEA', 'MAVEN', 'Kilopower', 'Voyager'], fact: 'Cuatro voluntarios vivieron un año en un hábitat impreso en 3D en Houston (2023-2024).' },
 ];
 
-export const DIFFICULTY_META: Record<Difficulty, { label: string; color: string }> = {
-  easy: { label: 'Fácil', color: '#64748b' },
-  medium: { label: 'Media', color: '#0B3D91' },
-  hard: { label: 'Difícil', color: '#FC3D21' },
-};
+/** Preguntas en el idioma activo (las traducciones viven en i18n/en/trivia.ts). */
+export const TRIVIA_QUESTIONS: TriviaQuestion[] = TRIVIA_QUESTIONS_ES.map((q) => withEnglish<TriviaQuestion>(q, TRIVIA_EN[q.id]));
+
+export const DIFFICULTY_META: Record<Difficulty, { label: string; color: string }> = localizeRecord(
+  {
+    easy: { label: 'Fácil', color: '#64748b' },
+    medium: { label: 'Media', color: '#0B3D91' },
+    hard: { label: 'Difícil', color: '#FC3D21' },
+  },
+  { easy: { label: 'Easy' }, medium: { label: 'Medium' }, hard: { label: 'Hard' } },
+);
 
 /** Duración de la trivia contrarreloj. */
 export const QUIZ_SECONDS = 60;
@@ -105,13 +113,22 @@ export function buildQuizQueue(): TriviaQuestion[] {
 }
 
 /** Complicaciones si una rama sale mal en la Fase 1. */
-export const COMPLICATIONS: Record<VitalKey, Complication> = {
-  oxygen: { category: 'oxygen', title: 'Fuga en conducto de O2', dailyPenalty: -4, startPenalty: -20 },
-  power: { category: 'power', title: 'Cortocircuito en la red eléctrica', dailyPenalty: -4, startPenalty: -20 },
-  food: { category: 'food', title: 'Plaga en la despensa', dailyPenalty: -4, startPenalty: -20 },
-  shield: { category: 'shield', title: 'Grieta en el blindaje', dailyPenalty: -4, startPenalty: -20 },
-  crewHealth: { category: 'crewHealth', title: 'Fatiga espacial de la tripulación', dailyPenalty: -4, startPenalty: -20 },
-};
+export const COMPLICATIONS: Record<VitalKey, Complication> = localizeRecord(
+  {
+    oxygen: { category: 'oxygen', title: 'Fuga en conducto de O2', dailyPenalty: -4, startPenalty: -20 },
+    power: { category: 'power', title: 'Cortocircuito en la red eléctrica', dailyPenalty: -4, startPenalty: -20 },
+    food: { category: 'food', title: 'Plaga en la despensa', dailyPenalty: -4, startPenalty: -20 },
+    shield: { category: 'shield', title: 'Grieta en el blindaje', dailyPenalty: -4, startPenalty: -20 },
+    crewHealth: { category: 'crewHealth', title: 'Fatiga espacial de la tripulación', dailyPenalty: -4, startPenalty: -20 },
+  },
+  {
+    oxygen: { title: 'O2 duct leak' },
+    power: { title: 'Power grid short circuit' },
+    food: { title: 'Pantry pest outbreak' },
+    shield: { title: 'Crack in the shielding' },
+    crewHealth: { title: 'Crew space fatigue' },
+  },
+);
 
 /** Una rama sufre complicación con 0 aciertos o con menos de 1/3 de aciertos (mínimo 3 intentos). */
 export function hasComplication(answered: number, correct: number): boolean {

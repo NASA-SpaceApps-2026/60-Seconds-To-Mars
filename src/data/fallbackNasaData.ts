@@ -1,4 +1,6 @@
-import type { DailyEvent, NASAWeather } from '../types/game';
+import type { DailyEvent, EventOption, NASAWeather } from '../types/game';
+import { getLang, withEnglish } from '../i18n/core';
+import { EVENTS_EN, LOADING_MESSAGES_EN } from '../i18n/en/events';
 
 /**
  * Llamaradas solares REALES archivadas de NASA DONKI (ciclo solar 25).
@@ -49,7 +51,7 @@ export type FallbackEvent = Omit<DailyEvent, 'sol' | 'source'> & { key: string }
  * 10 eventos completos de respaldo. Cada uno tiene al menos una opción libre
  * (requiredItemId: null) para que el jugador nunca se quede bloqueado.
  */
-export const FALLBACK_EVENTS: FallbackEvent[] = [
+const FALLBACK_EVENTS_ES: FallbackEvent[] = [
   {
     key: 'cme_arrival',
     title: '¡Llega el frente de la tormenta solar!',
@@ -424,9 +426,23 @@ export const FALLBACK_EVENTS: FallbackEvent[] = [
 ];
 
 /** Datos de ciencia extra para la pantalla de carga y el informe final. */
-export const LOADING_MESSAGES = [
+/** Eventos de respaldo en el idioma activo (traducciones en i18n/en/events.ts). */
+export const FALLBACK_EVENTS: FallbackEvent[] = FALLBACK_EVENTS_ES.map((e) => {
+  const en = EVENTS_EN[e.key];
+  if (!en) return e;
+  const { options: enOptions, ...enText } = en;
+  return withEnglish<FallbackEvent>(
+    { ...e, options: e.options.map((o) => withEnglish<EventOption>(o, enOptions[o.id])) },
+    enText,
+  );
+});
+
+const LOADING_MESSAGES_ES = [
   'Recibiendo telemetría de NASA DONKI y satélites orbitales...',
   'Sincronizando con el Mars Reconnaissance Orbiter...',
   'Leyendo sensores de radiación de la base espacial...',
   'Consultando la Deep Space Network...',
 ];
+
+/** Mensajes de carga entre Soles en el idioma activo. */
+export const getLoadingMessages = (): string[] => (getLang() === 'en' ? LOADING_MESSAGES_EN : LOADING_MESSAGES_ES);

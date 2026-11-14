@@ -7,6 +7,8 @@ import { playButtonClick, unlockAudio } from '../utils/soundEffects';
 import AriaAssistantWidget from './AriaAssistantWidget';
 import AriaCommandInput from './AriaCommandInput';
 import MissionPatch from './MissionPatchLogo';
+import LanguageToggle from './LanguageToggle';
+import { useT } from '../i18n/useT';
 
 /**
  * Portada. Cabe entera en el viewport (h-dvh) a 100 % de zoom: todos los tamaños y márgenes
@@ -16,6 +18,7 @@ export default function MenuScreen() {
   useAriaScreenReady();
   const enterMissionSelector = useGameStore((s) => s.enterMissionSelector);
   const testGemini = useGameStore((s) => s.testGemini);
+  const t = useT();
 
   // Diagnóstico de Gemini en segundo plano (sin píldora visible)
   useEffect(() => {
@@ -37,6 +40,7 @@ export default function MenuScreen() {
       />
       <div className="pointer-events-none absolute left-0 top-0 h-2 w-full bg-nasa-blue" />
       <div className="pointer-events-none absolute left-0 top-2 h-1 w-full bg-nasa-red" />
+      <LanguageToggle className="absolute right-[clamp(0.75rem,2vw,1.5rem)] top-[clamp(0.9rem,2.5dvh,1.5rem)] z-20" />
 
       <section className="thin-scroll relative z-10 flex max-h-full w-full max-w-4xl flex-col items-center overflow-y-auto text-center">
         <motion.div initial={{ scale: 0, rotate: -40 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 140 }}>
@@ -57,7 +61,7 @@ export default function MenuScreen() {
           THE SOLAR STORM PROTOCOL
         </h2>
         <p className="mt-[clamp(0.4rem,1.5dvh,1rem)] max-w-2xl text-[clamp(0.95rem,min(1.4vw,2.4dvh),1.2rem)] font-semibold text-slate-600">
-          Una tormenta solar real va hacia Marte. ¿Salvarás a tu tripulación?
+          {t('Una tormenta solar real va hacia Marte. ¿Salvarás a tu tripulación?', 'A real solar storm is heading for Mars. Will you save your crew?')}
         </p>
 
         <motion.button
@@ -71,7 +75,7 @@ export default function MenuScreen() {
           }}
           className="glow-red font-display mt-[clamp(0.9rem,4dvh,2.25rem)] flex shrink-0 items-center gap-3 rounded-2xl bg-nasa-red px-8 py-[clamp(0.6rem,2dvh,1rem)] text-lg font-black tracking-wider text-white sm:px-12 sm:text-xl"
         >
-          <Rocket size={26} /> COMENZAR MISIÓN
+          <Rocket size={26} /> {t('COMENZAR MISIÓN', 'START MISSION')}
         </motion.button>
 
         <AriaAssistantWidget className="mt-[clamp(0.9rem,4dvh,2rem)] w-full max-w-xl shrink-0 text-left" />

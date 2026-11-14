@@ -7,6 +7,7 @@ import { VITAL_META, useGameStore } from '../store/useGameStore';
 import { playButtonClick } from '../utils/soundEffects';
 import { RobotSvg } from './AriaRobot';
 import { ResourceIcon } from './icons';
+import { tr } from '../i18n/core';
 
 /** Comandante Elena (rover de rescate), de medio cuerpo, con el visor levantado y el comunicador. */
 function CommanderElena({ talking }: { talking: boolean }) {
@@ -100,7 +101,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
           exit={{ opacity: 0 }}
           role="dialog"
           aria-modal="true"
-          aria-label={`Transmisión entrante: ${note.headline}`}
+          aria-label={`${tr('Transmisión entrante', 'Incoming transmission')}: ${note.headline}`}
         >
           {/* Personaje en grande entrando por la derecha */}
           <motion.div
@@ -153,7 +154,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                 <div className="flex flex-col gap-[clamp(0.35rem,1.2dvh,0.75rem)] md:col-start-2 md:row-start-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">
-                    <Radio className="h-4 w-4" strokeWidth={1.75} /> TRANSMISIÓN ENTRANTE · SOL {note.sol}
+                    <Radio className="h-4 w-4" strokeWidth={1.75} /> {tr('TRANSMISIÓN ENTRANTE', 'INCOMING TRANSMISSION')} · SOL {note.sol}
                   </p>
                   <span className="text-sm font-semibold text-slate-500">{FIELD_NOTE_SENDER[note.source]}</span>
                 </div>
@@ -168,7 +169,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                         <span className="flex items-center gap-1 font-mono">
                           +{d.amount} <ResourceIcon k={d.vital} className="h-4 w-4" />
                         </span>
-                        {VITAL_META[d.vital].label} · ya sumado
+                        {VITAL_META[d.vital].label} · {tr('ya sumado', 'already added')}
                         <span className="hidden text-sm font-semibold text-emerald-700 sm:inline">({d.label})</span>
                       </span>
                     ))}
@@ -192,7 +193,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                     <div className="absolute inset-0 grid place-items-center text-slate-400">
                       <span className="flex flex-col items-center gap-2 px-6 text-center text-sm">
                         <ImageOff className="h-8 w-8" />
-                        {photo ? 'Sin señal de imagen' : 'Esta vez la transmisión llegó sin foto (sin conexión con la NASA).'}
+                        {photo ? tr('Sin señal de imagen', 'No image signal') : tr('Esta vez la transmisión llegó sin foto (sin conexión con la NASA).', 'This time the transmission arrived without a photo (no connection to NASA).')}
                       </span>
                     </div>
                   )}
@@ -203,7 +204,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                   )}
                   {photo && (
                     <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-md bg-black/70 px-2 py-1 font-mono text-xs font-bold text-white">
-                      <Camera className="h-3.5 w-3.5" /> FOTO REAL · NASA/JPL-Caltech
+                      <Camera className="h-3.5 w-3.5" /> {tr('FOTO REAL', 'REAL PHOTO')} · NASA/JPL-Caltech
                     </span>
                   )}
                 </div>
@@ -214,7 +215,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                 {photo && <p className="border-t border-dashed border-slate-300 pt-2 font-mono text-xs leading-relaxed text-slate-500">{photoFactLine(photo)}</p>}
                 {photo && (
                   <p className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
-                    <Telescope className="h-4 w-4" strokeWidth={1.75} /> Foto desbloqueada en el Periscopio ({unlocked} en tu álbum)
+                    <Telescope className="h-4 w-4" strokeWidth={1.75} /> {tr(`Foto desbloqueada en el Periscopio (${unlocked} en tu álbum)`, `Photo unlocked in the Periscope (${unlocked} in your album)`)}
                   </p>
                 )}
                 </div>
@@ -233,9 +234,9 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                   >
                     <PackageOpen className="h-[clamp(1.25rem,4dvh,1.75rem)] w-[clamp(1.25rem,4dvh,1.75rem)] shrink-0" strokeWidth={1.75} />
                     <span>
-                      ¡HAY UN CONTENEDOR EXTRA DENTRO!
+                      {tr('¡HAY UN CONTENEDOR EXTRA DENTRO!', 'THERE IS AN EXTRA CONTAINER INSIDE!')}
                       <span className="flex items-center gap-1 text-[clamp(0.85rem,2.2dvh,1rem)]">
-                        <ArrowRight className="h-4 w-4" /> ABRIR CAJA DE SUMINISTROS
+                        <ArrowRight className="h-4 w-4" /> {tr('ABRIR CAJA DE SUMINISTROS', 'OPEN SUPPLY CRATE')}
                       </span>
                     </span>
                   </motion.button>
@@ -245,7 +246,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                     onClick={finish}
                     className="font-display w-full rounded-xl bg-nasa-blue px-5 py-[clamp(0.5rem,1.6dvh,0.75rem)] text-base font-black tracking-wider text-white transition hover:brightness-110"
                   >
-                    GUARDAR EN EL ÁLBUM Y SEGUIR
+                    {tr('GUARDAR EN EL ÁLBUM Y SEGUIR', 'SAVE TO ALBUM AND CONTINUE')}
                   </button>
                 )}
                 </div>

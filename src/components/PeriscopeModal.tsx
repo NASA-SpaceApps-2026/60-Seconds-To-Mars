@@ -9,6 +9,8 @@ import { useGameStore } from '../store/useGameStore';
 import { earthMarsLink } from '../utils/marsEphemeris';
 import { playButtonClick } from '../utils/soundEffects';
 import MissionPatchLogo from './MissionPatchLogo';
+import { photoText } from '../data/fieldNotes';
+import { tr } from '../i18n/core';
 
 export const BADGE_ICONS: Record<BadgeId, LucideIcon> = {
   solar_engineer: Sun,
@@ -75,26 +77,32 @@ function MarsPhotoViewer() {
     <section className="overflow-hidden rounded-xl border-2 border-slate-900 bg-slate-950 text-white">
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-700 px-4 py-2">
         <Camera className="h-5 w-5 text-sky-300" strokeWidth={1.75} />
-        <p className="font-mono text-xs font-bold tracking-[0.2em] text-sky-300">ÁLBUM DE FOTOS REALES DE MARTE</p>
+        <p className="font-mono text-xs font-bold tracking-[0.2em] text-sky-300">{tr('ÁLBUM DE FOTOS REALES DE MARTE', 'REAL MARS PHOTO ALBUM')}</p>
         <span className="rounded-md bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold">
           {photos.length} / {allPhotos.length || '—'} desbloqueadas
         </span>
         <span
           className={`ml-auto rounded-md px-2 py-0.5 font-mono text-xs font-semibold ${status === 'live' ? 'bg-emerald-600' : status === 'fallback' ? 'bg-amber-600' : 'bg-slate-700'}`}
         >
-          {status === 'live' ? 'EN DIRECTO · images.nasa.gov' : status === 'fallback' ? 'ARCHIVO NASA (sin conexión)' : 'CONECTANDO...'}
+          {status === 'live'
+            ? tr('EN DIRECTO · images.nasa.gov', 'LIVE · images.nasa.gov')
+            : status === 'fallback'
+              ? tr('ARCHIVO NASA (sin conexión)', 'NASA ARCHIVE (offline)')
+              : tr('CONECTANDO...', 'CONNECTING...')}
         </span>
       </div>
 
       {status === 'idle' || status === 'loading' ? (
         <div className="flex h-56 items-center justify-center gap-2 text-slate-300">
-          <LoaderCircle className="h-5 w-5 animate-spin" /> Conectando con la biblioteca de imágenes de la NASA...
+          <LoaderCircle className="h-5 w-5 animate-spin" /> {tr('Conectando con la biblioteca de imágenes de la NASA...', 'Connecting to the NASA image library...')}
         </div>
       ) : !photo ? (
         <div className="flex h-56 flex-col items-center justify-center gap-2 px-6 text-center text-slate-300">
           <Camera className="h-8 w-8 text-sky-300" strokeWidth={1.5} />
-          <p className="text-base font-semibold">Todavía no has recibido ninguna foto real de Marte.</p>
-          <p className="text-sm text-slate-400">Llegan como notas de campo con cada envío de Houston y en las transmisiones del rover y de la sonda.</p>
+          <p className="text-base font-semibold">{tr('Todavía no has recibido ninguna foto real de Marte.', 'You have not received any real Mars photos yet.')}</p>
+          <p className="text-sm text-slate-400">
+            {tr('Llegan como notas de campo con cada envío de Houston y en las transmisiones del rover y de la sonda.', 'They arrive as field notes with every Houston shipment and in transmissions from the rover and the probe.')}
+          </p>
         </div>
       ) : (
         <div className="grid gap-0 md:grid-cols-[1.4fr_1fr]">
@@ -103,7 +111,7 @@ function MarsPhotoViewer() {
               {broken[photo.id] ? (
                 <motion.div key={`b-${photo.id}`} className="absolute inset-0 grid place-items-center text-slate-400" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <span className="flex flex-col items-center gap-2 text-sm">
-                    <ImageOff className="h-8 w-8" /> No se pudo cargar la imagen
+                    <ImageOff className="h-8 w-8" /> {tr('No se pudo cargar la imagen', 'The image could not be loaded')}
                   </span>
                 </motion.div>
               ) : (
@@ -140,9 +148,9 @@ function MarsPhotoViewer() {
               {photo.id} · Publicada el {photo.date ? formatFlareDate(`${photo.date}T12:00:00Z`).split(',')[0] : 'fecha desconocida'}
             </p>
             <h3 className="text-lg font-bold leading-snug">{photo.title}</h3>
-            <p className="text-base leading-relaxed text-slate-200">{photo.summaryEs}</p>
+            <p className="text-base leading-relaxed text-slate-200">{photoText(photo).summary}</p>
             <details className="text-sm text-slate-400">
-              <summary className="cursor-pointer select-none">Texto original de la NASA (inglés)</summary>
+              <summary className="cursor-pointer select-none">{tr('Texto original de la NASA (inglés)', 'Original NASA text')}</summary>
               <p className="mt-1">{photo.originalDescription}</p>
             </details>
             <a
@@ -159,17 +167,17 @@ function MarsPhotoViewer() {
                 onClick={() => go(-1)}
                 className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-600 px-3 py-2 text-sm font-bold transition hover:bg-slate-800"
               >
-                <ChevronLeft className="h-4 w-4" /> Anterior
+                <ChevronLeft className="h-4 w-4" /> {tr('Anterior', 'Previous')}
               </button>
               <button
                 type="button"
                 onClick={() => go(1)}
                 className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-nasa-blue px-3 py-2 text-sm font-bold transition hover:brightness-110"
               >
-                Siguiente foto real <ChevronRight className="h-4 w-4" />
+                {tr('Siguiente foto real', 'Next real photo')} <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-500">Imágenes: NASA/JPL-Caltech (dominio público).</p>
+            <p className="text-xs text-slate-500">{tr('Imágenes: NASA/JPL-Caltech (dominio público).', 'Images: NASA/JPL-Caltech (public domain).')}</p>
           </div>
         </div>
       )}
@@ -195,7 +203,7 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
           exit={{ opacity: 0 }}
           role="dialog"
           aria-modal="true"
-          aria-label="Periscopio y datos reales de la NASA"
+          aria-label={tr('Periscopio y datos reales de la NASA', 'Periscope and real NASA data')}
           onClick={onClose}
         >
           <motion.div
@@ -209,8 +217,8 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
                 <Telescope className="h-6 w-6" strokeWidth={1.75} />
               </span>
               <div>
-                <p className="font-mono text-xs tracking-[0.25em] text-slate-500">PERISCOPIO // CRÁTER JEZERO</p>
-                <h2 className="font-display text-2xl font-black text-nasa-blue">Fotos y datos reales de la NASA</h2>
+                <p className="font-mono text-xs tracking-[0.25em] text-slate-500">{tr('PERISCOPIO // CRÁTER JEZERO', 'PERISCOPE // JEZERO CRATER')}</p>
+                <h2 className="font-display text-2xl font-black text-nasa-blue">{tr('Fotos y datos reales de la NASA', 'Real NASA photos and data')}</h2>
               </div>
               <button
                 type="button"
@@ -219,9 +227,9 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
                   setSourcesOpen(true);
                 }}
                 className="ml-auto flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-nasa-blue transition hover:border-nasa-blue"
-                title="Qué datos reales de la NASA usa el juego y cómo verificarlos"
+                title={tr('Qué datos reales de la NASA usa el juego y cómo verificarlos', 'Which real NASA data the game uses and how to check it')}
               >
-                <Database className="h-4 w-4" strokeWidth={1.75} /> Datos Abiertos NASA Utilizados
+                <Database className="h-4 w-4" strokeWidth={1.75} /> {tr('Datos Abiertos NASA Utilizados', 'NASA Open Data Used')}
               </button>
               <button
                 type="button"
@@ -231,7 +239,7 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
                 }}
                 className="flex items-center gap-1 rounded-lg border border-slate-300 px-3 py-2 font-bold text-slate-700 transition hover:border-nasa-blue hover:text-nasa-blue"
               >
-                <X className="h-4 w-4" /> Cerrar
+                <X className="h-4 w-4" /> {tr('Cerrar', 'Close')}
               </button>
             </div>
 
@@ -243,7 +251,7 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
             {/* Insignias */}
             <div className="mt-5 flex items-center gap-2">
               <Award className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} />
-              <h3 className="text-lg font-bold text-slate-900">Insignias de misión</h3>
+              <h3 className="text-lg font-bold text-slate-900">{tr('Insignias de misión', 'Mission badges')}</h3>
               <span className="ml-auto rounded-md border border-slate-300 px-2 py-0.5 font-mono text-sm font-semibold text-slate-700">
                 {badges.length}/{BADGE_ORDER.length}
               </span>
@@ -262,23 +270,31 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
                 </div>
               ))}
               <div className="rounded-lg border border-t-4 border-slate-300 border-t-nasa-red p-3">
-                <p className="text-sm font-bold text-slate-500">Distancia a la Tierra hoy</p>
+                <p className="text-sm font-bold text-slate-500">{tr('Distancia a la Tierra hoy', 'Distance to Earth today')}</p>
                 <p className="font-display text-3xl font-black text-slate-900">≈ {Math.round(link.distanceMillionKm)} M km</p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Un mensaje de radio tarda <b>≈ {Math.round(link.lightDelayMinutes)} minutos</b> en llegar a Houston (entre 3 y 22 según las órbitas).
+                  {tr('Un mensaje de radio tarda', 'A radio message takes')} <b>≈ {Math.round(link.lightDelayMinutes)} {tr('minutos', 'minutes')}</b>{' '}
+                  {tr('en llegar a Houston (entre 3 y 22 según las órbitas).', 'to reach Houston (between 3 and 22 depending on the orbits).')}
                 </p>
               </div>
               <div className="rounded-lg border border-t-4 border-slate-300 border-t-amber-500 p-3">
                 <p className="flex items-center gap-1.5 text-sm font-bold text-slate-500">
-                  <Satellite className="h-4 w-4" /> Llamarada real · NASA DONKI
+                  <Satellite className="h-4 w-4" /> {tr('Llamarada real', 'Real flare')} · NASA DONKI
                 </p>
-                <p className="font-display text-3xl font-black text-slate-900">Clase {weather?.flareClass ?? '—'}</p>
+                <p className="font-display text-3xl font-black text-slate-900">{tr('Clase', 'Class')} {weather?.flareClass ?? '—'}</p>
                 <p className="mt-1 text-sm text-slate-600">
-                  {weather ? `${formatFlareDate(weather.peakTime)} · ${weather.isLive ? 'en directo' : 'archivo real'}` : 'Conectando con DONKI...'}
+                  {weather
+                    ? `${formatFlareDate(weather.peakTime)} · ${weather.isLive ? tr('en directo', 'live') : tr('archivo real', 'real archive')}`
+                    : tr('Conectando con DONKI...', 'Connecting to DONKI...')}
                 </p>
               </div>
             </div>
-            <p className="mt-2 text-xs text-slate-500">Fuentes: NASA Perseverance (MEDA, MOXIE), NASA DONKI. La distancia es un cálculo orbital aproximado para la fecha de hoy.</p>
+            <p className="mt-2 text-xs text-slate-500">
+              {tr(
+                'Fuentes: NASA Perseverance (MEDA, MOXIE), NASA DONKI. La distancia es un cálculo orbital aproximado para la fecha de hoy.',
+                'Sources: NASA Perseverance (MEDA, MOXIE), NASA DONKI. The distance is an approximate orbital calculation for today.',
+              )}
+            </p>
 
           </motion.div>
         </motion.div>

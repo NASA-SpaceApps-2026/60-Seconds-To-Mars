@@ -4,12 +4,13 @@ import confetti from 'canvas-confetti';
 import { Lock, PackageCheck, PackageOpen, Recycle, Satellite, Siren, Sprout, TriangleExclamationPoint, X, Zap, type LucideIcon } from 'lucide-react';
 import type { ItemId, SalvagePrizeId, SalvageSpinResult, SpinKind } from '../types/game';
 import { ITEMS_BY_ID, RARITY_META } from '../data/stationItems';
-import { SALVAGE_PRIZES, SPIN_META, SUPPLY_TIER_META, WHEELS } from '../data/salvagePrizes';
+import { SALVAGE_PRIZES, SPIN_META, SUPPLY_TIER_META, WHEELS, pickWeightedPrize, prizeOdds } from '../data/salvagePrizes';
 import { COMPLICATIONS } from '../data/triviaQuestions';
 import { VITAL_META, VITAL_ORDER, availableItems, useGameStore } from '../store/useGameStore';
 import { playButtonClick, playCaseTick, playErrorBuzz, playSuccess, playUnlock } from '../utils/soundEffects';
 import { ItemIcon, PrizeIcon, ResourceIcon } from './icons';
 import { RewardReveal } from './phase1/Phase1Shared';
+import { tr } from '../i18n/core';
 
 /** Geometría del carrusel (px en el espacio local del modal). */
 const CARD_W = 196;
@@ -29,8 +30,8 @@ const KINDS_PHASE2: SpinKind[] = ['houston'];
 const KIND_ICON: Record<SpinKind, LucideIcon> = { houston: PackageCheck, emergency: Siren, energy: Zap, science: Satellite, food: Sprout, scrap: Recycle };
 
 function randomStrip(kind: SpinKind, winner?: SalvagePrizeId): SalvagePrizeId[] {
-  const pool = WHEELS[kind];
-  const strip = Array.from({ length: STRIP_LEN }, () => pool[Math.floor(Math.random() * pool.length)]);
+  // Relleno con la misma ponderación por rareza que la tirada real
+  const strip = Array.from({ length: STRIP_LEN }, () => pickWeightedPrize(kind));
   if (winner) strip[WIN_INDEX] = winner;
   return strip;
 }
@@ -114,7 +115,8 @@ export default function SalvageRouletteModal({
 
   const scrapCandidates = availableItems(inventory, consumed);
   const inPhase1 = gamePhase === 'PHASE_1_SCAVENGE';
-  const contents = [...new Set(WHEELS[kind])];
+  const odds = prizeOdds(kind);
+  const contents = [...new Set(WHEELS[kind])].sort((a, b) => (odds[b] ?? 0) - (odds[a] ?? 0));
 
   const selectKind = (k: SpinKind) => {
     playButtonClick();
@@ -130,7 +132,7 @@ export default function SalvageRouletteModal({
   const openCapsule = (k: SpinKind = kind) => {
     if (spinning) return;
     if (k === 'scrap' && !scrapId) {
-      setError('Elige primero qué objeto desmontar.');
+      setError(tr('Elige primero qué objeto desmontar.', 'First choose an item to take apart.'));
       playErrorBuzz();
       return;
     }
@@ -203,7 +205,7 @@ export default function SalvageRouletteModal({
           exit={{ opacity: 0 }}
           role="dialog"
           aria-modal="true"
-          aria-label="Cápsula Orbital"
+          aria-label={tr('Cápsula Orbital', 'Orbital Capsule')}
         >
           <div className="m-auto flex min-h-[min(80dvh,42rem)] w-[95vw] max-w-6xl flex-col justify-between gap-[clamp(0.6rem,2.4dvh,1.5rem)] rounded-3xl border border-slate-800 bg-slate-950/95 p-[clamp(0.8rem,2.6dvh,2rem)] shadow-2xl">
             {/* Cabecera: título, recursos y cápsula a la izquierda · solo "Volver" arriba a la derecha */}
@@ -214,8 +216,8 @@ export default function SalvageRouletteModal({
                     <PackageOpen className="h-7 w-7" strokeWidth={1.75} />
                   </span>
                   <div>
-                    <p className="font-mono text-xs tracking-[0.25em] text-slate-400">SUPPLY DROP // ÓRBITA MARCIANA</p>
-                    <h2 className="font-display text-[clamp(1.3rem,4dvh,1.875rem)] font-black text-white">CÁPSULA ORBITAL</h2>
+                    <p className="font-mono text-xs tracking-[0.25em] text-slate-400">SUPPLY DROP // {tr('ÓRBITA MARCIANA', 'MARTIAN ORBIT')}</p>
+                    <h2 className="font-display text-[clamp(1.3rem,4dvh,1.875rem)] font-black text-white">{tr('CÁPSULA ORBITAL', 'ORBITAL CAPSULE')}</h2>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs font-bold">
@@ -232,7 +234,7 @@ export default function SalvageRouletteModal({
                       </span>
                     ))}
                   {!inPhase1 && (
-                    <span title="Ciencia" className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2 py-1 font-mono text-white">
+                    <span title={tr('Ciencia', 'Science')} className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2 py-1 font-mono text-white">
                       <ResourceIcon k="science" /> {science}
                     </span>
                   )}
@@ -277,7 +279,7 @@ export default function SalvageRouletteModal({
                 }}
                 className="ml-auto flex shrink-0 items-center gap-1.5 self-start rounded-xl bg-[#FC3D21] px-4 py-2 font-bold text-white shadow-lg transition hover:bg-orange-600 disabled:opacity-40"
               >
-                <X size={18} /> Volver
+                <X size={18} /> {tr('Volver', 'Back')}
               </button>
             </header>
 
@@ -301,11 +303,11 @@ export default function SalvageRouletteModal({
               {kind === 'scrap' && !result && (
                 <div className="w-full max-w-2xl rounded-lg border-2 border-white/15 bg-white/5 p-3 text-white">
                   <p className="flex items-center gap-1.5 text-sm font-extrabold">
-                    <Recycle className="h-4 w-4" strokeWidth={1.75} /> ¿Qué objeto desmontas?
+                    <Recycle className="h-4 w-4" strokeWidth={1.75} /> {tr('¿Qué objeto desmontas?', 'Which item will you take apart?')}
                   </p>
-                  <p className="text-xs text-white/70">Lo pierdes para siempre, pero puedes conseguir algo mejor.</p>
+                  <p className="text-xs text-white/70">{tr('Lo pierdes para siempre, pero puedes conseguir algo mejor.', 'You lose it forever, but you could get something better.')}</p>
                   <div className="thin-scroll mt-2 grid max-h-48 gap-1.5 overflow-y-auto sm:grid-cols-2">
-                    {scrapCandidates.length === 0 && <p className="text-xs text-white/60">No tienes objetos.</p>}
+                    {scrapCandidates.length === 0 && <p className="text-xs text-white/60">{tr('No tienes objetos.', 'You have no items.')}</p>}
                     {scrapCandidates.map((id) => {
                       const it = ITEMS_BY_ID[id];
                       return (
@@ -338,7 +340,7 @@ export default function SalvageRouletteModal({
                   className="font-display glow-red flex items-center gap-3 rounded-xl bg-nasa-red px-[clamp(1.5rem,5vw,3rem)] py-[clamp(0.55rem,2dvh,1rem)] text-[clamp(1.05rem,3.4dvh,1.5rem)] font-black tracking-wider text-white disabled:bg-slate-600 disabled:shadow-none"
                 >
                   <PackageOpen className="h-7 w-7" strokeWidth={1.75} />
-                  {spinning ? 'ABRIENDO...' : `ABRIR CÁPSULA · ${SPIN_META[kind].cost}`}
+                  {spinning ? tr('ABRIENDO...', 'OPENING...') : `${tr('ABRIR CÁPSULA', 'OPEN CAPSULE')} · ${SPIN_META[kind].cost}`}
                 </motion.button>
                 {!availability[kind].ok && !spinning && !result && (
                   <p className="flex items-center gap-1.5 text-sm font-bold text-amber-300">
@@ -380,7 +382,7 @@ export default function SalvageRouletteModal({
                   </motion.div>
                 ) : (
                   <motion.div key="contents" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full max-w-2xl rounded-lg border border-white/15 bg-white/5 p-3 text-white [@media(max-height:680px)]:hidden">
-                    <p className="font-mono text-xs font-semibold tracking-[0.2em] text-slate-400">CONTENIDO DE LA CÁPSULA</p>
+                    <p className="font-mono text-xs font-semibold tracking-[0.2em] text-slate-400">{tr('CONTENIDO DE LA CÁPSULA', 'CAPSULE CONTENTS')}</p>
                     <ul className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
                       {contents.map((pid) => (
                         <li key={pid} className="flex items-center gap-2">
@@ -388,10 +390,11 @@ export default function SalvageRouletteModal({
                           <PrizeIcon id={pid} className="h-4 w-4 text-slate-300" />
                           {SALVAGE_PRIZES[pid].label}
                           <span className="text-xs text-slate-400">· {SUPPLY_TIER_META[SALVAGE_PRIZES[pid].tier].label}</span>
+                          <span className="ml-auto font-mono text-xs font-semibold tabular-nums text-slate-300">{Math.max(1, Math.round((odds[pid] ?? 0) * 100))} %</span>
                         </li>
                       ))}
                     </ul>
-                    {inPhase1 && <p className="mt-2 text-xs text-amber-200">Los premios de barras se sumarán al empezar la base espacial.</p>}
+                    {inPhase1 && <p className="mt-2 text-xs text-amber-200">{tr('Los premios de barras se sumarán al empezar la base espacial.', 'Bar prizes will be added when the space base starts.')}</p>}
                   </motion.div>
                 )}
               </AnimatePresence>

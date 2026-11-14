@@ -7,6 +7,7 @@ import { ITEMS_BY_ID } from '../data/stationItems';
 import { useGameStore } from '../store/useGameStore';
 import { playButtonClick, playDoorSeal, playIncoming } from '../utils/soundEffects';
 import { ItemIcon, ResourceIcon } from './icons';
+import { tr } from '../i18n/core';
 
 /* =====================================================================
  * Lore: año 2038, base Ares-IV (Cráter Jezero). Los adultos salieron en el rover
@@ -270,35 +271,47 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
   switch (scene) {
     case 'prologue':
       return {
-        title: 'Prólogo · Base Ares-IV, Cráter Jezero, año 2038',
+        title: tr('Prólogo · Base Ares-IV, Cráter Jezero, año 2038', 'Prologue · Ares-IV Base, Jezero Crater, year 2038'),
         panels: [
           {
             art: <ArtRoverLeaving />,
-            speaker: 'Narrador',
-            text: 'Año 2038. Los astronautas adultos salen en el rover a explorar a 40 km de la base. En el hábitat se quedan los Cadetes Junior: Leo, Vega y Max.',
+            speaker: tr('Narrador', 'Narrator'),
+            text: tr(
+              'Año 2038. Los astronautas adultos salen en el rover a explorar a 40 km de la base. En el hábitat se quedan los Cadetes Junior: Leo, Vega y Max.',
+              'Year 2038. The adult astronauts drive off in the rover to explore 40 km from the base. The Junior Cadets stay in the habitat: Leo, Vega and Max.',
+            ),
           },
           {
             art: <ArtSolarFlare flareClass={flare} />,
             speaker: 'A.R.I.A.',
-            text: `¡Alerta! El satélite SOHO y NASA DONKI detectan una llamarada solar de clase ${flare} rumbo a Marte. La tormenta ha cortado el camino del rover.`,
+            text: tr(
+              `¡Alerta! El satélite SOHO y NASA DONKI detectan una llamarada solar de clase ${flare} rumbo a Marte. La tormenta ha cortado el camino del rover.`,
+              `Alert! The SOHO satellite and NASA DONKI detect a class ${flare} solar flare heading for Mars. The storm has cut off the rover's path.`,
+            ),
             sound: playIncoming,
           },
           {
             art: <ArtLockedConsole />,
-            speaker: 'Cmdte. Leo',
-            text: '¡La consola de suministros está bloqueada! Tenemos 60 segundos para responder el protocolo de seguridad y desbloquear el equipo de la base espacial.',
+            speaker: tr('Cmdte. Leo', 'Cmdr. Leo'),
+            text: tr(
+              '¡La consola de suministros está bloqueada! Tenemos 60 segundos para responder el protocolo de seguridad y desbloquear el equipo de la base espacial.',
+              'The supply console is locked! We have 60 seconds to answer the safety protocol and unlock the space base equipment.',
+            ),
           },
         ],
       };
     case 'lockdown': {
       const damaged = complications.length > 0;
       return {
-        title: 'Cierre de compuertas · Sol 1',
+        title: tr('Cierre de compuertas · Sol 1', 'Sealing the hatches · Sol 1'),
         panels: [
           {
             art: <ArtLockdown damaged={damaged} />,
             speaker: 'A.R.I.A.',
-            text: `Compuertas blindadas selladas. ${inventory.length} objetos han entrado en la base espacial a tiempo.`,
+            text: tr(
+              `Compuertas blindadas selladas. ${inventory.length} objetos han entrado en la base espacial a tiempo.`,
+              `Armored hatches sealed. ${inventory.length} items made it into the space base in time.`,
+            ),
             sound: playDoorSeal,
             extra: (
               <div className="flex flex-wrap gap-1.5">
@@ -308,7 +321,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
                   </span>
                 ))}
                 {inventory.length > 12 && <span className="self-center text-sm font-bold text-slate-500">+{inventory.length - 12}</span>}
-                {inventory.length === 0 && <span className="text-sm text-slate-500">Ningún objeto... ¡habrá que ser muy ingeniosos!</span>}
+                {inventory.length === 0 && <span className="text-sm text-slate-500">{tr('Ningún objeto... ¡habrá que ser muy ingeniosos!', 'No items... we will have to be very clever!')}</span>}
               </div>
             ),
           },
@@ -316,8 +329,11 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtLockdown damaged={damaged} />,
             speaker: 'Max',
             text: damaged
-              ? '¡La onda de choque ha dañado los sistemas donde fallamos preguntas! Podremos repararlos con los minijuegos de reparación de la base espacial.'
-              : '¡Los sistemas han aguantado la onda de choque! Respondimos bien todas las ramas.',
+              ? tr(
+                  '¡La onda de choque ha dañado los sistemas donde fallamos preguntas! Podremos repararlos con los minijuegos de reparación de la base espacial.',
+                  'The shock wave damaged the systems where we missed questions! We can fix them with the space base repair mini-games.',
+                )
+              : tr('¡Los sistemas han aguantado la onda de choque! Respondimos bien todas las ramas.', 'The systems survived the shock wave! We answered every branch well.'),
             extra: damaged ? (
               <div className="flex flex-wrap gap-1.5">
                 {complications.map((c: VitalKey) => (
@@ -334,24 +350,30 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
     }
     case 'radio_sol4':
       return {
-        title: 'Transmisión entrante · Sol 4',
+        title: tr('Transmisión entrante · Sol 4', 'Incoming transmission · Sol 4'),
         panels: [
           {
             art: <ArtRadio progress={0.35} />,
-            speaker: 'Rover de rescate',
-            text: '¡Cadetes, resistid! Ya hemos cruzado el cañón, estamos a pocos Soles de la base. ¡Estamos muy orgullosos de vosotros!',
+            speaker: tr('Rover de rescate', 'Rescue rover'),
+            text: tr(
+              '¡Cadetes, resistid! Ya hemos cruzado el cañón, estamos a pocos Soles de la base. ¡Estamos muy orgullosos de vosotros!',
+              'Cadets, hold on! We have crossed the canyon and we are a few Sols from the base. We are so proud of you!',
+            ),
             sound: playIncoming,
           },
         ],
       };
     case 'radio_sol8':
       return {
-        title: 'Transmisión entrante · Sol 8',
+        title: tr('Transmisión entrante · Sol 8', 'Incoming transmission · Sol 8'),
         panels: [
           {
             art: <ArtRadio progress={0.8} />,
-            speaker: 'Rover de rescate',
-            text: '¡Ya vemos las luces de Ares-IV en el horizonte! Dos Soles más y llegamos. Mantened esas barras arriba, ¡casi lo tenéis!',
+            speaker: tr('Rover de rescate', 'Rescue rover'),
+            text: tr(
+              '¡Ya vemos las luces de Ares-IV en el horizonte! Dos Soles más y llegamos. Mantened esas barras arriba, ¡casi lo tenéis!',
+              'We can see the lights of Ares-IV on the horizon! Two more Sols and we are there. Keep those bars up, you are almost there!',
+            ),
             sound: playIncoming,
           },
         ],
@@ -400,7 +422,7 @@ function StoryContent({ scene }: { scene: StoryScene }) {
           {scene.startsWith('radio') ? <Radio className="h-5 w-5" strokeWidth={1.75} /> : <BookOpen className="h-5 w-5" strokeWidth={1.75} />}
         </span>
         <div className="min-w-0">
-          <p className="font-mono text-xs tracking-[0.25em] text-slate-400">MODO HISTORIA // ARES-IV</p>
+          <p className="font-mono text-xs tracking-[0.25em] text-slate-400">{tr('MODO HISTORIA', 'STORY MODE')} // ARES-IV</p>
           <h2 className="font-display truncate text-xl font-black text-white sm:text-2xl">{title}</h2>
         </div>
         <button
@@ -411,7 +433,7 @@ function StoryContent({ scene }: { scene: StoryScene }) {
           }}
           className="ml-auto flex shrink-0 items-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20"
         >
-          <FastForward className="h-4 w-4" /> Saltar historia
+          <FastForward className="h-4 w-4" /> {tr('Saltar historia', 'Skip story')}
         </button>
       </div>
 
@@ -442,7 +464,7 @@ function StoryContent({ scene }: { scene: StoryScene }) {
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <div className="flex gap-1.5" aria-label={`Viñeta ${shown} de ${panels.length}`}>
+        <div className="flex gap-1.5" aria-label={tr(`Viñeta ${shown} de ${panels.length}`, `Panel ${shown} of ${panels.length}`)}>
           {panels.map((_, i) => (
             <span key={i} className={`h-2 w-8 rounded-full ${i < shown ? 'bg-nasa-red' : 'bg-slate-600'}`} />
           ))}
@@ -454,7 +476,7 @@ function StoryContent({ scene }: { scene: StoryScene }) {
           onClick={next}
           className="font-display glow-red flex items-center gap-2 rounded-xl bg-nasa-red px-8 py-4 text-lg font-black tracking-wider text-white"
         >
-          {last ? '¡A la misión!' : 'Siguiente'} <ArrowRight className="h-5 w-5" />
+          {last ? tr('¡A la misión!', 'To the mission!') : tr('Siguiente', 'Next')} <ArrowRight className="h-5 w-5" />
         </motion.button>
       </div>
     </div>
@@ -475,7 +497,7 @@ export default function StoryComicModal() {
           exit={{ opacity: 0 }}
           role="dialog"
           aria-modal="true"
-          aria-label="Modo Historia"
+          aria-label={tr('Modo Historia', 'Story Mode')}
         >
           <StoryContent scene={scene} />
         </motion.div>

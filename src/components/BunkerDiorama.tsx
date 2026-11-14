@@ -4,6 +4,7 @@ import { Activity, BatteryLow, Moon, Utensils, type LucideIcon } from 'lucide-re
 import type { ItemId, RadiationLevel, Vitals } from '../types/game';
 import { ITEMS_BY_ID } from '../data/stationItems';
 import { ITEM_ICONS } from './icons';
+import { tr } from '../i18n/core';
 
 /** Icono de objeto dentro del SVG (lucide anida un <svg> con x/y). */
 function ItemIcon({ id, ...rest }: { id: ItemId; x: number; y: number; size: number; color: string; strokeWidth?: number }) {
@@ -57,19 +58,19 @@ interface Props {
 }
 
 const CREW = [
-  { name: 'Cmdte. Leo', role: 'Comandante', cx: 238, skin: '#f1c27d', hair: '#4b2e19', accent: '#f97316' },
-  { name: 'Dra. Vega', role: 'Botánica', cx: 320, skin: '#8d5524', hair: '#1c1917', accent: '#22c55e' },
-  { name: 'Max', role: 'Ingeniero', cx: 402, skin: '#e0ac69', hair: '#b45309', accent: '#3b82f6' },
+  { get name() { return tr('Cmdte. Leo', 'Cmdr. Leo'); }, get role() { return tr('Comandante', 'Commander'); }, cx: 238, skin: '#f1c27d', hair: '#4b2e19', accent: '#f97316' },
+  { get name() { return tr('Dra. Vega', 'Dr. Vega'); }, get role() { return tr('Botánica', 'Botanist'); }, cx: 320, skin: '#8d5524', hair: '#1c1917', accent: '#22c55e' },
+  { name: 'Max', get role() { return tr('Ingeniero', 'Engineer'); }, cx: 402, skin: '#e0ac69', hair: '#b45309', accent: '#3b82f6' },
 ] as const;
 
 const MOOD_LABEL: Record<Mood, string> = {
-  happy: 'contento',
-  focused: 'concentrado',
-  hungry: 'con hambre',
-  dizzy: 'mareado por falta de aire',
-  cold: 'con frío',
-  worried: 'preocupado por la radiación',
-  tired: 'con fatiga espacial',
+  get happy() { return tr('contento', 'happy'); },
+  get focused() { return tr('concentrado', 'focused'); },
+  get hungry() { return tr('con hambre', 'hungry'); },
+  get dizzy() { return tr('mareado por falta de aire', 'dizzy from lack of air'); },
+  get cold() { return tr('con frío', 'cold'); },
+  get worried() { return tr('preocupado por la radiación', 'worried about radiation'); },
+  get tired() { return tr('con fatiga espacial', 'with space fatigue'); },
 };
 
 function computeMoods(v: Vitals, storm: boolean): Mood[] {
@@ -362,7 +363,7 @@ export default function BunkerDiorama({
   const machines = visible.filter((id) => ITEMS_BY_ID[id].kind === 'machine');
   const activeIcons = machines.slice(0, 8);
 
-  const summary = `Hábitat Ares-IV en el Cráter Jezero: ${CREW.map((c, i) => `${c.name} ${MOOD_LABEL[moods[i]]}`).join(', ')}.${lowPower ? ' Luces en modo ahorro.' : ''}${alarm ? ' Alarma de radiación activa.' : ''}${needsRepair ? ' Hay una avería en el hábitat.' : ''}`;
+  const summary = `${tr('Hábitat Ares-IV en el Cráter Jezero', 'Ares-IV habitat in Jezero Crater')}: ${CREW.map((c, i) => `${c.name} ${MOOD_LABEL[moods[i]]}`).join(', ')}.${lowPower ? tr(' Luces en modo ahorro.', ' Lights in power-saving mode.') : ''}${alarm ? tr(' Alarma de radiación activa.', ' Radiation alarm on.') : ''}${needsRepair ? tr(' Hay una avería en el hábitat.', ' There is a breakdown in the habitat.') : ''}`;
 
   // El paisaje se estira a todo el contenedor
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -410,7 +411,11 @@ export default function BunkerDiorama({
     onBlur: () => setHover(null),
   });
 
-  const antennaTip = houstonArrived ? 'Enlace Houston · envío recibido' : houstonEta !== null ? `Enlace Houston · llega en ${houstonEta} ${houstonEta === 1 ? 'Sol' : 'Soles'}` : 'Enlace Houston · Pedir Suministros';
+  const antennaTip = houstonArrived
+    ? tr('Enlace Houston · envío recibido', 'Houston Link · shipment received')
+    : houstonEta !== null
+      ? tr(`Enlace Houston · llega en ${houstonEta} ${houstonEta === 1 ? 'Sol' : 'Soles'}`, `Houston Link · arrives in ${houstonEta} ${houstonEta === 1 ? 'Sol' : 'Sols'}`)
+      : tr('Enlace Houston · Pedir Suministros', 'Houston Link · Order Supplies');
 
   return (
     <div ref={wrapRef} className="h-full w-full">
@@ -559,7 +564,7 @@ export default function BunkerDiorama({
         <ellipse cx={hx} cy={GROUND_Y + 8} rx={BODY.w / 2 + 30} ry={18} fill="#431407" opacity={0.4} />
 
         {/* ================= HÁBITAT (clic → Sistemas e Inventario) ================= */}
-        <g {...clickable('habitat', onHabitatClick)} aria-label="Hábitat Ares-IV: abrir Sistemas e Inventario">
+        <g {...clickable('habitat', onHabitatClick)} aria-label={tr('Hábitat Ares-IV: abrir Sistemas e Inventario', 'Ares-IV habitat: open Systems and Inventory')}>
           {/* Patas cortas integradas en la base */}
           {[-0.4, -0.16, 0.16, 0.4].map((f) => {
             const x = hx + f * BODY.w;
@@ -689,11 +694,11 @@ export default function BunkerDiorama({
 
           {/* Zona de clic amplia (invisible) */}
           <rect x={bx - 10} y={BODY.y - 70} width={BODY.w + 20} height={GROUND_Y - BODY.y + 76} fill="transparent" />
-          {hover === 'habitat' && <HoverTip x={hx} y={BODY.y + 40} maxX={VW} text={needsRepair ? 'Sistemas e Inventario · reparar averías' : 'Sistemas e Inventario'} />}
+          {hover === 'habitat' && <HoverTip x={hx} y={BODY.y + 40} maxX={VW} text={needsRepair ? tr('Sistemas e Inventario · reparar averías', 'Systems and Inventory · fix breakdowns') : tr('Sistemas e Inventario', 'Systems and Inventory')} />}
         </g>
 
         {/* ================= ANTENA DEL TEJADO (clic → Enlace Houston) ================= */}
-        <g {...clickable('antenna', onAntennaClick)} aria-label="Antena de alta ganancia: abrir Enlace Houston">
+        <g {...clickable('antenna', onAntennaClick)} aria-label={tr('Antena de alta ganancia: abrir Enlace Houston', 'High-gain antenna: open Houston Link')}>
           <rect x={antX - 5} y={dishY + 8} width={10} height={BODY.y - dishY - 6} fill="#94a3b8" />
           <rect x={antX - 16} y={BODY.y - 8} width={32} height={9} rx={2} fill="#64748b" />
           <g transform={`rotate(-28 ${antX} ${dishY})`}>

@@ -3,11 +3,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Cable, CircleCheck, Crosshair, Dices, Droplets, Radio, SatelliteDish, SunMedium, Timer, TriangleExclamationPoint, Wrench } from 'lucide-react';
 import { DebrisGame, LeakGame } from './QuickGames';
 import type { MinigameKind } from '../../types/game';
-import { DEBRIS_FACT, DUST_FACT, LEAK_FACT, MINIGAME_META } from '../../data/missionExtras';
+import { MINIGAME_META, debrisFact, dustFact, leakFact } from '../../data/missionExtras';
 import { formatFlareDate } from '../../services/nasaApi';
 import { useGameStore } from '../../store/useGameStore';
 import { earthMarsLink } from '../../utils/marsEphemeris';
 import { playBlip, playButtonClick, playErrorBuzz, playPickup, playSuccess, playTick } from '../../utils/soundEffects';
+import { tr } from '../../i18n/core';
 
 type Phase = 'intro' | 'play' | 'won' | 'lost';
 
@@ -43,10 +44,10 @@ function useCountdown(seconds: number, running: boolean, onEnd: () => void) {
 // Minijuego A · Reconectar cables del escudo (8 s)
 // =====================================================================
 const WIRES = [
-  { id: 'o2', label: 'O2-AZUL', color: '#3b82f6' },
-  { id: 'pwr', label: 'PWR-ÁMBAR', color: '#f59e0b' },
-  { id: 'bio', label: 'BIO-VERDE', color: '#22c55e' },
-  { id: 'rad', label: 'RAD-ROJO', color: '#ef4444' },
+  { id: 'o2', get label() { return tr('O2-AZUL', 'O2-BLUE'); }, color: '#3b82f6' },
+  { id: 'pwr', get label() { return tr('PWR-ÁMBAR', 'PWR-AMBER'); }, color: '#f59e0b' },
+  { id: 'bio', get label() { return tr('BIO-VERDE', 'BIO-GREEN'); }, color: '#22c55e' },
+  { id: 'rad', get label() { return tr('RAD-ROJO', 'RAD-RED'); }, color: '#ef4444' },
 ] as const;
 const LX = 92;
 const RX = 408;
@@ -103,7 +104,7 @@ function CablesGame({ onWin }: { onWin: () => void }) {
     >
       <rect x={200} y={20} width={100} height={240} rx={10} fill="#1e293b" stroke="#334155" />
       <text x={250} y={146} textAnchor="middle" fontSize={12} fontWeight={700} fill="#64748b" fontFamily="ui-monospace, monospace">
-        BLINDAJE
+        {tr('BLINDAJE', 'SHIELD')}
       </text>
       {/* Cables conectados */}
       {links.map((w) => {
@@ -251,7 +252,7 @@ function DustGame({ onWin }: { onWin: () => void }) {
         ))}
       </div>
       <div className="mt-2 flex items-center gap-2 text-sm font-bold text-slate-700">
-        <SunMedium className="h-4 w-4 text-amber-500" strokeWidth={1.75} /> Panel limpio: <span className="font-mono">{pct} %</span>
+        <SunMedium className="h-4 w-4 text-amber-500" strokeWidth={1.75} /> {tr('Panel limpio', 'Panel clean')}: <span className="font-mono">{pct} %</span>
       </div>
     </div>
   );
@@ -322,28 +323,28 @@ function RadioGame({ running, onWin }: { running: boolean; onWin: () => void }) 
         <path d={wavePath(target.freq, target.amp, phase)} stroke="#22d3ee" strokeWidth={4} fill="none" strokeDasharray="10 6" opacity={0.9} />
         <path d={wavePath(freq, amp, phase)} stroke={matched ? '#4ade80' : '#3b82f6'} strokeWidth={3} fill="none" />
         <text x={8} y={16} fontSize={11} fontWeight={700} fill="#22d3ee" fontFamily="ui-monospace, monospace">
-          SATÉLITE
+          {tr('SATÉLITE', 'SATELLITE')}
         </text>
         <text x={8} y={172} fontSize={11} fontWeight={700} fill={matched ? '#4ade80' : '#60a5fa'} fontFamily="ui-monospace, monospace">
-          {matched ? 'SEÑAL ENGANCHADA' : 'TU ANTENA'}
+          {matched ? tr('SEÑAL ENGANCHADA', 'SIGNAL LOCKED') : tr('TU ANTENA', 'YOUR ANTENNA')}
         </text>
       </svg>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-sm font-bold text-slate-700">
           <span className="flex justify-between">
-            Frecuencia <span className="font-mono text-slate-500">{freq.toFixed(2)} Hz</span>
+            {tr('Frecuencia', 'Frequency')} <span className="font-mono text-slate-500">{freq.toFixed(2)} Hz</span>
           </span>
           <input type="range" min={1} max={5} step={0.02} value={freq} disabled={!running} onChange={(e) => setFreq(Number(e.target.value))} className="accent-nasa-blue" />
         </label>
         <label className="grid gap-1 text-sm font-bold text-slate-700">
           <span className="flex justify-between">
-            Amplitud <span className="font-mono text-slate-500">{amp.toFixed(2)}</span>
+            {tr('Amplitud', 'Amplitude')} <span className="font-mono text-slate-500">{amp.toFixed(2)}</span>
           </span>
           <input type="range" min={0.2} max={1} step={0.01} value={amp} disabled={!running} onChange={(e) => setAmp(Number(e.target.value))} className="accent-nasa-blue" />
         </label>
       </div>
       <div className="mt-2 flex items-center gap-2 text-sm font-bold text-slate-700">
-        Enganche
+        {tr('Enganche', 'Lock')}
         <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-200">
           <div className="h-full bg-emerald-500 transition-[width] duration-75" style={{ width: `${Math.min(100, (hold / HOLD_MS) * 100)}%` }} />
         </div>
@@ -364,13 +365,19 @@ function useTelemetryLine(kind: MinigameKind) {
   const link = useMemo(() => earthMarsLink(), []);
   if (kind === 'cables') {
     return weather
-      ? `Pico de Radiación Real DONKI: Clase ${weather.flareClass} (${formatFlareDate(weather.peakTime)}) — Reconecta los circuitos del blindaje.`
-      : 'Pico de Radiación detectado por NASA DONKI — Reconecta los circuitos del blindaje.';
+      ? tr(
+          `Pico de Radiación Real DONKI: Clase ${weather.flareClass} (${formatFlareDate(weather.peakTime)}) — Reconecta los circuitos del blindaje.`,
+          `Real DONKI Radiation Peak: Class ${weather.flareClass} (${formatFlareDate(weather.peakTime)}) — Reconnect the shield circuits.`,
+        )
+      : tr('Pico de Radiación detectado por NASA DONKI — Reconecta los circuitos del blindaje.', 'Radiation peak detected by NASA DONKI — Reconnect the shield circuits.');
   }
-  if (kind === 'dust') return DUST_FACT;
-  if (kind === 'leak') return LEAK_FACT;
-  if (kind === 'debris') return DEBRIS_FACT;
-  return `Deep Space Network de la NASA: Marte está a ≈ ${Math.round(link.distanceMillionKm)} millones de km — cada mensaje tarda ≈ ${Math.round(link.lightDelayMinutes)} minutos en llegar a la Tierra.`;
+  if (kind === 'dust') return dustFact();
+  if (kind === 'leak') return leakFact();
+  if (kind === 'debris') return debrisFact();
+  return tr(
+    `Deep Space Network de la NASA: Marte está a ≈ ${Math.round(link.distanceMillionKm)} millones de km — cada mensaje tarda ≈ ${Math.round(link.lightDelayMinutes)} minutos en llegar a la Tierra.`,
+    `NASA Deep Space Network: Mars is ≈ ${Math.round(link.distanceMillionKm)} million km away — each message takes ≈ ${Math.round(link.lightDelayMinutes)} minutes to reach Earth.`,
+  );
 }
 
 interface Props {
@@ -437,7 +444,7 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
             <Icon className="h-7 w-7" strokeWidth={1.75} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="font-mono text-xs tracking-[0.25em] text-slate-500">INTERVENCIÓN MANUAL // {meta.code}</p>
+            <p className="font-mono text-xs tracking-[0.25em] text-slate-500">{tr('INTERVENCIÓN MANUAL', 'MANUAL OVERRIDE')} // {meta.code}</p>
             <h2 className="font-display text-2xl font-black text-nasa-blue">{meta.title}</h2>
             <p className="text-sm font-semibold text-slate-600">{stakes}</p>
           </div>
@@ -449,9 +456,9 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
                 onSwitch();
               }}
               className="flex shrink-0 items-center gap-1.5 self-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
-              title="Prueba otro de los 5 minijuegos"
+              title={tr('Prueba otro de los 5 minijuegos', 'Try another of the 5 mini-games')}
             >
-              <Dices className="h-4 w-4" strokeWidth={1.75} /> Cambiar prueba
+              <Dices className="h-4 w-4" strokeWidth={1.75} /> {tr('Cambiar prueba', 'Switch test')}
             </button>
           )}
           <div className={`font-display shrink-0 rounded-xl border-2 px-4 py-1 text-center ${pct < 35 && phase === 'play' ? 'border-nasa-red text-nasa-red' : 'border-nasa-blue text-nasa-blue'}`}>
@@ -491,7 +498,7 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
                 exit={{ opacity: 0 }}
               >
                 <motion.span key={intro} initial={{ scale: 1.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="font-display text-7xl font-black text-nasa-blue">
-                  {intro > 0 ? intro : '¡YA!'}
+                  {intro > 0 ? intro : tr('¡YA!', 'GO!')}
                 </motion.span>
               </motion.div>
             )}
@@ -515,9 +522,9 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
               )}
               <div className="flex-1">
                 <p className={`font-display text-xl font-black ${phase === 'won' ? 'text-emerald-700' : 'text-nasa-red'}`}>
-                  {phase === 'won' ? '¡REPARACIÓN COMPLETADA!' : 'TIEMPO AGOTADO'}
+                  {phase === 'won' ? tr('¡REPARACIÓN COMPLETADA!', 'REPAIR COMPLETE!') : tr('TIEMPO AGOTADO', 'TIME IS UP')}
                 </p>
-                <p className="text-sm text-slate-700">{phase === 'won' ? 'Has evitado la avería a tiempo.' : 'La avería se ha activado en la base espacial.'}</p>
+                <p className="text-sm text-slate-700">{phase === 'won' ? tr('Has evitado la avería a tiempo.', 'You stopped the breakdown in time.') : tr('La avería se ha activado en la base espacial.', 'The breakdown has hit the space base.')}</p>
               </div>
               <button
                 type="button"
@@ -527,7 +534,7 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
                 }}
                 className="font-display flex items-center gap-2 rounded-xl bg-nasa-blue px-6 py-3 font-black tracking-wider text-white"
               >
-                <Wrench className="h-5 w-5" strokeWidth={1.75} /> CONTINUAR
+                <Wrench className="h-5 w-5" strokeWidth={1.75} /> {tr('CONTINUAR', 'CONTINUE')}
               </button>
             </motion.div>
           )}

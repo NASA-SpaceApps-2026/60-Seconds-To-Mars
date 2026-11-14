@@ -104,7 +104,7 @@ type MissionOutcome = 'victory' | 'evacuation';
 | `tickTimer()` | −1 s y avisos de A.R.I.A. en 40/20/10 s |
 | `sealBunker()` | → `PHASE_2_BUNKER`, máquinas ON por defecto |
 | `debugSkipToPhase2()` | Fase 2 con `DEBUG_INVENTORY` (sin botón en pantalla; lo usan las órdenes y `devQa`) |
-| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación: **supervivencia** → base espacial, **final** → pantalla final (victoria), **derrota** → evacuación. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
+| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación (ES / EN): **supervivencia / survival** → base espacial, **final / end** → pantalla final (victoria), **derrota / defeat** → evacuación. También en el panel del robot A.R.I.A. de la base. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
 | `toggleMachine`, `useConsumable` | Panel de ingeniería |
 | `loadSolEvent()` | Gemini/fallback, mínimo 700 ms de animación, ignora resultados obsoletos (`requestId`) |
 | `chooseOption(id)` | Aplica opción → `computeSolTick` → `solStage: 'report'` |
@@ -173,7 +173,7 @@ fallback local `getFallbackAriaAnswer` (barra más baja / qué máquina apagar /
 - **Lore:** año 2038, base Ares-IV (Cráter Jezero). Los adultos se fueron en el rover a 40 km; la tormenta solar (DONKI) les corta el paso. Leo, Vega, Max y A.R.I.A. aguantan 10 Soles.
 - **Modo Historia** (`StoryComicModal`, montado en `App.tsx` con carga diferida): lee `storyScene` del store (`'prologue' | 'lockdown' | 'radio_sol4' | 'radio_sol8'`).
   `startGame` → prólogo · `sealBunker` → compuertas · `continueAfterReport` al llegar a los Soles 4 y 8 → radio del rover. `closeStory()` la cierra ("Saltar historia").
-- **Deep Space Network** (`DeepSpaceLink`, `data/missionExtras.ts`): `orderHoustonPackage(id)` cuesta −10 Energía hoy, 1 pedido por Sol, **máx. 3 pedidos por partida** (`HOUSTON_MAX_ORDERS`, contador `houstonOrdersPlaced`) y **máx. 2 en camino a la vez** (`HOUSTON_MAX_IN_TRANSIT`: hasta que no llegue uno no se pide otro), llega en 2 Soles (`houstonOrders`; se entrega en `continueAfterReport`).
+- **Deep Space Network** (`DeepSpaceLink`, `data/missionExtras.ts`): `orderHoustonPackage(id)` cuesta −10 Energía hoy, 1 pedido por Sol, **máx. 3 pedidos por partida** (`HOUSTON_MAX_ORDERS`, contador `houstonOrdersPlaced`) y **solo 1 en camino a la vez** (`HOUSTON_MAX_IN_TRANSIT = 1`: hasta que no llega a la base no se puede pedir otro), llega en 2 Soles (`houstonOrders`; se entrega en `continueAfterReport`).
 - **Insignias** (`BADGES`, `awardBadge`, `badges`): Ingeniero Solar, Botánico GeneLab, Maestro del Trueque, Comunicador Deep Space, Héroe de Ares-IV. Se ven en el Periscopio (`PeriscopeModal`) y en la pantalla final.
 - **Avisos** flotantes de la base espacial: `notice` + `dismissNotice` (`MissionNoticeToast`).
 - **Distancia Tierra-Marte**: `utils/marsEphemeris.ts` (aproximación orbital; también da el retraso de la luz).
@@ -266,3 +266,18 @@ Si cambias una mecánica o un texto visible que aparece en estos documentos, act
 - **Pantallas que deben caber al 100 % de zoom incluso en ~1100×540** (portátil con escalado de Windows al 125-150 %): terminal de decisión (`max-h-[min(85dvh,…)]`, sin altura mínima fija), `ArrivalTransmission` (md+: foto a la izquierda y texto a la derecha; el botón de acción va FUERA de la zona con scroll) y la Cápsula Orbital. Velocímetros de la cabecera: `w-[clamp(64px,min(11vw,15dvh),140px)]`. Para comprobarlo: `#qa-bunker-decision`, `#qa-transmission`, `#qa-capsule`.
 - **Resumen post-quiz** (`Phase1Summary`): SIN avance automático; solo se entra a la base con el botón "ENTRAR A LA BASE ESPACIAL".
 - **Selector de modo** (`MissionSelector`, `#qa-selector`): credenciales ilustradas (casco de cadete / insignia de comandante, SVG propios), medidor de reto (estrellas + barras), datos reales de cada perfil (`answerOptions`, reservas, averías) y fondo animado (órbitas, estrellas, cohete, base en Marte). Botón INICIAR MISIÓN en una barra fija abajo. Excepción a la paleta monocromática del Menú: aquí se usa naranja para dar un toque infantil.
+
+## 15. Idioma (ES / EN)
+- **Selector** `LanguageToggle` arriba a la derecha de la portada; también `?lang=en` / `?lang=es` en la URL. Se guarda en `localStorage` (`ares-iv-language-v1`).
+- **Núcleo** `src/i18n/core.ts` (sin dependencias): `getLang()`, `tr(es, en)`, `withEnglish(obj, en)` y `localizeRecord(base, en)` (getters que devuelven el idioma activo).
+  Store: `language` + `setLanguage()` (cambia también la voz de A.R.I.A. a una voz del idioma). Componentes del Menú: hook `useT()` / `useLang()` (`src/i18n/useT.ts`).
+  El idioma solo se cambia en la portada, así que en las pantallas de juego basta con `tr()`.
+- **Traducciones de datos** en `src/i18n/en/` por id: `trivia.ts` (45 preguntas), `items.ts` (30 objetos), `events.ts` (10 eventos + mensajes de carga).
+  Metadatos (`VITAL_META`, `CATEGORY_META`, `RARITY_META`, `COMPLICATIONS`, `BADGES`, `HOUSTON_PACKAGES`, `SALVAGE_PRIZES`, `SPIN_META`, glosario, cartas) con `localizeRecord`.
+  Rango: el valor interno `Rank` sigue en español; se muestra con `RANK_LABEL[rank]`. Fotos de Marte: campos `summaryEn/whoEn/cameraEn/topicEn` y helper `photoText()`.
+- **Gemini**: en inglés se añade al prompt "IDIOMA DE SALIDA: inglés..." (reservando hueco antes de recortar a `MAX_PROMPT_CHARS`); la `SYSTEM_INSTRUCTION` lo contempla y `UNSAFE_WORDS` filtra también palabras inglesas.
+- **Regla:** todo texto visible nuevo va con `tr('español', 'English')` (o en el diccionario de `src/i18n/en/`).
+
+## 16. Cápsula Orbital: tirada ponderada por rareza
+`pickWeightedPrize(kind)` (`data/salvagePrizes.ts`) con `TIER_WEIGHTS`: Estándar 50 · Avanzado 26 · Prototipo 12 · Legendario 3 (antes era uniforme).
+El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" muestra el % real de cada premio (`prizeOdds`).

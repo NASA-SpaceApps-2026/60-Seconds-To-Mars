@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { playBlip, playPickup } from '../../utils/soundEffects';
+import { tr } from '../../i18n/core';
 
 // =====================================================================
 // Minijuego 4 · Tapar fugas de oxígeno en la tubería (whack-a-mole, 9 s)
@@ -100,7 +101,7 @@ export function LeakGame({ running, onWin }: { running: boolean; onWin: () => vo
         })}
       </svg>
       <p className="mt-2 text-sm font-bold text-slate-700">
-        Fugas tapadas: <span className="font-mono">{count} / {LEAKS.length}</span>
+        {tr('Fugas tapadas', 'Leaks patched')}: <span className="font-mono">{count} / {LEAKS.length}</span>
       </p>
     </div>
   );
@@ -236,7 +237,7 @@ export function DebrisGame({ running, onWin }: { running: boolean; onWin: () => 
         })}
       </svg>
       <p className="mt-2 text-sm font-bold text-slate-700">
-        Rocas destruidas: <span className="font-mono">{destroyed} / {ROCK_COUNT}</span>
+        {tr('Rocas destruidas', 'Rocks destroyed')}: <span className="font-mono">{destroyed} / {ROCK_COUNT}</span>
       </p>
     </div>
   );

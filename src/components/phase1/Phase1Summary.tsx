@@ -10,29 +10,30 @@ import SalvageRouletteModal from '../SalvageRouletteModal';
 import { ItemIcon, ResourceIcon, type ResourceKey } from '../icons';
 import { Phase1Header, SYSTEM_META } from './Phase1Shared';
 import { devOpenCapsule } from '../../utils/devQa';
+import { tr } from '../../i18n/core';
 
 /** Rango de los cadetes según cuántos aciertos lograron y con qué precisión. */
 function cadetRank(correct: number, accuracy: number): string {
-  if (correct >= 8 && accuracy >= 0.75) return 'Comandantes de Esclusa';
-  if (correct >= 5) return 'Ingenieros de Carga';
-  if (correct >= 2) return 'Cadetes Técnicos';
-  return 'Cadetes en Prácticas';
+  if (correct >= 8 && accuracy >= 0.75) return tr('Comandantes de Esclusa', 'Airlock Commanders');
+  if (correct >= 5) return tr('Ingenieros de Carga', 'Cargo Engineers');
+  if (correct >= 2) return tr('Cadetes Técnicos', 'Tech Cadets');
+  return tr('Cadetes en Prácticas', 'Trainee Cadets');
 }
 
 /** Efecto principal de un objeto en la base espacial, en forma de cifras con icono. */
 function itemEffect(item: StationItem): { deltas: [ResourceKey, number][]; note?: string } {
   if (item.kind === 'consumable' && item.useEffect) {
-    return { deltas: (Object.entries(item.useEffect) as [keyof Effects, number][]).slice(0, 2), note: 'al usar' };
+    return { deltas: (Object.entries(item.useEffect) as [keyof Effects, number][]).slice(0, 2), note: tr('al usar', 'when used') };
   }
   if (item.kind === 'tool') return { deltas: [], note: 'Herramienta: abre opciones' };
-  if (item.radiationReduction) return { deltas: [], note: `−${item.radiationReduction} radiación por Sol` };
+  if (item.radiationReduction) return { deltas: [], note: tr(`−${item.radiationReduction} radiación por Sol`, `−${item.radiationReduction} radiation per Sol`) };
   if (item.id === 'lead_blanket') return { deltas: [], note: 'Radiación ÷2' };
   const deltas: [ResourceKey, number][] = [];
   if (item.powerPerSol) deltas.push(['power', item.powerPerSol]);
   for (const [k, v] of Object.entries(item.effectPerSol ?? {}) as [keyof Effects, number][]) {
     if (k !== 'power' && v) deltas.push([k, v]);
   }
-  return { deltas: deltas.slice(0, 2), note: item.kind === 'machine' ? 'por Sol (ON)' : 'por Sol' };
+  return { deltas: deltas.slice(0, 2), note: item.kind === 'machine' ? tr('por Sol (ON)', 'per Sol (ON)') : tr('por Sol', 'per Sol') };
 }
 
 function SupplyCard({ id, index }: { id: ItemId; index: number }) {
@@ -110,7 +111,14 @@ export default function Phase1Summary() {
   return (
     <div className="relative flex min-h-dvh flex-col bg-slate-100 lg:h-dvh lg:overflow-hidden">
       <div className="bg-grid pointer-events-none absolute inset-0" />
-      <Phase1Header step={3} title="Manifiesto de Carga" subtitle={`${correct} aciertos de ${answers.length} preguntas · ${inventory.length} suministros a la base espacial`} />
+      <Phase1Header
+        step={3}
+        title={tr('Manifiesto de Carga', 'Cargo Manifest')}
+        subtitle={tr(
+          `${correct} aciertos de ${answers.length} preguntas · ${inventory.length} suministros a la base espacial`,
+          `${correct} right out of ${answers.length} questions · ${inventory.length} supplies to the space base`,
+        )}
+      />
 
       <main className="thin-scroll relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-y-auto py-3 sm:py-4 big:py-8">
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-3 px-4 sm:px-6 lg:gap-4 xl:max-w-6xl 2xl:max-w-7xl big:gap-6 big:px-8 min-[1800px]:max-w-[min(94vw,104rem)]! [&>*]:w-full">
@@ -121,37 +129,37 @@ export default function Phase1Summary() {
               <Target className="h-6 w-6 big:h-9 big:w-9" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
-              <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">ACIERTOS</p>
+              <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">{tr('ACIERTOS', 'RIGHT ANSWERS')}</p>
               <p className="font-display text-2xl font-black leading-none text-nasa-blue big:text-4xl">
                 {correct}
                 <span className="text-base text-slate-400 big:text-xl"> / {answers.length}</span>
               </p>
-              <p className="text-xs text-slate-500 big:text-sm">Precisión {Math.round(accuracy * 100)} %</p>
+              <p className="text-xs text-slate-500 big:text-sm">{tr('Precisión', 'Accuracy')} {Math.round(accuracy * 100)} %</p>
             </div>
           </div>
           <div className="hw-panel flex flex-col justify-center gap-1.5 p-3 big:gap-3 big:p-6">
             <div className="flex items-center justify-between">
-              <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">PREPARACIÓN DE LA BASE ESPACIAL</p>
+              <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">{tr('PREPARACIÓN DE LA BASE ESPACIAL', 'SPACE BASE READINESS')}</p>
               <span className="font-display text-xl font-black text-slate-900 big:text-4xl">{readiness} %</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 big:h-3.5">
               <motion.div className={`h-full ${readinessColor}`} initial={{ width: 0 }} animate={{ width: `${readiness}%` }} transition={{ duration: 0.9, ease: 'easeOut' }} />
             </div>
-            <p className="text-xs text-slate-500 big:text-sm">Equipo conseguido y estado inicial de las barras.</p>
+            <p className="text-xs text-slate-500 big:text-sm">{tr('Equipo conseguido y estado inicial de las barras.', 'Equipment obtained and starting bar levels.')}</p>
           </div>
           <div className="hw-panel flex items-center gap-3 p-3 big:gap-4 big:p-6">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-nasa-blue text-white big:h-16 big:w-16">
               <Award className="h-6 w-6 big:h-9 big:w-9" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
-              <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">RANGO DE LA TRIPULACIÓN</p>
+              <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">{tr('RANGO DE LA TRIPULACIÓN', 'CREW RANK')}</p>
               <p className="text-lg font-black leading-tight text-slate-900 big:text-2xl">{cadetRank(correct, accuracy)}</p>
             </div>
           </div>
         </section>
 
         {/* Diagnóstico por rama (compacto) */}
-        <section className="flex flex-wrap justify-center gap-2" aria-label="Aciertos por sistema">
+        <section className="flex flex-wrap justify-center gap-2" aria-label={tr('Aciertos por sistema', 'Right answers per system')}>
           {VITAL_ORDER.map((k: VitalKey) => {
             const st = stats?.[k] ?? { correct: 0, answered: 0 };
             const failed = complications.includes(k);
@@ -177,12 +185,12 @@ export default function Phase1Summary() {
         {/* ---- Grid de suministros asegurados ---- */}
         <section className="hw-panel p-3 sm:p-4 big:p-6">
           <h2 className="flex items-center gap-2 text-base font-bold text-slate-900 big:text-xl">
-            <ClipboardList className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} /> Suministros asegurados
+            <ClipboardList className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} /> {tr('Suministros asegurados', 'Secured supplies')}
             <span className="rounded-md bg-nasa-blue px-2 py-0.5 font-mono text-xs text-white">{inventory.length}</span>
           </h2>
           {inventory.length === 0 ? (
             <p className="mt-2 rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">
-              No ha entrado ningún suministro. Tendréis que aguantar con ingenio... ¡y con la ayuda de Houston!
+              {tr('No ha entrado ningún suministro. Tendréis que aguantar con ingenio... ¡y con la ayuda de Houston!', 'No supplies made it in. You will have to hold out with your wits... and with help from Houston!')}
             </p>
           ) : (
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 big:mt-4 big:gap-4">
@@ -193,7 +201,7 @@ export default function Phase1Summary() {
           )}
           {bonusKeys.length > 0 && (
             <p className="mt-3 flex flex-wrap items-center gap-1.5 text-sm font-bold text-nasa-blue">
-              <Gift className="h-4 w-4" strokeWidth={1.75} /> Bonus de la Cápsula al empezar:
+              <Gift className="h-4 w-4" strokeWidth={1.75} /> {tr('Bonus de la Cápsula al empezar:', 'Capsule bonus at the start:')}
               {bonusKeys.map((k) => (
                 <span key={k} className="inline-flex items-center gap-0.5 rounded bg-blue-50 px-1.5 font-mono">
                   +{supplyBonus[k] ?? 0} <ResourceIcon k={k} className="h-3.5 w-3.5" />
@@ -207,7 +215,8 @@ export default function Phase1Summary() {
         {complications.length > 0 ? (
           <section className="flex flex-col gap-2 rounded-xl border-2 border-nasa-red bg-red-50 p-3 lg:flex-row lg:items-center big:gap-4 big:p-6">
             <p className="flex shrink-0 items-center gap-2 font-mono text-sm font-bold tracking-wider text-nasa-red big:text-base">
-              <TriangleExclamationPoint className="h-5 w-5" strokeWidth={2} /> DIAGNÓSTICO: {complications.length} {complications.length === 1 ? 'AVERÍA INICIAL' : 'AVERÍAS INICIALES'}
+              <TriangleExclamationPoint className="h-5 w-5" strokeWidth={2} /> {tr('DIAGNÓSTICO', 'DIAGNOSTIC')}: {complications.length}{' '}
+              {complications.length === 1 ? tr('AVERÍA INICIAL', 'STARTING BREAKDOWN') : tr('AVERÍAS INICIALES', 'STARTING BREAKDOWNS')}
             </p>
             <div className="flex flex-1 flex-wrap gap-2">
               {complications.map((c) => (
@@ -215,16 +224,17 @@ export default function Phase1Summary() {
                   <Wrench className="h-4 w-4 text-nasa-red" strokeWidth={1.75} />
                   <b>{COMPLICATIONS[c].title}</b>
                   <span className="font-mono text-xs text-nasa-red">
-                    {COMPLICATIONS[c].startPenalty} inicial · {COMPLICATIONS[c].dailyPenalty}/Sol
+                    {COMPLICATIONS[c].startPenalty} {tr('inicial', 'at start')} · {COMPLICATIONS[c].dailyPenalty}/Sol
                   </span>
                 </span>
               ))}
             </div>
-            <p className="text-xs text-slate-600 lg:max-w-[15rem] big:text-sm">Se reparan dentro de la base espacial superando un minijuego.</p>
+            <p className="text-xs text-slate-600 lg:max-w-[15rem] big:text-sm">{tr('Se reparan dentro de la base espacial superando un minijuego.', 'They are fixed inside the space base by beating a mini-game.')}</p>
           </section>
         ) : (
           <section className="flex items-center gap-2 rounded-xl border-2 border-emerald-400 bg-emerald-50 p-3 text-sm font-bold text-emerald-800 big:p-6 big:text-base">
-            <CircleCheck className="h-5 w-5 shrink-0" strokeWidth={1.75} /> Diagnóstico de esclusa: todos los sistemas operativos. La base espacial empieza sin averías.
+            <CircleCheck className="h-5 w-5 shrink-0" strokeWidth={1.75} />{' '}
+            {tr('Diagnóstico de esclusa: todos los sistemas operativos. La base espacial empieza sin averías.', 'Airlock diagnostic: all systems operational. The space base starts with no breakdowns.')}
           </section>
         )}
 
@@ -241,7 +251,7 @@ export default function Phase1Summary() {
               }}
               className="font-display flex items-center justify-center gap-2 rounded-2xl bg-nasa-red px-7 py-3.5 text-base font-black tracking-wider text-white shadow-lg sm:text-lg big:px-10 big:py-5 big:text-xl"
             >
-              <PackageOpen strokeWidth={1.75} /> CÁPSULA DE RESCATE GRATIS ({freeSpins})
+              <PackageOpen strokeWidth={1.75} /> {tr('CÁPSULA DE RESCATE GRATIS', 'FREE RESCUE CAPSULE')} ({freeSpins})
             </motion.button>
           )}
           <motion.button
@@ -255,7 +265,7 @@ export default function Phase1Summary() {
             }}
             className="font-display glow-blue flex items-center justify-center gap-2 rounded-2xl bg-nasa-blue px-8 py-3.5 text-base font-black tracking-wider text-white disabled:opacity-60 sm:text-lg big:px-12 big:py-5 big:text-xl"
           >
-            <DoorClosed /> {sealing ? 'SELLANDO...' : 'ENTRAR A LA BASE ESPACIAL'}
+            <DoorClosed /> {sealing ? tr('SELLANDO...', 'SEALING...') : tr('ENTRAR A LA BASE ESPACIAL', 'ENTER THE SPACE BASE')}
           </motion.button>
         </section>
         </div>

@@ -6,6 +6,7 @@ import { CATEGORY_META, ITEMS_BY_ID, RARITY_META } from '../../data/stationItems
 import AriaAssistantWidget from '../AriaAssistantWidget';
 import MissionPatch from '../MissionPatchLogo';
 import { ItemIcon, RESOURCE_ICONS } from '../icons';
+import { tr } from '../../i18n/core';
 
 /** Identidad monocromática de cada sistema: icono vectorial + código técnico (sin colores por rama). */
 export const SYSTEM_META: Record<VitalKey, { code: string; Icon: LucideIcon }> = {
@@ -42,7 +43,7 @@ export function Phase1Header({
   right?: ReactNode;
   triviaSeconds?: number;
 }) {
-  const steps = ['Preparados', `${triviaSeconds} s de Trivia`, 'Resumen'];
+  const steps = [tr('Preparados', 'Ready'), tr(`${triviaSeconds} s de Trivia`, `${triviaSeconds} s Trivia`), tr('Resumen', 'Summary')];
   return (
     <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b border-slate-300 bg-white px-4 py-2 shadow-sm md:grid-cols-[1fr_auto_1fr]">
       <div className="flex min-w-0 items-center gap-3">
@@ -119,7 +120,7 @@ export function RewardReveal({ id }: { id: ItemId }) {
       </span>
       <div className="relative min-w-0">
         <p className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-nasa-blue">
-          <Gift className="h-3.5 w-3.5" strokeWidth={1.75} /> Equipo conseguido
+          <Gift className="h-3.5 w-3.5" strokeWidth={1.75} /> {tr('Equipo conseguido', 'Equipment obtained')}
         </p>
         <p className="text-base font-black leading-tight text-slate-900">{item.name}</p>
         <span className={`mt-1 inline-block rounded border px-1.5 text-xs font-extrabold ${meta.badge}`}>{meta.label}</span>
