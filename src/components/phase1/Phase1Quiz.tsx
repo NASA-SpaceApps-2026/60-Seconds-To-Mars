@@ -194,6 +194,7 @@ export default function Phase1Quiz() {
                     <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-600">
                       <Icon className="h-4 w-4" strokeWidth={2} />
                     </span>
+
                     <span>
                       <b className="text-slate-900">{title}</b> → {text}
                     </span>
@@ -317,8 +318,10 @@ export default function Phase1Quiz() {
         </section>
 
         {/* ===== Inventario por ramas ===== */}
+
         <aside ref={inventoryRef} className={`${CARD} relative flex w-full shrink-0 flex-col gap-2 overflow-hidden p-4 pt-5 lg:w-80`}>
           <span className="pointer-events-none absolute inset-x-0 top-0 h-2 bg-nasa-blue" aria-hidden />
+
           <p className="flex items-center gap-2 text-sm font-extrabold text-nasa-blue">
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-600">
               <Backpack className="h-4 w-4" strokeWidth={2} />
@@ -330,6 +333,7 @@ export default function Phase1Quiz() {
               const st = stats[cat];
               return (
                 <div key={cat} className="rounded-xl bg-slate-50 p-2.5">
+
                   <div className="flex items-center justify-between text-xs">
                     <SystemLabel cat={cat} />
                     <span className={`font-extrabold ${st.answered > 0 && st.correct === 0 ? 'text-nasa-red' : 'text-slate-500'}`}>

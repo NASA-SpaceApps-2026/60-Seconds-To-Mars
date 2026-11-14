@@ -8,6 +8,7 @@ import AriaAssistantWidget from './AriaAssistantWidget';
 import AriaCommandInput from './AriaCommandInput';
 import MissionPatch from './MissionPatchLogo';
 import LanguageToggle from './LanguageToggle';
+import SpaceBackdrop from './SpaceBackdrop';
 import { useT } from '../i18n/useT';
 
 /**
@@ -31,13 +32,25 @@ export default function MenuScreen() {
       onPointerDown={unlockAudio}
     >
       <div className="bg-grid pointer-events-none absolute inset-0" />
+      <SpaceBackdrop />
       <div
-        className="pointer-events-none absolute -bottom-[clamp(10rem,30vw,18rem)] -right-[clamp(8rem,20vw,12rem)] h-[clamp(18rem,40vw,36rem)] w-[clamp(18rem,40vw,36rem)] rounded-full opacity-90"
-        style={{
-          background: 'radial-gradient(circle at 30% 30%, #fdba74 0%, #ea580c 40%, #9a3412 72%, #431407 100%)',
-          boxShadow: '0 0 0 14px rgba(255,255,255,0.7), 0 0 0 16px #cbd5e1',
-        }}
-      />
+        className="pointer-events-none absolute -bottom-[clamp(10rem,30vw,18rem)] -right-[clamp(8rem,20vw,12rem)] h-[clamp(18rem,40vw,36rem)] w-[clamp(18rem,40vw,36rem)] opacity-90"
+        aria-hidden
+      >
+        <div className="absolute -inset-4 rounded-full border-2 border-slate-300/80" />
+        <div className="absolute inset-0 overflow-hidden rounded-full border-[5px] border-slate-300 bg-[#7c2d12] shadow-[inset_-28px_-24px_42px_rgba(67,20,7,0.55),0_0_0_14px_rgba(255,255,255,0.72),0_18px_40px_rgba(15,23,42,0.18)]">
+          <motion.img
+            src="/mars/mars-globe.jpg"
+            alt=""
+            className="h-full w-full scale-[1.03] object-cover"
+            style={{ filter: 'sepia(0.28) saturate(1.65) hue-rotate(-8deg) brightness(1.04) contrast(1.06)' }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 120, repeat: Infinity, ease: 'linear' }}
+            aria-hidden
+          />
+          <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,214,170,0.2),transparent_28%),linear-gradient(135deg,transparent_42%,rgba(124,45,18,0.42)_100%)]" />
+        </div>
+      </div>
       <div className="pointer-events-none absolute left-0 top-0 h-2 w-full bg-nasa-blue" />
       <div className="pointer-events-none absolute left-0 top-2 h-1 w-full bg-nasa-red" />
       <LanguageToggle className="absolute right-[clamp(0.75rem,2vw,1.5rem)] top-[clamp(0.9rem,2.5dvh,1.5rem)] z-20" />
