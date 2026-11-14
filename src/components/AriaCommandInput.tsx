@@ -25,7 +25,7 @@ function getRecognition(): RecognitionCtor | null {
 
 /**
  * Terminal de órdenes de A.R.I.A. (atajos para las presentaciones):
- *  - "supervivencia" / "survival" → salta la trivia y empieza en la base espacial.
+ *  - "10" → salta la trivia y empieza en la base espacial.
  *  - "final" / "end"               → termina la partida y abre la pantalla final.
  *  - "derrota" / "defeat"          → pantalla final de evacuación (con el análisis de fallos).
  * Se puede escribir o decir en voz alta (micrófono, si el navegador lo permite).
@@ -99,7 +99,7 @@ export default function AriaCommandInput({ className = '' }: { className?: strin
           maxLength={60}
           placeholder={t('Orden para A.R.I.A....', 'Command for A.R.I.A....')}
           aria-label={t('Orden para A.R.I.A.', 'Command for A.R.I.A.')}
-          title={t('Órdenes rápidas: supervivencia · final · derrota', 'Quick commands: survival · end · defeat')}
+          title={t('Órdenes rápidas: 10 · final · derrota', 'Quick commands: 10 · end · defeat')}
           className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
         />
         {Recognition && (
