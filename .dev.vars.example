@@ -1,0 +1,4 @@
+# Copia este archivo como .dev.vars para probar el proxy de Cloudflare en local
+# (npx wrangler pages dev). NUNCA subas .dev.vars a Git.
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-3.5-flash
