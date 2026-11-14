@@ -606,7 +606,6 @@ function defaultMachineStates(inventory: ItemId[], complications: VitalKey[]): P
 export const useGameStore = create<GameStore>()((set, get) => ({
   gamePhase: 'MENU',
   missionDifficulty: 'explorer',
-  totalSols: EXPLORER_TOTAL_SOLS,
   nasaWeather: null,
   nasaStatus: 'idle',
   marsPhotos: [],
