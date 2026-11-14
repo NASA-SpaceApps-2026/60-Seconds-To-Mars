@@ -39,7 +39,7 @@ export default function App() {
     runDevQaScenario();
   }, []);
 
-  // Órdenes rápidas de presentación: teclear "final", "supervivencia" o "derrota" en cualquier pantalla
+  // Órdenes rápidas de presentación: teclear "10", "final" o "derrota" en cualquier pantalla
   // (fuera de un campo de texto) equivale a decírselo a A.R.I.A.
   useEffect(() => {
     let buffer = '';
@@ -48,7 +48,7 @@ export default function App() {
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
       buffer = (buffer + e.key.toLowerCase()).slice(-20);
-      for (const cmd of ['supervivencia', 'survival', 'final', 'derrota', 'defeat']) {
+      for (const cmd of ['10', 'final', 'end', 'derrota', 'defeat']) {
         if (buffer.endsWith(cmd)) {
           buffer = '';
           useGameStore.getState().runAriaCommand(cmd);

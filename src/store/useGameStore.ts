@@ -515,7 +515,7 @@ interface GameActions {
   finishQuiz: () => void;
   sealBunker: () => void;
   debugSkipToPhase2: () => void;
-  /** Comandos rápidos de presentación: 'supervivencia', 'final', 'derrota'. Devuelve true si lo reconoce. */
+  /** Comandos rápidos de presentación: '10', 'final', 'derrota'. Devuelve true si lo reconoce. */
   runAriaCommand: (text: string) => boolean;
   /** Termina la partida al instante y lleva a la pantalla final. */
   forceGameOver: (outcome: MissionOutcome) => void;
@@ -858,19 +858,20 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       .toLowerCase()
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z]+/g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
       .trim()
       .split(' ');
-    if (words.includes('supervivencia') || words.includes('survival')) {
+    const command = words.join(' ');
+    if (command === '10' || command === 'supervivencia' || command === 'survival') {
       get().debugSkipToPhase2();
-      get().ariaSay(tr('Comando aceptado. Saltamos directamente a la fase de supervivencia en la base espacial.', 'Command accepted. Jumping straight to the survival phase in the space base.'));
+      get().ariaSay(tr('Comando aceptado. Saltamos directamente a los 10 Soles en la base espacial.', 'Command accepted. Jumping straight to the 10-Sol mission in the space base.'));
       return true;
     }
-    if (words.includes('final') || words.includes('end')) {
+    if (command === 'final' || command === 'end') {
       get().forceGameOver('victory');
       return true;
     }
-    if (words.includes('derrota') || words.includes('defeat')) {
+    if (command === 'derrota' || command === 'defeat') {
       get().forceGameOver('evacuation');
       return true;
     }

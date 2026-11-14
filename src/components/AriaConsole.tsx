@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LoaderCircle, MessageCircle, Send } from 'lucide-react';
-import { askAriaQuestion } from '../services/geminiGameMaster';
+import { askAriaQuestion, getFallbackAriaAnswer } from '../services/geminiGameMaster';
 import { MAX_QUESTION_CHARS } from '../services/geminiSchemas';
 import { availableItems, useGameStore } from '../store/useGameStore';
 import { useAriaTypedText } from '../utils/useAriaVoiceState';
@@ -28,7 +28,7 @@ export default function AriaConsole() {
   const ask = async (text: string) => {
     const q = text.trim().slice(0, MAX_QUESTION_CHARS);
     if (!q || loading) return;
-    // Órdenes rápidas de presentación ("final", "supervivencia", "derrota")
+    // Órdenes rápidas de presentación ("10", "final", "derrota")
     if (q.split(/\s+/).length <= 2 && useGameStore.getState().runAriaCommand(q)) {
       setQuestion('');
       return;
@@ -41,20 +41,26 @@ export default function AriaConsole() {
     setAnswer(null);
 
     const s = useGameStore.getState();
-    const reply = await askAriaQuestion(
-      q,
-      {
-        sol: s.sol,
-        totalSols: s.totalSols,
-        vitals: s.vitals,
-        science: s.scienceScore,
-        inventory: availableItems(s.bunkerInventory, s.consumedItems),
-        machineStates: s.machineStates,
-      },
-      s.currentEvent,
-    );
+    const gameState = {
+      sol: s.sol,
+      totalSols: s.totalSols,
+      vitals: s.vitals,
+      science: s.scienceScore,
+      inventory: availableItems(s.bunkerInventory, s.consumedItems),
+      machineStates: s.machineStates,
+    };
+    let reply: string;
+    try {
+      reply = await askAriaQuestion(q, gameState, s.currentEvent);
+    } catch (error) {
+      console.warn('[A.R.I.A.] Error inesperado; usando respuesta local:', error);
+      reply = getFallbackAriaAnswer(q, gameState, s.currentEvent);
+    }
     // Si la partida cambió de fase mientras esperábamos, no hablar
-    if (useGameStore.getState().gamePhase !== 'PHASE_2_BUNKER') return;
+    if (useGameStore.getState().gamePhase !== 'PHASE_2_BUNKER') {
+      setLoading(false);
+      return;
+    }
     setAnswer(reply);
     setLoading(false);
     setQuestion('');

@@ -141,7 +141,7 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
             style={{ transformOrigin: 'top right' }}
-            className="thin-scroll mt-2 max-h-[calc(100dvh-13rem)] w-[min(28rem,calc(100vw-1.5rem))] sm:mt-3 sm:max-h-[min(82vh,calc(100dvh-14rem))] overflow-y-auto rounded-2xl border-2 border-slate-300 bg-white/95 p-3 shadow-2xl backdrop-blur-md"
+            className="thin-scroll mt-2 max-h-[min(60dvh,calc(100dvh-16rem))] w-[min(28rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl border-2 border-slate-300 bg-white/95 p-3 shadow-2xl backdrop-blur-md sm:mt-3 sm:max-h-[min(62dvh,calc(100dvh-16rem))]"
             role="dialog"
             aria-label={t('A.R.I.A.: preguntas y voz', 'A.R.I.A.: questions and voice')}
           >
