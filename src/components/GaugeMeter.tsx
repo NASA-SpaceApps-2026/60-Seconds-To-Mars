@@ -22,6 +22,9 @@ export default function GaugeMeter({ label, resource, value, forecast, nativeTit
   const v = Math.max(0, Math.min(100, Math.round(value)));
   const color = v > 50 ? '#16a34a' : v >= 25 ? '#f59e0b' : '#dc2626';
   const critical = v < 25;
+  const accessibleLabel = `${label}: ${v} de 100${critical ? ', nivel crítico' : ''}${
+    forecast !== undefined ? `. Previsión al acabar el Sol: ${forecast >= 0 ? '+' : ''}${forecast}` : ''
+  }`;
   // Marcador sobre el borde exterior del arco: 180° (vacío) → 0° (lleno)
   const markerAngle = Math.PI - (v / 100) * Math.PI;
   const marker = { x: CX + Math.cos(markerAngle) * (R + 7), y: CY - Math.sin(markerAngle) * (R + 7) };
@@ -43,7 +46,7 @@ export default function GaugeMeter({ label, resource, value, forecast, nativeTit
       className={`flex min-w-0 flex-col items-center ${className}`}
       title={nativeTitle ? `${label}: ${v}/100${forecast !== undefined ? ` · Previsión al acabar el Sol: ${forecast >= 0 ? '+' : ''}${forecast}` : ''}` : undefined}
     >
-      <svg viewBox="0 0 120 74" className="w-full max-w-[140px]" role="img" aria-label={`${label} ${v} de 100`}>
+      <svg viewBox="0 0 120 74" className="w-full max-w-[140px]" role="img" aria-label={accessibleLabel}>
         {/* Bisel del instrumento */}
         <path d={`M${CX - R - 8} ${CY} A${R + 8} ${R + 8} 0 0 1 ${CX + R + 8} ${CY} Z`} fill="#f8fafc" stroke="#cbd5e1" strokeWidth={1.5} />
         {/* Zonas de color */}

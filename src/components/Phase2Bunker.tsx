@@ -172,6 +172,7 @@ function OptionButton({
         onChoose();
       }}
       aria-disabled={!available}
+      aria-label={`${option.label}. ${available ? 'Disponible.' : lockReason}`}
       title={option.description || undefined}
       className={`box-border flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border-2 p-3 text-left transition-colors sm:flex-nowrap sm:p-4 ${
         !available
@@ -492,6 +493,7 @@ export default function Phase2Bunker() {
               className="pointer-events-auto w-full cursor-help"
             >
               <motion.p
+                role="alert"
                 className="flex w-full items-center gap-2 rounded-lg border border-amber-400 bg-slate-950/85 px-3 py-2 text-sm font-bold text-amber-300 shadow-lg"
                 animate={{ opacity: [1, 0.6, 1] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
@@ -503,7 +505,7 @@ export default function Phase2Bunker() {
             </KidTooltip>
           )}
           {lowPower && (
-            <p className="flex items-center gap-2 rounded-lg border border-sky-400 bg-slate-950/85 px-3 py-2 text-sm font-bold text-sky-300 shadow-lg">
+            <p role="status" className="flex items-center gap-2 rounded-lg border border-sky-400 bg-slate-950/85 px-3 py-2 text-sm font-bold text-sky-300 shadow-lg">
               <BatteryLow className="h-5 w-5 shrink-0" strokeWidth={2} />
               <span className="font-mono tracking-wider">MODO AHORRO</span>
               <span className="ml-auto text-xs text-sky-200">Energía baja</span>
@@ -812,6 +814,7 @@ export default function Phase2Bunker() {
                 transition={{ type: 'spring', stiffness: 220, damping: 28 }}
                 className="absolute bottom-[3%] left-1/2 z-40 flex max-h-[min(82vh,94%)] w-[min(64rem,calc(100%-2rem))] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-white shadow-2xl"
                 role="dialog"
+                aria-modal="true"
                 aria-label={`Terminal de misión, Sol ${sol}`}
               >
                 <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-slate-50 px-5 py-2.5">
