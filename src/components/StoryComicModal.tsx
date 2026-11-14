@@ -381,6 +381,29 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
   }
 }
 
+/**
+ * Contenido de una viñeta. Con `reserve` se pinta invisible (sin la ilustración animada, solo su hueco 16:10)
+ * para fijar de antemano el tamaño de la celda.
+ */
+function PanelFrame({ panel, reserve = false }: { panel: Panel; reserve?: boolean }) {
+  const body = (
+    <>
+      <div className="aspect-[16/10] w-full shrink-0 border-b-4 border-slate-900 bg-slate-900">{reserve ? null : panel.art}</div>
+      <figcaption className="flex flex-1 flex-col gap-2 p-4">
+        <span className="w-fit rounded bg-slate-900 px-2 py-0.5 font-mono text-xs font-bold uppercase tracking-wider text-white">{panel.speaker}</span>
+        <p className="text-lg font-semibold leading-snug text-slate-900">{panel.text}</p>
+        {panel.extra}
+      </figcaption>
+    </>
+  );
+  if (!reserve) return body;
+  return (
+    <div className="invisible flex flex-col border-4 border-transparent" aria-hidden>
+      {body}
+    </div>
+  );
+}
+
 function StoryContent({ scene }: { scene: StoryScene }) {
   const { title, panels } = useScenePanels(scene);
   const closeStory = useGameStore((s) => s.closeStory);
@@ -414,9 +437,10 @@ function StoryContent({ scene }: { scene: StoryScene }) {
   });
 
   const cols = panels.length >= 3 ? 'lg:grid-cols-3' : panels.length === 2 ? 'md:grid-cols-2' : '';
+  const single = panels.length === 1;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-5">
+    <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 p-5">
       <div className="flex items-center gap-3">
         <span className="grid h-10 w-10 place-items-center rounded-lg border border-slate-600 bg-slate-800 text-white">
           {scene.startsWith('radio') ? <Radio className="h-5 w-5" strokeWidth={1.75} /> : <BookOpen className="h-5 w-5" strokeWidth={1.75} />}
@@ -437,30 +461,34 @@ function StoryContent({ scene }: { scene: StoryScene }) {
         </button>
       </div>
 
-      <div className={`grid flex-1 content-center gap-4 ${cols}`}>
-        {panels.map((p, i) => (
-          <AnimatePresence key={i}>
-            {i < shown ? (
-              <motion.figure
-                initial={{ opacity: 0, y: 24, rotate: i % 2 ? 1.5 : -1.5, scale: 0.92 }}
-                animate={{ opacity: 1, y: 0, rotate: i % 2 ? 0.6 : -0.6, scale: 1 }}
-                transition={{ type: 'spring', stiffness: 140, damping: 16 }}
-                className={`flex flex-col overflow-hidden rounded-lg border-4 border-slate-900 bg-white shadow-[6px_6px_0_0_rgba(2,6,23,0.6)] ${
-                  panels.length === 1 ? 'mx-auto w-full max-w-3xl' : ''
-                }`}
-              >
-                <div className="aspect-[16/10] w-full border-b-4 border-slate-900 bg-slate-900">{p.art}</div>
-                <figcaption className="flex flex-1 flex-col gap-2 p-4">
-                  <span className="w-fit rounded bg-slate-900 px-2 py-0.5 font-mono text-xs font-bold uppercase tracking-wider text-white">{p.speaker}</span>
-                  <p className="text-lg font-semibold leading-snug text-slate-900">{p.text}</p>
-                  {p.extra}
-                </figcaption>
-              </motion.figure>
-            ) : (
-              <div className="hidden min-h-[12rem] rounded-lg border-4 border-dashed border-slate-700 lg:block" aria-hidden />
-            )}
-          </AnimatePresence>
-        ))}
+      {/* Zona de viñetas: único scroll (solo si no cabe) con hueco de barra reservado, así nunca empuja el layout */}
+      <div className="thin-scroll min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+        <div className={`grid min-h-full content-center gap-4 ${cols}`}>
+          {panels.map((p, i) => (
+            /* Cada celda ya mide lo mismo que su viñeta final (copia invisible): aparecer no cambia ninguna altura.
+               overflow-clip recorta el desplazamiento de entrada (y/scale) sin crear otra zona de scroll. */
+            <div
+              key={i}
+              className={`relative overflow-clip p-2 ${single ? 'mx-auto w-full max-w-[min(48rem,calc((100dvh-17rem)*1.6))]' : ''}`}
+            >
+              <PanelFrame panel={p} reserve />
+              <AnimatePresence>
+                {i < shown ? (
+                  <motion.figure
+                    initial={{ opacity: 0, y: 24, rotate: i % 2 ? 1.5 : -1.5, scale: 0.92 }}
+                    animate={{ opacity: 1, y: 0, rotate: i % 2 ? 0.6 : -0.6, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 140, damping: 16 }}
+                    className="absolute inset-2 flex flex-col overflow-hidden rounded-lg border-4 border-slate-900 bg-white shadow-[6px_6px_0_0_rgba(2,6,23,0.6)]"
+                  >
+                    <PanelFrame panel={p} />
+                  </motion.figure>
+                ) : (
+                  <div className="absolute inset-2 rounded-lg border-4 border-dashed border-slate-700" aria-hidden />
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-3">
@@ -491,7 +519,7 @@ export default function StoryComicModal() {
       {scene && (
         <motion.div
           key={scene}
-          className="fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-slate-950/92 backdrop-blur-md"
+          className="fixed inset-0 z-[60] flex h-dvh flex-col overflow-hidden bg-slate-950/92 backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
