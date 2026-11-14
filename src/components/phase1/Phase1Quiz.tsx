@@ -210,12 +210,15 @@ export default function Phase1Quiz() {
                       <Check className="h-4 w-4 text-nasa-blue" /> {correctCount}
                     </span>
                   </div>
-                  <h2 className="max-w-3xl text-2xl font-bold leading-snug text-slate-900 md:text-3xl">{q.question}</h2>
+                  <h2 aria-live="polite" className="max-w-3xl text-2xl font-bold leading-snug text-slate-900 md:text-3xl">
+                    {q.question}
+                  </h2>
                   {/* Hueco fijo para la respuesta (evita saltos de layout) */}
                   <div className="flex h-10 items-center justify-center">
                     <AnimatePresence>
                       {result && (
                         <motion.p
+                          role="status"
                           initial={{ opacity: 0, y: 6 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
@@ -250,6 +253,7 @@ export default function Phase1Quiz() {
                         animate={result && picked && !isCorrect ? { x: [0, -8, 8, -5, 5, 0] } : {}}
                         disabled={Boolean(result)}
                         onClick={(e) => choose(ans, e)}
+                        aria-label={`Respuesta ${'ABCD'[i]}: ${ans}`}
                         className={`relative flex min-h-[110px] items-center justify-center rounded-2xl border-2 p-6 text-center text-2xl font-bold shadow-sm transition-all disabled:cursor-default ${cls}`}
                       >
                         <span className="absolute left-4 top-3 font-mono text-sm font-bold opacity-60">{'ABCD'[i]}</span>
