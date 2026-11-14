@@ -17,7 +17,7 @@ export const GLOSSARY: Record<GlossaryKey, GlossaryEntry> = localizeRecord<Gloss
   {
     sol: {
       term: 'Sol (día marciano)',
-      text: 'Un Sol es un día marciano: dura 24 horas y 39 minutos, un poco más que un día en la Tierra. ¡Tenéis que aguantar 10 Soles hasta que llegue el rescate!',
+      text: 'Un Sol es un día marciano: dura 24 horas y 39 minutos, un poco más que un día en la Tierra. ¡Tenéis que aguantar toda la tormenta hasta que llegue el rescate!',
     },
     radiation: {
       term: 'Radiación solar y CME',
@@ -35,7 +35,7 @@ export const GLOSSARY: Record<GlossaryKey, GlossaryEntry> = localizeRecord<Gloss
   {
     sol: {
       term: 'Sol (Martian day)',
-      text: 'A Sol is a Martian day: it lasts 24 hours and 39 minutes, a little longer than a day on Earth. You have to hold out for 10 Sols until the rescue arrives!',
+      text: 'A Sol is a Martian day: it lasts 24 hours and 39 minutes, a little longer than a day on Earth. You have to hold out through the entire storm until the rescue arrives!',
     },
     radiation: {
       term: 'Solar radiation and CMEs',

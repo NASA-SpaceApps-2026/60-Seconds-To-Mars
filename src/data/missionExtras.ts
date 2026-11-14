@@ -34,14 +34,14 @@ export const BADGES: Record<BadgeId, { name: string; patchText: string; how: str
     genelab_botanist: { name: 'Botánico GeneLab', patchText: 'BOTÁNICO GENELAB', how: 'Cosecha lechuga roja con las Semillas OSDR.' },
     barter_master: { name: 'Mecánico de Ares-IV', patchText: 'MECÁNICO ARES', how: 'Repara una avería superando un minijuego.' },
     deep_space_communicator: { name: 'Comunicador Deep Space', patchText: 'DEEP SPACE', how: 'Recibe un paquete de Houston por la Deep Space Network.' },
-    ares_hero: { name: 'Héroe de Ares-IV', patchText: 'HÉROE ARES-IV', how: 'Sobrevive los 10 Soles de la tormenta solar.' },
+    ares_hero: { name: 'Héroe de Ares-IV', patchText: 'HÉROE ARES-IV', how: 'Sobrevive toda la tormenta solar.' },
   },
   {
     solar_engineer: { name: 'Solar Engineer', patchText: 'SOLAR ENGINEER', how: 'Finish a Sol with Power at 70 or more.' },
     genelab_botanist: { name: 'GeneLab Botanist', patchText: 'GENELAB BOTANIST', how: 'Harvest red lettuce with the OSDR Seeds.' },
     barter_master: { name: 'Ares-IV Mechanic', patchText: 'ARES MECHANIC', how: 'Fix a breakdown by beating a mini-game.' },
     deep_space_communicator: { name: 'Deep Space Communicator', patchText: 'DEEP SPACE', how: 'Receive a Houston package over the Deep Space Network.' },
-    ares_hero: { name: 'Ares-IV Hero', patchText: 'ARES-IV HERO', how: 'Survive all 10 Sols of the solar storm.' },
+    ares_hero: { name: 'Ares-IV Hero', patchText: 'ARES-IV HERO', how: 'Survive the entire solar storm.' },
   },
 );
 export const BADGE_ORDER: BadgeId[] = ['solar_engineer', 'genelab_botanist', 'barter_master', 'deep_space_communicator', 'ares_hero'];
