@@ -437,7 +437,7 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
       aria-modal="true"
       aria-label={meta.title}
     >
-      <motion.div initial={{ y: 24, scale: 0.96 }} animate={{ y: 0, scale: 1 }} className="my-auto w-full max-w-3xl rounded-2xl border-2 border-slate-200 bg-white p-3 shadow-2xl sm:p-5">
+      <motion.div initial={{ y: 24, scale: 0.96 }} animate={{ y: 0, scale: 1 }} className="my-auto min-w-0 w-full max-w-3xl rounded-2xl border-2 border-slate-200 bg-white p-3 shadow-2xl sm:p-5">
         {/* Cabecera (móvil: título a todo el ancho y "Cambiar prueba" en su propia fila) */}
         <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
           <span className="hidden h-12 w-12 shrink-0 place-items-center rounded-lg border border-slate-200 bg-slate-100 text-nasa-blue sm:grid">
@@ -477,7 +477,7 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
         <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200">
           <div className={`h-full ${pct < 35 ? 'bg-nasa-red' : 'bg-nasa-blue'}`} style={{ width: `${pct}%` }} />
         </div>
-        <p className="mt-2 text-base text-slate-700">{meta.instructions}</p>
+        <p className="mt-2 min-w-0 whitespace-normal break-words text-base text-slate-700">{meta.instructions}</p>
 
         {/* Zona de juego */}
         <div className="relative mt-3">
