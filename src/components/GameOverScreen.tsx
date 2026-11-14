@@ -63,11 +63,6 @@ export default function GameOverScreen() {
   const { loadDebrief, playAgain, resetToMenu, ariaSay } = useGameStore.getState();
   const victory = outcome === 'victory';
   const solsSurvived = victory ? TOTAL_SOLS : Math.max(0, history.length - 1);
-  const mostCostly = [...history].sort((a, b) => {
-    const impact = (report: (typeof history)[number]) =>
-      VITAL_ORDER.reduce((sum, key) => sum + Math.max(0, -report.deltas[key]), 0);
-    return impact(b) - impact(a);
-  })[0];
 
   const announced = useRef(false);
   useEffect(() => {
@@ -256,25 +251,6 @@ export default function GameOverScreen() {
                     )}
                   </div>
                 </motion.div>
-              )}
-            </section>
-
-            <section className="hw-panel border-sky-200 bg-sky-50/60 p-4 sm:p-5">
-              <p className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-[0.2em] text-sky-700">
-                <Lightbulb className="h-4 w-4" strokeWidth={1.75} /> QUÉ APRENDER DE ESTA PARTIDA
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-slate-700">
-                {victory
-                  ? `Completaste los ${TOTAL_SOLS} Soles. Revisa tus decisiones para descubrir cómo mantuviste el equilibrio entre vida, energía y protección.`
-                  : `La evacuación ocurrió porque ${failedVital ? VITAL_META[failedVital].label.toLowerCase() : 'una barra'} llegó a cero. Ese es el sistema que debes proteger primero en la siguiente partida.`}
-              </p>
-              {mostCostly && (
-                <div className="mt-3 rounded-xl border border-sky-200 bg-white p-3">
-                  <p className="text-sm font-extrabold text-sky-800">Momento más exigente: Sol {mostCostly.sol}</p>
-                  <p className="mt-1 text-sm text-slate-700">
-                    Elegiste «{mostCostly.optionLabel}» en «{mostCostly.eventTitle}». Observa qué barras bajaron y compara esa decisión con otra estrategia.
-                  </p>
-                </div>
               )}
             </section>
           </motion.div>

@@ -79,7 +79,6 @@ export default function Phase1Summary() {
   const rawComplications = useGameStore((s) => s.complications);
   const freeSpins = useGameStore((s) => s.freeSpins) ?? 0;
   const supplyBonus = useGameStore((s) => s.supplyBonus) ?? {};
-  const missionDifficulty = useGameStore((s) => s.missionDifficulty);
   const inventory = (rawInventory ?? []).filter((id) => Boolean(ITEMS_BY_ID[id]));
   const complications = (rawComplications ?? []).filter((c) => Boolean(COMPLICATIONS[c]));
   const sealBunker = useGameStore((s) => s.sealBunker);
@@ -94,7 +93,7 @@ export default function Phase1Summary() {
   const stats = categoryStats(answers);
   const correct = answers.filter((a) => a.correct).length;
   const accuracy = answers.length ? correct / answers.length : 0;
-  const startVitals = projectedStartVitals(supplyBonus, complications, missionDifficulty);
+  const startVitals = projectedStartVitals(supplyBonus, complications);
   const vitalsAvg = VITAL_ORDER.reduce((sum, k) => sum + (startVitals?.[k] ?? 0), 0) / VITAL_ORDER.length;
   // Preparación: 60 % equipo conseguido (10 objetos = 100 %) + 40 % estado inicial de las barras
   const readiness = Math.round(0.6 * Math.min(100, (inventory.length / 10) * 100) + 0.4 * vitalsAvg);

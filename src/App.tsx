@@ -4,7 +4,6 @@ import { useGameStore } from './store/useGameStore';
 import { unlockAudio } from './utils/soundEffects';
 import { runDevQaScenario } from './utils/devQa';
 import MenuScreen from './components/MenuScreen';
-import MissionSelector from './components/MissionSelector';
 import ScreenErrorBoundary from './components/ScreenErrorBoundary';
 
 // Las pantallas de juego se cargan bajo demanda (bundle inicial más ligero)
@@ -62,7 +61,6 @@ export default function App() {
         <ScreenErrorBoundary onHome={() => useGameStore.getState().resetToMenu()}>
           <Suspense fallback={<ScreenLoader />}>
             {gamePhase === 'MENU' && <MenuScreen />}
-            {gamePhase === 'MISSION_SELECT' && <MissionSelector />}
             {gamePhase === 'PHASE_1_SCAVENGE' && <Phase1Scavenge />}
             {gamePhase === 'PHASE_2_BUNKER' && <Phase2Bunker />}
             {gamePhase === 'GAME_OVER' && <GameOverScreen />}

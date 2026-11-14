@@ -531,15 +531,11 @@ export function getFallbackDebrief(ctx: DebriefContext): Debrief {
   const loaded = ctx.loadedItems.map((id) => ITEMS_BY_ID[id].shortName);
   const leftOut = STATION_ITEMS.filter((i) => !ctx.loadedItems.includes(i.id)).map((i) => i.shortName);
   const victory = ctx.outcome === 'victory';
-  const vitalKeys: VitalKey[] = ['oxygen', 'power', 'food', 'shield', 'crewHealth'];
-  const vitalLoss = (report: SolReport) =>
-    vitalKeys.reduce((sum, key) => sum + Math.max(0, -report.deltas[key]), 0);
 
   const best = [...ctx.history].sort((a, b) => {
     const sum = (r: SolReport) => Object.values(r.deltas).reduce((s, n) => s + n, 0);
     return sum(b) - sum(a);
   })[0];
-  const mostCostly = [...ctx.history].sort((a, b) => vitalLoss(b) - vitalLoss(a))[0];
 
   const lessons: string[] = [];
   if (ctx.failedVital) lessons.push(FAIL_LESSONS[ctx.failedVital]);
@@ -557,15 +553,13 @@ export function getFallbackDebrief(ctx: DebriefContext): Debrief {
       : `Evacuación médica a la órbita en el Sol ${ctx.solsSurvived + 1}`,
     report: victory
       ? `Has mantenido el búnker funcionando durante ${ctx.totalSols} Soles completos. Elegiste cargar ${loaded.join(', ') || 'muy pocas cosas'}, y gracias a esa estrategia la tripulación está sana y salva. Además conseguiste ${ctx.science} puntos de ciencia para la NASA.`
-      : `La tripulación resistió ${ctx.solsSurvived} Soles antes de que la nave de rescate la llevara a la órbita sana y salva. Cargaste ${loaded.join(', ') || 'muy pocas cosas'} y dejaste fuera ${leftOut.join(', ') || 'nada'}. ${
-          mostCostly ? `El momento más exigente fue el Sol ${mostCostly.sol}, cuando elegiste «${mostCostly.optionLabel}».` : ''
-        } Cada misión es un experimento: ¡ahora sabes qué cambiar!`,
+      : `La tripulación resistió ${ctx.solsSurvived} Soles antes de que la nave de rescate la llevara a la órbita sana y salva. Cargaste ${loaded.join(', ') || 'muy pocas cosas'} y dejaste fuera ${leftOut.join(', ') || 'nada'}. Cada misión es un experimento: ¡ahora sabes qué cambiar!`,
     lessons: lessons.slice(0, 4),
     bestDecision: best
       ? `Sol ${best.sol}: "${best.optionLabel}" en el evento "${best.eventTitle}".`
       : 'Sellar las compuertas a tiempo y mantener la calma.',
     improvementTip: ctx.failedVital
-      ? `${mostCostly ? `Revisa tu decisión del Sol ${mostCostly.sol} («${mostCostly.optionLabel}»). ` : ''}La próxima vez, deja hueco para algo que proteja tu ${VITAL_NAMES[ctx.failedVital].toLowerCase()}.`
+      ? `La próxima vez, deja hueco para algo que proteja tu ${VITAL_NAMES[ctx.failedVital].toLowerCase()}.`
       : 'Prueba otra combinación de carga para conseguir más puntos de ciencia.',
     source: 'fallback',
   };
@@ -716,15 +710,7 @@ export async function generateDebrief(ctx: DebriefContext): Promise<Debrief> {
   try {
     const loaded = ctx.loadedItems.map((id) => ITEMS_BY_ID[id].name);
     const leftOut = STATION_ITEMS.filter((i) => !ctx.loadedItems.includes(i.id)).map((i) => i.name);
-    const history = ctx.history
-      .map((h) => {
-        const deltas = Object.entries(h.deltas)
-          .filter(([, value]) => value !== 0)
-          .map(([key, value]) => `${key} ${value > 0 ? '+' : ''}${value}`)
-          .join(', ');
-        return `Sol ${h.sol}: ${h.eventTitle} -> ${h.optionLabel} | cambios reales: ${deltas || 'sin cambios'}`;
-      })
-      .join('\n');
+    const history = ctx.history.map((h) => `Sol ${h.sol}: ${h.eventTitle} -> ${h.optionLabel}`).join('\n');
     const prompt = `Escribe, como A.R.I.A. (el ordenador de a bordo), el INFORME DE INGENIERÍA de la NASA al final de la partida. Tono cálido y educativo. Si no ganó, la tripulación fue evacuada a la órbita sana y salva.
 
 Resultado: ${ctx.outcome === 'victory' ? 'MISIÓN CUMPLIDA' : 'EVACUACIÓN MÉDICA A LA ÓRBITA'}. Rango: ${ctx.rank}.
