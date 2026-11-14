@@ -32,7 +32,6 @@ import { getLoadingMessages } from '../data/fallbackNasaData';
 import { COMPLICATIONS } from '../data/triviaQuestions';
 import {
   RADIATION_LABEL,
-  TOTAL_SOLS,
   VITAL_META,
   VITAL_ORDER,
   availableItems,
@@ -293,6 +292,7 @@ function LoadingTelemetry({ sol }: { sol: number }) {
 export default function Phase2Bunker() {
   useAriaScreenReady();
   const sol = useGameStore((s) => s.sol);
+  const totalSols = useGameStore((s) => s.totalSols);
   const missionDifficulty = useGameStore((s) => s.missionDifficulty);
   const vitals = useGameStore((s) => s.vitals);
   const science = useGameStore((s) => s.scienceScore);
@@ -448,14 +448,14 @@ export default function Phase2Bunker() {
       <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 md:grid-cols-[auto_1fr]">
         <div className="flex items-center gap-4">
           <NasaLogo size={52} />
-          <KidTooltip term={GLOSSARY.sol.term} text={GLOSSARY.sol.text} extra={tr(`Hoy: Sol ${sol} de ${TOTAL_SOLS}`, `Today: Sol ${sol} of ${TOTAL_SOLS}`)} align="left">
+          <KidTooltip term={GLOSSARY.sol.term} text={GLOSSARY.sol.text} extra={tr(`Hoy: Sol ${sol} de ${totalSols}`, `Today: Sol ${sol} of ${totalSols}`)} align="left">
           <div className="cursor-help">
             <p className="font-display text-2xl font-black leading-none text-nasa-blue">
               SOL {sol}
-              <span className="text-lg text-slate-400"> / {TOTAL_SOLS}</span>
+              <span className="text-lg text-slate-400"> / {totalSols}</span>
             </p>
             <div className="mt-1.5 flex gap-1" aria-hidden>
-              {Array.from({ length: TOTAL_SOLS }).map((_, i) => (
+              {Array.from({ length: totalSols }).map((_, i) => (
                 <span key={i} className={`h-1.5 w-3 rounded-full ${i < sol - 1 ? 'bg-nasa-blue' : i === sol - 1 ? 'bg-nasa-red' : 'bg-slate-200'}`} />
               ))}
             </div>
@@ -897,7 +897,7 @@ export default function Phase2Bunker() {
               >
                 <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-[clamp(0.25rem,1dvh,0.625rem)]">
                   <Monitor className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} />
-                  <p className="font-mono text-sm font-bold tracking-[0.2em] text-nasa-blue">{tr('TERMINAL DE MISIÓN', 'MISSION TERMINAL')} // SOL {sol} / {TOTAL_SOLS}</p>
+                  <p className="font-mono text-sm font-bold tracking-[0.2em] text-nasa-blue">{tr('TERMINAL DE MISIÓN', 'MISSION TERMINAL')} // SOL {sol} / {totalSols}</p>
                   <button
                     type="button"
                     onClick={() => {

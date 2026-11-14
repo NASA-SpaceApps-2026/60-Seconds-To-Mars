@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LoaderCircle, MessageCircle, Send } from 'lucide-react';
 import { askAriaQuestion } from '../services/geminiGameMaster';
 import { MAX_QUESTION_CHARS } from '../services/geminiSchemas';
-import { TOTAL_SOLS, availableItems, useGameStore } from '../store/useGameStore';
+import { availableItems, useGameStore } from '../store/useGameStore';
 import { useAriaTypedText } from '../utils/useAriaVoiceState';
 import { playButtonClick, playIncoming } from '../utils/soundEffects';
 import { useT } from '../i18n/useT';
@@ -45,7 +45,7 @@ export default function AriaConsole() {
       q,
       {
         sol: s.sol,
-        totalSols: TOTAL_SOLS,
+        totalSols: s.totalSols,
         vitals: s.vitals,
         science: s.scienceScore,
         inventory: availableItems(s.bunkerInventory, s.consumedItems),
