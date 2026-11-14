@@ -6,6 +6,7 @@ import { MISSION_DIFFICULTY_META, getMissionProfile, useGameStore } from '../sto
 import type { MissionDifficulty } from '../types/game';
 import { playButtonClick, playToggle, unlockAudio } from '../utils/soundEffects';
 import MissionPatch from './MissionPatchLogo';
+import SpaceBackdrop from './SpaceBackdrop';
 import { useT } from '../i18n/useT';
 import { tr } from '../i18n/core';
 
@@ -79,6 +80,7 @@ function CommanderMedal() {
 }
 
 // ============================================================
+<<<<<<< HEAD
 // Fondo ambiental: órbitas, estrellas y un cohete en trayectoria
 // ============================================================
 const STARS = [
@@ -137,6 +139,8 @@ export function SpaceBackdrop() {
 }
 
 // ============================================================
+=======
+>>>>>>> origin/develop
 // Tarjeta "Credencial de Cadete"
 // ============================================================
 interface ModeCard {

@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+ import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen, Camera, Database, ExternalLink, Sprout, Sun, X, type LucideIcon } from 'lucide-react';
 import type { NasaStatus } from '../types/game';
 import { GLOSSARY } from '../data/glossary';

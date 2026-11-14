@@ -45,7 +45,10 @@ export function Phase1Header({
 }) {
   const steps = [tr('Preparados', 'Ready'), tr(`${triviaSeconds} s de Trivia`, `${triviaSeconds} s Trivia`), tr('Resumen', 'Summary')];
   return (
-    <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b border-slate-300 bg-white px-4 py-2 shadow-sm md:grid-cols-[1fr_auto_1fr]">
+    <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b-2 border-slate-200 bg-white/90 px-4 py-2 shadow-[0_8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl md:grid-cols-[1fr_auto_1fr]">
+      {/* Franjas Azul NASA + Rojo Misión, como en el Selector de Modo */}
+      <span className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-nasa-blue" aria-hidden />
+      <span className="pointer-events-none absolute inset-x-0 top-1 h-0.5 bg-nasa-red" aria-hidden />
       <div className="flex min-w-0 items-center gap-3">
         <MissionPatch size={60} />
         <div className="min-w-0">
@@ -58,17 +61,17 @@ export function Phase1Header({
           steps.map((label, i) => (
             <div key={label} className="flex items-center gap-1.5">
               <span
-                className={`flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-extrabold ${
+                className={`flex items-center gap-1 rounded-full border-2 px-3 py-1 font-mono text-xs font-bold tracking-wider ${
                   i + 1 === step
-                    ? 'border-nasa-blue bg-nasa-blue text-white'
+                    ? 'border-nasa-blue bg-nasa-blue text-white shadow-[0_8px_18px_-10px_rgba(11,61,145,0.8)]'
                     : i + 1 < step
-                      ? 'border-nasa-blue bg-white text-nasa-blue'
-                      : 'border-slate-300 bg-white text-slate-400'
+                      ? 'border-orange-300 bg-orange-50 text-orange-700'
+                      : 'border-slate-200 bg-white text-slate-400'
                 }`}
               >
-                {i + 1 < step ? <Check className="h-3.5 w-3.5" /> : `${i + 1}.`} {label}
+                {i + 1 < step ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : `${i + 1}.`} {label}
               </span>
-              {i < steps.length - 1 && <span className="h-px w-3 bg-slate-300" />}
+              {i < steps.length - 1 && <span className="h-0.5 w-3 rounded-full border-t-2 border-dashed border-slate-300" />}
             </div>
           ))}
       </div>
