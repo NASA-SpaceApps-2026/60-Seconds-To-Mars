@@ -248,7 +248,7 @@ function LegendButton({
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/10 text-sky-300">
         <Icon className="h-5 w-5" strokeWidth={1.75} />
       </span>
-      <span className="min-w-0 flex-1 truncate whitespace-nowrap text-sm font-bold">{label}</span>
+      <span className="min-w-0 flex-1 truncate whitespace-nowrap text-xs font-bold">{label}</span>
       <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold ${statusCls}`}>{status}</span>
     </button>
   );
@@ -609,7 +609,7 @@ export default function Phase2Bunker() {
 
         {/* ============ LEYENDA INTERACTIVA (abajo a la izquierda) ============ */}
         <nav
-          className="absolute bottom-[clamp(1rem,5%,2.5rem)] left-[clamp(0.75rem,2%,2rem)] z-20 flex w-[min(21rem,30vw)] min-w-[15rem] flex-col gap-1.5 rounded-2xl border border-white/20 bg-slate-950/75 px-2.5 py-2.5 shadow-2xl backdrop-blur-sm"
+          className="absolute bottom-[clamp(1rem,5%,2.5rem)] left-[clamp(0.75rem,2%,2rem)] z-20 flex w-[min(20rem,27vw)] min-w-[14rem] flex-col gap-1 rounded-2xl border border-white/20 bg-slate-950/75 px-2 py-2 shadow-2xl backdrop-blur-sm"
           aria-label={tr('Qué puedes hacer en la base', 'What you can do at the base')}
         >
           <p className="px-1.5 pb-0.5 font-mono text-xs font-bold tracking-[0.2em] text-sky-300">{tr('TOCA LA ESCENA', 'TAP THE SCENE')}</p>
@@ -860,17 +860,17 @@ export default function Phase2Bunker() {
               className="absolute bottom-[4%] right-[3%] z-30 max-w-[min(30rem,calc(100%-2rem))] text-left disabled:cursor-wait"
             >
               <motion.span
-                className={`flex items-center gap-3 rounded-2xl border-2 px-5 py-4 shadow-2xl ${stage === 'loading' ? 'border-slate-500 bg-slate-800 text-slate-300' : 'border-white bg-nasa-red text-white'}`}
+                className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3 shadow-2xl ${stage === 'loading' ? 'border-slate-500 bg-slate-800 text-slate-300' : 'border-white bg-nasa-red text-white'}`}
                 animate={stage === 'loading' ? {} : { boxShadow: ['0 0 0 0 rgba(252,61,33,0.6)', '0 0 0 14px rgba(252,61,33,0)', '0 0 0 0 rgba(252,61,33,0)'] }}
                 transition={stage === 'loading' ? {} : { duration: 1.8, repeat: Infinity }}
               >
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-white/15">
-                  {stage === 'loading' ? <Satellite className="h-7 w-7 animate-pulse" strokeWidth={1.75} /> : <Monitor className="h-7 w-7" strokeWidth={1.75} />}
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/15">
+                  {stage === 'loading' ? <Satellite className="h-6 w-6 animate-pulse" strokeWidth={1.75} /> : <Monitor className="h-6 w-6" strokeWidth={1.75} />}
                 </span>
                 <span className="min-w-0">
-                  <span className="font-display flex items-center gap-2 text-lg font-black tracking-wider">
+                  <span className="font-display flex items-center gap-2 text-base font-black tracking-wider">
                     {stage === 'loading' ? tr('Recibiendo telemetría...', 'Receiving telemetry...') : stage === 'report' ? tr(`Informe del Sol ${sol} listo`, `Sol ${sol} report ready`) : tr(`Resolver Misión Sol ${sol}`, `Solve Sol ${sol} Mission`)}
-                    {stage !== 'loading' && <ArrowRight className="h-5 w-5 shrink-0" />}
+                    {stage !== 'loading' && <ArrowRight className="h-4 w-4 shrink-0" />}
                   </span>
                   <span className={`mt-1 inline-block max-w-full truncate rounded-md px-2 py-0.5 text-sm font-bold ${stage === 'loading' ? 'bg-slate-700' : 'bg-white/20'}`}>
                     {terminalHeadline}

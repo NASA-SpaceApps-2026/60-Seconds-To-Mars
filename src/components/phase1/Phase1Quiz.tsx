@@ -54,13 +54,13 @@ function GiantTimer({ timeLeft, totalSeconds }: { timeLeft: number; totalSeconds
     <motion.div
       animate={urgent ? { scale: [1, 1.08, 1] } : {}}
       transition={{ duration: 1, repeat: urgent ? Infinity : 0 }}
-      className={`font-display relative overflow-hidden rounded-2xl border-[3px] px-7 py-1 text-center shadow-lg ${
+      className={`font-display relative mt-1 overflow-hidden rounded-2xl border-[3px] px-5 py-1 text-center shadow-lg ${
         urgent ? 'glow-red border-nasa-red bg-red-50 text-nasa-red' : 'border-nasa-blue bg-white text-nasa-blue shadow-[0_12px_28px_-14px_rgba(11,61,145,0.7)]'
       }`}
       aria-label={tr(`Quedan ${timeLeft} segundos`, `${timeLeft} seconds left`)}
     >
       <div className="text-xs font-bold tracking-[0.3em] opacity-80">{tr('TIEMPO', 'TIME')}</div>
-      <div className="text-6xl font-black tabular-nums leading-none">{timeLeft}s</div>
+      <div className="text-5xl font-black tabular-nums leading-none">{timeLeft}s</div>
       <div className="absolute inset-x-0 bottom-0 h-1.5 bg-slate-200">
         <motion.div className={`h-full ${urgent ? 'bg-nasa-red' : 'bg-gradient-to-r from-nasa-blue to-orange-400'}`} animate={{ width: `${pct}%` }} transition={{ duration: 0.4 }} />
       </div>
@@ -156,7 +156,7 @@ export default function Phase1Quiz() {
       <Phase1Header
         step={stage === 'ready' ? 1 : 2}
         title={tr('Trivia Contrarreloj NASA', 'NASA Countdown Trivia')}
-        subtitle={tr('Cada acierto manda un objeto de esa rama a la base espacial. ¡Las difíciles dan objetos legendarios!', 'Every right answer sends an item from that branch to the space base. Hard ones give legendary items!')}
+        subtitle={tr('Cada acierto manda un objeto a la base. ¡Las difíciles dan objetos legendarios!', 'Right answers add supplies. Hard questions give legendary items!')}
         triviaSeconds={quizSeconds}
         right={stage === 'quiz' ? <GiantTimer timeLeft={timeLeft} totalSeconds={quizSeconds} /> : undefined}
       />
@@ -209,9 +209,9 @@ export default function Phase1Quiz() {
                   playButtonClick();
                   beginQuiz();
                 }}
-                className="font-display glow-red mt-2 flex items-center gap-3 rounded-2xl bg-nasa-red px-10 py-5 text-2xl font-black tracking-wider text-white"
+                className="font-display glow-red mt-2 flex items-center gap-3 rounded-2xl bg-nasa-red px-8 py-4 text-xl font-black tracking-wider text-white"
               >
-                <Rocket /> {tr('¡EMPEZAR LA MISIÓN!', 'START THE MISSION!')}
+                <Rocket size={22} /> {tr('¡EMPEZAR LA MISIÓN!', 'START THE MISSION!')}
               </motion.button>
             </div>
           )}
