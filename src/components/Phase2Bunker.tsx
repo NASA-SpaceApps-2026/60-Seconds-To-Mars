@@ -8,6 +8,7 @@ import {
   CircleCheck,
   ChevronDown,
   ChevronLeft,
+  ExternalLink,
   Minus,
   Monitor,
   Package,
@@ -28,6 +29,7 @@ import { ItemIcon, ResourceIcon, type ResourceKey } from './icons';
 import type { Effects, EventOption, ItemId, MinigameKind, RepairTarget, StationItem, VitalKey } from '../types/game';
 import { ITEMS_BY_ID, STATION_ITEMS } from '../data/stationItems';
 import { LOADING_MESSAGES } from '../data/fallbackNasaData';
+import { formatFlareDate } from '../services/nasaApi';
 import { COMPLICATIONS } from '../data/triviaQuestions';
 import {
   RADIATION_LABEL,
@@ -172,7 +174,6 @@ function OptionButton({
         onChoose();
       }}
       aria-disabled={!available}
-      aria-label={`${option.label}. ${available ? 'Disponible.' : lockReason}`}
       title={option.description || undefined}
       className={`box-border flex w-full min-w-0 flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border-2 p-3 text-left transition-colors sm:flex-nowrap sm:p-4 ${
         !available
@@ -493,7 +494,6 @@ export default function Phase2Bunker() {
               className="pointer-events-auto w-full cursor-help"
             >
               <motion.p
-                role="alert"
                 className="flex w-full items-center gap-2 rounded-lg border border-amber-400 bg-slate-950/85 px-3 py-2 text-sm font-bold text-amber-300 shadow-lg"
                 animate={{ opacity: [1, 0.6, 1] }}
                 transition={{ duration: 1.2, repeat: Infinity }}
@@ -505,7 +505,7 @@ export default function Phase2Bunker() {
             </KidTooltip>
           )}
           {lowPower && (
-            <p role="status" className="flex items-center gap-2 rounded-lg border border-sky-400 bg-slate-950/85 px-3 py-2 text-sm font-bold text-sky-300 shadow-lg">
+            <p className="flex items-center gap-2 rounded-lg border border-sky-400 bg-slate-950/85 px-3 py-2 text-sm font-bold text-sky-300 shadow-lg">
               <BatteryLow className="h-5 w-5 shrink-0" strokeWidth={2} />
               <span className="font-mono tracking-wider">MODO AHORRO</span>
               <span className="ml-auto text-xs text-sky-200">Energía baja</span>
@@ -814,7 +814,6 @@ export default function Phase2Bunker() {
                 transition={{ type: 'spring', stiffness: 220, damping: 28 }}
                 className="absolute bottom-[3%] left-1/2 z-40 flex max-h-[min(82vh,94%)] w-[min(64rem,calc(100%-2rem))] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-white shadow-2xl"
                 role="dialog"
-                aria-modal="true"
                 aria-label={`Terminal de misión, Sol ${sol}`}
               >
                 <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-slate-50 px-5 py-2.5">
@@ -865,6 +864,33 @@ export default function Phase2Bunker() {
                               <FlaskConical className="mr-1 inline h-4 w-4 align-[-2px]" strokeWidth={1.75} />
                               <b>Dato Real NASA ({event.radiationLevel === 'high' || event.radiationLevel === 'extreme' ? 'DONKI' : 'DONKI / OSDR'}) ·</b> {event.nasaFact}
                             </p>
+                            <div className="mt-3 border-t border-amber-200 pt-2 text-sm text-amber-950">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-mono text-xs font-black tracking-[0.16em]">TRAZABILIDAD</span>
+                                <span
+                                  className={`rounded-md px-2 py-0.5 font-mono text-xs font-bold ${
+                                    nasaWeather?.isLive ? 'bg-emerald-600 text-white' : 'bg-amber-400 text-slate-950'
+                                  }`}
+                                >
+                                  {nasaWeather?.isLive ? 'DATO EN VIVO' : 'ARCHIVO REAL'}
+                                </span>
+                              </div>
+                              <p className="mt-1.5">
+                                {nasaWeather
+                                  ? `${nasaWeather.provider ?? 'NASA DONKI'} · llamarada ${nasaWeather.flareClass} · ${formatFlareDate(nasaWeather.peakTime)}`
+                                  : event.nasaSource}
+                              </p>
+                              {nasaWeather?.link && (
+                                <a
+                                  href={nasaWeather.link}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-1 inline-flex items-center gap-1 font-semibold text-nasa-blue hover:underline"
+                                >
+                                  Ver registro de la llamarada <ExternalLink className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
 

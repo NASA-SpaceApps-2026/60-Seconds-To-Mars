@@ -180,25 +180,6 @@ input[type='range'] {
 button {
   cursor: pointer;
 }
-
-button:focus-visible,
-a:focus-visible,
-[role='dialog']:focus-visible {
-  outline: 3px solid #f59e0b;
-  outline-offset: 3px;
-}
-
 button:disabled {
   cursor: not-allowed;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
 }
