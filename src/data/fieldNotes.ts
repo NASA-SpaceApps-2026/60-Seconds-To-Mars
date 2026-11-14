@@ -66,7 +66,7 @@ export function buildFieldNote(
             '¡Cadetes! ¡Acabamos de ver caer el paracaídas térmico de Houston junto a vuestro domo! Os hemos dejado el suministro en la esclusa y os mandamos esta foto que acabamos de sacar de camino...',
             '¡Aquí la Comandante Elena desde el rover! El paquete de Houston ha bajado justo donde calculasteis. ¡Qué buen trabajo! Os adjunto una foto real del viaje.',
           ]),
-          message: `¡Vemos que tenéis el búnker en muy buena forma! Mientras el contenedor bajaba hacia vuestra posición, seguíamos avanzando por el cráter.${photoBit} ¡Ya queda menos para vernos!`,
+          message: `¡Vemos que tenéis la base espacial en muy buena forma! Mientras el contenedor bajaba hacia vuestra posición, seguíamos avanzando por el cráter.${photoBit} ¡Ya queda menos para vernos!`,
         };
   }
 

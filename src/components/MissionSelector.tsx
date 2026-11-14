@@ -1,117 +1,393 @@
+import { useAriaScreenReady } from '../utils/useAriaVoiceState';
+import type { ReactElement } from 'react';
 import { motion } from 'framer-motion';
-import { Award, ArrowLeft, Rocket, Satellite } from 'lucide-react';
-import { MISSION_DIFFICULTY_META, useGameStore } from '../store/useGameStore';
+import { ArrowLeft, Check, Gauge, ListChecks, Rocket, ShieldHalf, Star, Wrench, type LucideIcon } from 'lucide-react';
+import { MISSION_DIFFICULTY_META, getMissionProfile, useGameStore } from '../store/useGameStore';
 import type { MissionDifficulty } from '../types/game';
-import { playButtonClick, unlockAudio } from '../utils/soundEffects';
+import { playButtonClick, playToggle, unlockAudio } from '../utils/soundEffects';
 import MissionPatch from './MissionPatchLogo';
 
+// ============================================================
+// Ilustraciones originales (SVG propio, sin logos ni emojis)
+// ============================================================
+
+/** Casco de cadete con visor y antena: Modo Explorador. */
+function CadetHelmet() {
+  return (
+    <svg viewBox="0 0 120 120" className="h-full w-full" aria-hidden>
+      <defs>
+        <linearGradient id="ms-visor" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#7dd3fc" />
+          <stop offset="0.55" stopColor="#1e5bc6" />
+          <stop offset="1" stopColor="#0b1e45" />
+        </linearGradient>
+      </defs>
+      <motion.g animate={{ y: [0, -3, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
+        <path d="M60 12 V4" stroke="#94a3b8" strokeWidth={3} strokeLinecap="round" />
+        <motion.circle cx={60} cy={4} r={4} fill="#f97316" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.2, repeat: Infinity }} />
+        <circle cx={60} cy={62} r={48} fill="#f8fafc" stroke="#cbd5e1" strokeWidth={3} />
+        <rect x={8} y={54} width={10} height={22} rx={5} fill="#0b3d91" />
+        <rect x={102} y={54} width={10} height={22} rx={5} fill="#0b3d91" />
+        <rect x={24} y={34} width={72} height={52} rx={24} fill="url(#ms-visor)" />
+        <path d="M34 46 Q44 38 58 40" stroke="#ffffff" strokeOpacity={0.75} strokeWidth={5} strokeLinecap="round" fill="none" />
+        <circle cx={80} cy={70} r={3} fill="#ffffff" fillOpacity={0.5} />
+        <path d="M30 98 Q60 112 90 98" stroke="#f97316" strokeWidth={6} strokeLinecap="round" fill="none" />
+      </motion.g>
+    </svg>
+  );
+}
+
+/** Insignia de Comandante Estelar con escudo de tormenta: Modo Comandante. */
+function CommanderBadge() {
+  return (
+    <svg viewBox="0 0 120 120" className="h-full w-full" aria-hidden>
+      <motion.g
+        style={{ transformOrigin: '60px 60px' }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
+      >
+        {Array.from({ length: 12 }).map((_, i) => (
+          <rect key={i} x={57} y={2} width={6} height={14} rx={3} fill="#f97316" opacity={i % 2 ? 0.45 : 0.9} transform={`rotate(${i * 30} 60 60)`} />
+        ))}
+      </motion.g>
+      <path d="M60 18 L94 30 V60 C94 82 79 97 60 104 C41 97 26 82 26 60 V30 Z" fill="#0b3d91" stroke="#ffffff" strokeWidth={4} />
+      <path d="M60 26 L87 36 V60 C87 77 75 89 60 95 C45 89 33 77 33 60 V36 Z" fill="#1e5bc6" />
+      <motion.path
+        d="M64 36 L48 64 H60 L54 86 L74 56 H62 Z"
+        fill="#fc3d21"
+        stroke="#ffffff"
+        strokeWidth={2.5}
+        strokeLinejoin="round"
+        animate={{ opacity: [1, 0.55, 1] }}
+        transition={{ duration: 1.4, repeat: Infinity }}
+      />
+      <path d="M22 100 L60 112 L98 100" stroke="#f97316" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
+  );
+}
+
+/** Base en Marte con cúpula y antena (decoración del fondo). */
+function MarsBaseScene() {
+  return (
+    <svg viewBox="0 0 400 120" className="h-full w-full" preserveAspectRatio="xMidYMax slice" aria-hidden>
+      <path d="M0 80 Q60 60 120 76 T240 70 T400 74 V120 H0 Z" fill="#fdba74" opacity={0.55} />
+      <path d="M0 96 Q80 80 160 92 T320 88 T400 94 V120 H0 Z" fill="#fb923c" opacity={0.55} />
+      <g transform="translate(250 54)">
+        <path d="M0 34 Q0 4 34 4 Q68 4 68 34 Z" fill="#f8fafc" stroke="#cbd5e1" strokeWidth={2} />
+        <rect x={-6} y={32} width={80} height={10} rx={3} fill="#e2e8f0" stroke="#cbd5e1" strokeWidth={2} />
+        <rect x={20} y={16} width={28} height={9} rx={4.5} fill="#0b3d91" />
+        <path d="M80 34 V10" stroke="#94a3b8" strokeWidth={2.5} />
+        <path d="M72 12 Q80 2 90 10" stroke="#94a3b8" strokeWidth={2.5} fill="none" />
+        <motion.circle cx={80} cy={8} r={3} fill="#fc3d21" animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 1.1, repeat: Infinity }} />
+      </g>
+    </svg>
+  );
+}
+
+// ============================================================
+// Fondo ambiental: órbitas, estrellas y un cohete en trayectoria
+// ============================================================
+const STARS = [
+  [6, 18], [14, 62], [22, 30], [31, 78], [38, 12], [47, 52], [55, 22], [63, 70], [71, 36], [79, 14], [86, 58], [93, 28], [11, 44], [67, 88], [42, 90],
+];
+
+function SpaceBackdrop() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {/* Estrellas que parpadean */}
+      {STARS.map(([x, y], i) => (
+        <motion.span
+          key={i}
+          className="absolute h-1.5 w-1.5 rounded-full bg-nasa-blue/40"
+          style={{ left: `${x}%`, top: `${y}%` }}
+          animate={{ opacity: [0.2, 1, 0.2], scale: [0.8, 1.3, 0.8] }}
+          transition={{ duration: 2.4 + (i % 4) * 0.6, repeat: Infinity, delay: i * 0.25 }}
+        />
+      ))}
+
+      {/* Órbitas con pequeños planetas */}
+      <div className="absolute -left-[clamp(6rem,14vw,10rem)] -top-[clamp(6rem,14vw,10rem)] h-[clamp(14rem,30vw,24rem)] w-[clamp(14rem,30vw,24rem)]">
+        <div className="absolute inset-0 rounded-full border-2 border-dashed border-nasa-blue/15" />
+        <motion.div className="absolute inset-0" animate={{ rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}>
+          <span className="absolute bottom-[14%] right-[14%] h-4 w-4 rounded-full bg-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.6)]" />
+        </motion.div>
+        <div className="absolute inset-[18%] rounded-full border border-nasa-blue/10" />
+      </div>
+      <div className="absolute -right-[clamp(5rem,10vw,8rem)] top-[18%] h-[clamp(10rem,20vw,16rem)] w-[clamp(10rem,20vw,16rem)]">
+        <div className="absolute inset-0 rounded-full border-2 border-dashed border-orange-400/25" />
+        <motion.div className="absolute inset-0" animate={{ rotate: -360 }} transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}>
+          <span className="absolute left-[8%] top-[22%] h-3 w-3 rounded-full bg-nasa-blue/60" />
+        </motion.div>
+      </div>
+
+      {/* Cohete siguiendo una trayectoria punteada */}
+      <svg className="absolute inset-x-0 top-[6%] h-[30%] w-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
+        <path d="M-20 170 C 250 40, 600 220, 1020 30" stroke="#0b3d91" strokeOpacity={0.12} strokeWidth={3} strokeDasharray="10 12" fill="none" />
+      </svg>
+      <motion.div
+        className="absolute top-[6%] h-[30%] w-full"
+        initial={{ x: '-10%' }}
+        animate={{ x: ['-10%', '105%'] }}
+        transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
+      >
+        <motion.span
+          className="absolute grid h-9 w-9 place-items-center rounded-full bg-white text-nasa-red shadow-md"
+          animate={{ top: ['80%', '20%', '60%', '5%'], rotate: [-20, 10, -10, 15] }}
+          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
+        >
+          <Rocket className="h-5 w-5 rotate-45" strokeWidth={2} />
+        </motion.span>
+      </motion.div>
+
+      {/* Base en Marte al fondo */}
+      <div className="absolute inset-x-0 bottom-0 h-[clamp(5rem,18dvh,9rem)] opacity-80">
+        <MarsBaseScene />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Tarjeta "Credencial de Cadete"
+// ============================================================
+interface ModeCard {
+  badge: string;
+  tagline: string;
+  Art: () => ReactElement;
+  stars: number;
+  accent: string;
+  facts: { Icon: LucideIcon; text: string }[];
+}
+
+function buildCards(): Record<MissionDifficulty, ModeCard> {
+  const exp = getMissionProfile('explorer');
+  const cmd = getMissionProfile('commander');
+  return {
+    explorer: {
+      badge: 'CREDENCIAL DE CADETE',
+      tagline: '¡Perfecto para tu primera misión!',
+      Art: CadetHelmet,
+      stars: 1,
+      accent: '#1e5bc6',
+      facts: [
+        { Icon: ListChecks, text: `Preguntas con ${exp.answerOptions} respuestas` },
+        { Icon: ShieldHalf, text: 'Más reservas en la base' },
+        { Icon: Wrench, text: 'Pocas averías' },
+      ],
+    },
+    commander: {
+      badge: 'INSIGNIA DE COMANDANTE',
+      tagline: '¿Te atreves con la gran tormenta?',
+      Art: CommanderBadge,
+      stars: 3,
+      accent: '#fc3d21',
+      facts: [
+        { Icon: ListChecks, text: `Preguntas con ${cmd.answerOptions} respuestas` },
+        { Icon: ShieldHalf, text: 'Menos reservas, más radiación' },
+        { Icon: Wrench, text: 'Averías frecuentes' },
+      ],
+    },
+  };
+}
+
+function DifficultyMeter({ stars, accent }: { stars: number; accent: string }) {
+  return (
+    <span className="flex items-center gap-2" aria-label={`Dificultad ${stars} de 3`}>
+      <span className="font-mono text-xs font-bold tracking-wider text-slate-500">RETO</span>
+      <span className="flex gap-0.5">
+        {[1, 2, 3].map((n) => (
+          <Star key={n} className="h-5 w-5" strokeWidth={1.75} style={{ color: n <= stars ? accent : '#cbd5e1' }} fill={n <= stars ? accent : 'none'} />
+        ))}
+      </span>
+      <span className="ml-1 flex items-end gap-0.5" aria-hidden>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span
+            key={n}
+            className="w-1.5 rounded-sm"
+            style={{ height: `${6 + n * 3}px`, background: n <= (stars === 1 ? 2 : 5) ? accent : '#e2e8f0' }}
+          />
+        ))}
+      </span>
+    </span>
+  );
+}
+
+function ModeCredential({ difficulty, selected, onSelect }: { difficulty: MissionDifficulty; selected: boolean; onSelect: () => void }) {
+  const meta = MISSION_DIFFICULTY_META[difficulty];
+  const card = buildCards()[difficulty];
+  return (
+    <motion.button
+      type="button"
+      aria-pressed={selected}
+      onClick={onSelect}
+      whileHover={{ y: -6, rotate: difficulty === 'explorer' ? -0.8 : 0.8 }}
+      whileTap={{ scale: 0.97 }}
+      animate={selected ? { scale: 1.02 } : { scale: 1 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      className={`group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] bg-white text-left shadow-lg transition-colors ${
+        selected ? 'shadow-[0_18px_40px_-18px_rgba(11,61,145,0.7)]' : 'border-slate-200 hover:border-slate-300'
+      }`}
+      style={selected ? { borderColor: card.accent } : undefined}
+    >
+      {/* Cinta superior tipo credencial */}
+      <span className="flex items-center justify-between px-[clamp(0.9rem,2dvh,1.25rem)] py-2 text-white" style={{ background: card.accent }}>
+        <span className="font-mono text-xs font-bold tracking-[0.25em]">{card.badge}</span>
+        {!selected && <span className="h-2.5 w-10 rounded-full bg-white/40" aria-hidden />}
+      </span>
+
+      <span className="flex flex-1 flex-col gap-[clamp(0.5rem,1.6dvh,0.9rem)] p-[clamp(0.9rem,2.2dvh,1.4rem)]">
+        <span className="flex items-center gap-4">
+          {/* Ilustración grande con halo */}
+          <span className="relative grid h-[clamp(4.5rem,15dvh,7.5rem)] w-[clamp(4.5rem,15dvh,7.5rem)] shrink-0 place-items-center">
+            <motion.span
+              className="absolute inset-0 rounded-full"
+              style={{ background: `radial-gradient(circle, ${card.accent}26 0%, transparent 70%)` }}
+              animate={selected ? { scale: [1, 1.15, 1] } : { scale: 1 }}
+              transition={{ duration: 1.8, repeat: selected ? Infinity : 0 }}
+            />
+            <span className="relative h-full w-full transition-transform duration-300 group-hover:scale-110">
+              <card.Art />
+            </span>
+          </span>
+          <span className="min-w-0">
+            <span className="font-display block text-[clamp(1.2rem,3.4dvh,1.6rem)] font-black leading-tight tracking-wide text-slate-900">{meta.label}</span>
+            <span className="mt-0.5 block text-[clamp(0.95rem,2.4dvh,1.1rem)] font-bold" style={{ color: card.accent }}>
+              {card.tagline}
+            </span>
+            <span className="mt-1.5 block">
+              <DifficultyMeter stars={card.stars} accent={card.accent} />
+            </span>
+          </span>
+        </span>
+
+        <span className="text-[clamp(0.9rem,2.3dvh,1rem)] leading-snug text-slate-600">{meta.description}</span>
+
+        <span className="mt-auto grid gap-1.5">
+          {card.facts.map(({ Icon, text }) => (
+            <span key={text} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-[clamp(0.25rem,0.9dvh,0.45rem)] text-sm font-semibold text-slate-700">
+              <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} style={{ color: card.accent }} />
+              {text}
+            </span>
+          ))}
+        </span>
+      </span>
+
+      {/* Sello de seleccionado */}
+      {selected && (
+        <motion.span
+          initial={{ scale: 2.2, opacity: 0, rotate: -25 }}
+          animate={{ scale: 1, opacity: 1, rotate: -4 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 14 }}
+          className="font-display absolute right-3 top-1 flex items-center gap-1 rounded-lg border-2 px-2 py-0.5 text-xs font-black tracking-widest shadow-sm"
+          style={{ borderColor: card.accent, color: card.accent, background: 'rgba(255,255,255,0.92)' }}
+        >
+          <Check className="h-4 w-4" strokeWidth={3} /> ELEGIDO
+        </motion.span>
+      )}
+    </motion.button>
+  );
+}
+
+// ============================================================
+// Pantalla
+// ============================================================
 export default function MissionSelector() {
+  useAriaScreenReady();
   const missionDifficulty = useGameStore((s) => s.missionDifficulty);
   const setMissionDifficulty = useGameStore((s) => s.setMissionDifficulty);
   const startGame = useGameStore((s) => s.startGame);
   const resetToMenu = useGameStore((s) => s.resetToMenu);
 
   return (
-    <main
-      className="relative flex min-h-dvh items-center overflow-hidden bg-slate-100 px-4 pb-32 pt-6 text-slate-900 sm:px-8"
-      onPointerDown={unlockAudio}
-    >
-      <div className="bg-grid pointer-events-none absolute inset-0 opacity-70" />
-      <div className="pointer-events-none absolute -bottom-48 -right-32 h-96 w-96 rounded-full bg-orange-300/30 blur-3xl" />
+    <main className="relative flex h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900" onPointerDown={unlockAudio}>
+      <div className="bg-grid pointer-events-none absolute inset-0 opacity-60" />
+      <SpaceBackdrop />
       <div className="pointer-events-none absolute left-0 top-0 h-2 w-full bg-nasa-blue" />
       <div className="pointer-events-none absolute left-0 top-2 h-1 w-full bg-nasa-red" />
 
-      <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-col justify-center pb-24">
-        <header className="flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              playButtonClick();
-              resetToMenu();
-            }}
-            className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs font-bold tracking-widest text-slate-500 shadow-sm transition hover:border-nasa-blue hover:text-nasa-blue"
-          >
-            <ArrowLeft size={15} /> PORTADA
-          </button>
-          <div className="flex items-center gap-3">
-            <MissionPatch size={48} className="h-10 w-10 sm:h-12 sm:w-12" />
-            <div className="hidden text-right sm:block">
-              <p className="font-mono text-[10px] tracking-[0.3em] text-nasa-blue">ARES-IV // MISSION CONTROL</p>
-              <p className="font-display text-xs font-bold tracking-widest text-slate-500">SELECTOR DE MISIÓN</p>
-            </div>
-          </div>
-        </header>
+      {/* Contenido con scroll propio si no cabe (móvil); el botón de abajo queda fijo */}
+      <div className="thin-scroll relative z-10 min-h-0 flex-1 overflow-y-auto px-4 pt-[clamp(0.75rem,2.5dvh,1.5rem)] sm:px-8">
+        <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col">
+          <header className="flex items-center justify-between gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                playButtonClick();
+                resetToMenu();
+              }}
+              className="flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-3 py-2 font-mono text-xs font-bold tracking-widest text-slate-500 shadow-sm transition hover:border-nasa-blue hover:text-nasa-blue"
+            >
+              <ArrowLeft size={15} /> PORTADA
+            </button>
+            <motion.div animate={{ rotate: [0, -4, 4, 0] }} transition={{ duration: 6, repeat: Infinity }}>
+              <MissionPatch size={52} className="h-[clamp(2.5rem,7dvh,3.25rem)] w-auto" />
+            </motion.div>
+          </header>
 
-        <section className="mt-8 text-center sm:mt-10">
-          <p className="font-mono text-xs font-bold tracking-[0.35em] text-nasa-red">PROTOCOLO DE DESPLIEGUE</p>
-          <h1 className="font-display mt-2 text-[clamp(1.8rem,4vw,3.4rem)] font-black tracking-tight text-nasa-blue">
-            Elige cómo afrontar la tormenta
-          </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
-            Configura la misión antes de abrir la transmisión de la historia.
-          </p>
-        </section>
+          <section className="mt-[clamp(0.5rem,2.5dvh,1.75rem)] text-center">
+            <motion.p
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mx-auto inline-flex items-center gap-2 rounded-full bg-nasa-blue px-4 py-1 font-mono text-xs font-bold tracking-[0.25em] text-white"
+            >
+              <Gauge className="h-4 w-4" strokeWidth={2} /> ELIGE TU MODO
+            </motion.p>
+            <motion.h1
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 140 }}
+              className="font-display mt-2 text-[clamp(1.6rem,min(4.2vw,6dvh),3.1rem)] font-black leading-tight text-nasa-blue"
+            >
+              ¿Qué tipo de <span className="text-nasa-red">astronauta</span> eres?
+            </motion.h1>
+            <p className="mx-auto mt-1 max-w-xl text-[clamp(0.95rem,2.4dvh,1.15rem)] font-semibold text-slate-600">
+              Toca una credencial para elegirla. ¡Podrás cambiar de modo en la próxima misión!
+            </p>
+          </section>
 
-        <section aria-label="Tipo de juego" className="mx-auto mt-8 w-full max-w-5xl">
-          <div className="mb-3 flex items-center justify-between gap-3 border-b border-slate-200 px-2 pb-3">
-            <p className="font-mono text-xs font-bold tracking-[0.22em] text-nasa-blue">CONFIGURACIÓN DE MISIÓN</p>
-            <span className="flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-wider text-emerald-600">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" /> SISTEMAS NOMINALES
-            </span>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(Object.keys(MISSION_DIFFICULTY_META) as MissionDifficulty[]).map((difficulty) => {
-              const selected = missionDifficulty === difficulty;
-              const meta = MISSION_DIFFICULTY_META[difficulty];
-              const Icon = difficulty === 'explorer' ? Satellite : Award;
-              return (
-                <button
-                  key={difficulty}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => {
-                    playButtonClick();
+          <section aria-label="Modo de juego" className="mx-auto mt-[clamp(0.75rem,3dvh,2rem)] grid w-full gap-[clamp(0.9rem,2.5dvh,1.5rem)] pb-4 sm:grid-cols-2">
+            {(Object.keys(MISSION_DIFFICULTY_META) as MissionDifficulty[]).map((difficulty, i) => (
+              <motion.div
+                key={difficulty}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.12, type: 'spring', stiffness: 160, damping: 18 }}
+              >
+                <ModeCredential
+                  difficulty={difficulty}
+                  selected={missionDifficulty === difficulty}
+                  onSelect={() => {
+                    playToggle(true);
                     setMissionDifficulty(difficulty);
                   }}
-                  className={`group relative h-fit overflow-hidden rounded-2xl border-2 p-6 text-left transition-all ${
-                    selected
-                      ? 'border-nasa-blue bg-white shadow-[0_12px_30px_-16px_rgba(11,61,145,0.65)]'
-                      : 'border-slate-300 bg-white/90 hover:border-nasa-blue/50 hover:shadow-md'
-                  }`}
-                >
-                  <span className="absolute inset-x-0 top-0 h-1 bg-nasa-blue transition-colors group-hover:bg-nasa-red" aria-hidden />
-                  <span className="flex items-center gap-4">
-                    <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full border-2 border-nasa-blue/20 bg-blue-50 text-nasa-blue transition-colors group-hover:border-nasa-blue">
-                      <Icon className={difficulty === 'commander' ? 'rotate-180' : undefined} size={28} strokeWidth={1.75} />
-                    </span>
-                    <span className="font-display text-xl font-black tracking-wider text-slate-900">{meta.label}</span>
-                    <span className={`ml-auto h-4 w-4 rounded-full border-2 ${selected ? 'border-nasa-blue bg-nasa-blue' : 'border-slate-300'}`} />
-                  </span>
-                  <span className="mt-3 block max-w-md text-base leading-relaxed text-slate-600">{meta.description}</span>
-                  <span className="mt-5 block border-t border-slate-100 pt-3 font-mono text-xs tracking-wider text-slate-500">
-                    {difficulty === 'explorer' ? 'DESGASTE REDUCIDO · IDEAL PARA APRENDER' : 'TORMENTA EXIGENTE · RETO AVANZADO'}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+                />
+              </motion.div>
+            ))}
+          </section>
+        </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-300 bg-white/95 px-4 py-4 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:py-5">
-        <div className="mx-auto flex max-w-6xl justify-center">
+      {/* Botón de inicio fijo abajo (no mueve el resto) */}
+      <div className="relative z-20 shrink-0 border-t-2 border-slate-200 bg-white/90 px-4 py-[clamp(0.6rem,2dvh,1.1rem)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-center gap-4">
+          <span className="hidden font-mono text-xs font-bold tracking-widest text-slate-500 sm:block">
+            MODO: <span className="text-nasa-blue">{MISSION_DIFFICULTY_META[missionDifficulty].label.toUpperCase()}</span>
+          </span>
           <motion.button
             type="button"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.96 }}
             onClick={() => {
               unlockAudio();
               playButtonClick();
               startGame();
             }}
-            className="glow-red font-display flex items-center gap-3 rounded-xl bg-nasa-red px-8 py-3.5 text-base font-black tracking-wider text-white sm:px-12 sm:py-4 sm:text-lg"
+            className="glow-red font-display flex items-center gap-3 rounded-2xl bg-nasa-red px-8 py-[clamp(0.6rem,1.8dvh,1rem)] text-base font-black tracking-wider text-white sm:px-12 sm:text-lg"
           >
-            <Rocket size={22} /> INICIAR MISIÓN
+            <motion.span animate={{ y: [0, -3, 0], rotate: [0, -8, 0] }} transition={{ duration: 1.4, repeat: Infinity }}>
+              <Rocket size={22} />
+            </motion.span>
+            INICIAR MISIÓN
           </motion.button>
         </div>
       </div>

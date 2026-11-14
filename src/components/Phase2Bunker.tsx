@@ -1,3 +1,4 @@
+import { useAriaScreenReady } from '../utils/useAriaVoiceState';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -53,7 +54,7 @@ import KidTooltip from './KidTooltip';
 import { GLOSSARY, VITAL_GLOSSARY } from '../data/glossary';
 import DeepSpaceLink, { MissionNoticeToast } from './DeepSpaceLink';
 import EmergencyMinigameModal from './minigames/EmergencyMinigameModal';
-import { REPAIR_FAIL_POWER, pickMinigame, repairKey } from '../data/missionExtras';
+import { HOUSTON_MAX_ORDERS, REPAIR_FAIL_POWER, pickMinigame, repairKey } from '../data/missionExtras';
 
 const EFFECT_ORDER: (keyof Effects)[] = ['oxygen', 'power', 'food', 'shield', 'crewHealth', 'science'];
 
@@ -181,7 +182,7 @@ function OptionButton({
       }}
       aria-disabled={!available}
       title={option.description || undefined}
-      className={`box-border flex w-full min-w-0 flex-col gap-3 rounded-2xl border-2 p-3 text-left transition-colors sm:p-4 ${
+      className={`box-border flex w-full min-w-0 flex-col gap-[clamp(0.35rem,1.2dvh,0.75rem)] rounded-2xl border-2 px-3 py-[clamp(0.45rem,1.5dvh,1rem)] text-left transition-colors sm:px-4 ${
         !available
           ? 'cursor-not-allowed border-slate-200 bg-slate-100 opacity-60'
           : advantage
@@ -191,7 +192,7 @@ function OptionButton({
     >
       <span className="flex min-w-0 items-start justify-between gap-4">
         <span className="min-w-0">
-          <span className={`block text-base font-bold leading-snug sm:text-lg ${available ? 'text-slate-900' : 'text-slate-500'}`}>{option.label}</span>
+          <span className={`block text-[clamp(0.95rem,2.6dvh,1.125rem)] font-bold leading-snug ${available ? 'text-slate-900' : 'text-slate-500'}`}>{option.label}</span>
           {advantage && (
             <span className="mt-0.5 flex items-center gap-1 text-base font-semibold text-emerald-700">
               <Sparkles className="h-4 w-4" strokeWidth={1.75} /> Ventaja: <ItemIcon id={req.id} className="h-4 w-4" /> {req.shortName}
@@ -209,9 +210,9 @@ function OptionButton({
         </span>
       </span>
       {available && projectedEffects && (
-        <span className="ml-auto flex w-fit max-w-full flex-col items-end border-t border-slate-200 pt-2 text-right text-xs font-bold uppercase tracking-wide text-slate-500 sm:min-w-[20.4375rem]">
+        <span className="ml-auto flex w-fit max-w-full flex-wrap items-center justify-end gap-x-2 gap-y-1 border-t border-slate-200 pt-[clamp(0.25rem,1dvh,0.5rem)] text-right text-xs font-bold uppercase tracking-wide text-slate-500 sm:min-w-[20.4375rem]">
           Al terminar el Sol
-          <span className="mt-1 block normal-case tracking-normal">
+          <span className="block normal-case tracking-normal">
             <EffectNumbers effects={projectedEffects} />
           </span>
         </span>
@@ -241,7 +242,7 @@ function LegendButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-2 rounded-lg px-1.5 py-1 text-left text-white transition hover:bg-white/10"
+      className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-left text-white transition hover:bg-white/10"
     >
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/10 text-sky-300">
         <Icon className="h-5 w-5" strokeWidth={1.75} />
@@ -289,6 +290,7 @@ function LoadingTelemetry({ sol }: { sol: number }) {
 }
 
 export default function Phase2Bunker() {
+  useAriaScreenReady();
   const sol = useGameStore((s) => s.sol);
   const missionDifficulty = useGameStore((s) => s.missionDifficulty);
   const vitals = useGameStore((s) => s.vitals);
@@ -354,6 +356,7 @@ export default function Phase2Bunker() {
   const houstonCrates = useGameStore((s) => s.houstonCrates);
   const houstonOrders = useGameStore((s) => s.houstonOrders);
   const houstonOrderedSol = useGameStore((s) => s.houstonOrderedSol);
+  const houstonOrdersPlaced = useGameStore((s) => s.houstonOrdersPlaced);
   const nasaWeather = useGameStore((s) => s.nasaWeather);
 
   // ESC cierra cualquier panel abierto
@@ -488,7 +491,7 @@ export default function Phase2Bunker() {
                       value={vitals[k]}
                       forecast={forecast.deltas[k]}
                       nativeTitle={false}
-                      className="w-[clamp(76px,11vw,140px)]"
+                      className="w-[clamp(64px,min(11vw,15dvh),140px)]"
                     />
                   </KidTooltip>
                 ))}
@@ -507,7 +510,7 @@ export default function Phase2Bunker() {
       </header>
 
       <main className="relative z-0 min-h-0 flex-1 overflow-hidden">
-        {/* ============ ESCENA DEL BÚNKER A PANTALLA COMPLETA ============ */}
+        {/* ============ ESCENA DE LA BASE ESPACIAL A PANTALLA COMPLETA ============ */}
         <div className="absolute inset-0">
           <BunkerDiorama
             vitals={vitals}
@@ -605,13 +608,13 @@ export default function Phase2Bunker() {
 
         {/* ============ LEYENDA INTERACTIVA (abajo a la izquierda) ============ */}
         <nav
-          className="absolute bottom-[4%] left-[2%] z-20 flex w-[min(24rem,46vw)] flex-col gap-1 rounded-2xl border border-white/20 bg-slate-950/75 p-2 shadow-2xl backdrop-blur-sm"
+          className="absolute bottom-[clamp(1rem,5%,2.5rem)] left-[clamp(1rem,2.5%,2.5rem)] z-20 flex w-[min(27rem,44vw)] flex-col gap-2 rounded-2xl border border-white/20 bg-slate-950/75 px-4 py-3.5 shadow-2xl backdrop-blur-sm"
           aria-label="Qué puedes hacer en la base"
         >
-          <p className="px-1 font-mono text-xs font-bold tracking-[0.2em] text-sky-300">TOCA LA ESCENA</p>
+          <p className="px-1.5 pb-0.5 font-mono text-xs font-bold tracking-[0.2em] text-sky-300">TOCA LA ESCENA</p>
           <LegendButton
             icon={Wrench}
-            label="Búnker: Sistemas/Averías"
+            label="Base: Sistemas/Averías"
             status={repairCount > 0 ? `${repairCount} ${repairCount === 1 ? 'avería' : 'averías'}` : 'Todo OK'}
             tone={repairCount > 0 ? 'alert' : 'ok'}
             onClick={() => openOverlay('systems')}
@@ -624,9 +627,11 @@ export default function Phase2Bunker() {
                 ? 'Envío recibido'
                 : nextArrival !== null
                   ? `En camino (${nextArrival} ${nextArrival === 1 ? 'Sol' : 'Soles'})`
-                  : houstonOrderedSol === sol
-                    ? 'Transmitido hoy'
-                    : 'Disponible'
+                  : houstonOrdersPlaced >= HOUSTON_MAX_ORDERS
+                    ? 'Sin pedidos'
+                    : houstonOrderedSol === sol
+                      ? 'Transmitido hoy'
+                      : 'Disponible'
             }
             tone={houstonCrates > 0 ? 'alert' : 'info'}
             onClick={() => openOverlay('houston')}
@@ -637,13 +642,21 @@ export default function Phase2Bunker() {
         {/* ============ CAJÓN LATERAL: ENLACE HOUSTON ============ */}
         <AnimatePresence>
           {drawer === 'houston' && (
-            <motion.aside
+            <motion.div
               key="drawer-houston"
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-              className="thin-scroll absolute left-0 top-0 z-40 flex max-h-full w-[min(26rem,92vw)] flex-col gap-3 overflow-y-auto rounded-br-2xl border-b-2 border-r-2 border-slate-300 bg-white/95 p-4 shadow-2xl backdrop-blur-md"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="pointer-events-none absolute inset-0 z-40 grid place-items-center p-4"
+            >
+            <motion.aside
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+              className="thin-scroll pointer-events-auto flex max-h-full w-[min(30rem,92vw)] flex-col gap-3 overflow-y-auto rounded-2xl border-2 border-slate-300 bg-white/95 p-4 shadow-2xl backdrop-blur-md"
+              role="dialog"
+              aria-label="Enlace Houston"
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="font-mono text-xs font-bold tracking-[0.25em] text-nasa-blue">ENLACE HOUSTON</p>
@@ -652,11 +665,12 @@ export default function Phase2Bunker() {
                   onClick={closeOverlay}
                   className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
                 >
-                  <ChevronLeft className="h-4 w-4" /> Replegar
+                  <ChevronLeft className="h-4 w-4" /> Cerrar
                 </button>
               </div>
               <DeepSpaceLink onOpenCrate={() => setRouletteOpen(true)} />
             </motion.aside>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -743,7 +757,7 @@ export default function Phase2Bunker() {
                     <span className="rounded-md bg-nasa-blue px-2 py-0.5 font-mono text-xs text-white">{activeItems.length}</span>
                   </h2>
                   {activeItems.length === 0 ? (
-                    <p className="mt-2 rounded-xl border border-slate-200 p-4 text-base text-slate-500">No queda ningún objeto en el búnker.</p>
+                    <p className="mt-2 rounded-xl border border-slate-200 p-4 text-base text-slate-500">No queda ningún objeto en la base espacial.</p>
                   ) : (
                     <div className="mt-2 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                       {activeItems.map((item) => {
@@ -876,11 +890,11 @@ export default function Phase2Bunker() {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: '60%', opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-                className="absolute bottom-[3%] left-1/2 z-40 flex max-h-[min(82vh,94%)] w-[min(64rem,calc(100%-2rem))] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-white shadow-2xl"
+                className="absolute bottom-[clamp(0.5rem,2%,1rem)] left-1/2 z-40 flex max-h-[min(85dvh,calc(100%-1rem))] w-[min(64rem,calc(100%-1rem))] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-white shadow-2xl"
                 role="dialog"
                 aria-label={`Terminal de misión, Sol ${sol}`}
               >
-                <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-slate-50 px-5 py-2.5">
+                <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-[clamp(0.25rem,1dvh,0.625rem)]">
                   <Monitor className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} />
                   <p className="font-mono text-sm font-bold tracking-[0.2em] text-nasa-blue">TERMINAL DE MISIÓN // SOL {sol} / {TOTAL_SOLS}</p>
                   <button
@@ -895,7 +909,7 @@ export default function Phase2Bunker() {
                     <Minus className="h-4 w-4" /> Minimizar ordenador
                   </button>
                 </div>
-                <div className="relative flex min-h-[22rem] flex-1 flex-col overflow-hidden p-5">
+                <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-[clamp(0.625rem,2dvh,1.25rem)]">
                   <AnimatePresence mode="wait">
                     {stage === 'loading' && <LoadingTelemetry key={`loading-${sol}`} sol={sol} />}
 
@@ -905,10 +919,10 @@ export default function Phase2Bunker() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="grid h-full min-h-0 grid-cols-1 gap-5 md:grid-cols-2"
+                        className="thin-scroll grid min-h-0 flex-1 grid-cols-1 gap-[clamp(0.75rem,2dvh,1.25rem)] overflow-y-auto md:grid-cols-2 md:overflow-hidden"
                       >
                         {/* El problema */}
-                        <div className="thin-scroll flex min-h-0 flex-col gap-3 overflow-y-auto">
+                        <div className="thin-scroll flex min-h-0 flex-col gap-[clamp(0.4rem,1.4dvh,0.75rem)] md:overflow-y-auto [&>*]:shrink-0">
                           <div>
                             <p className="flex items-center gap-2 text-base font-semibold text-slate-500">
                               <span className={`h-2.5 w-2.5 rounded-full ${RADIATION_DOT[radiation]}`} /> Radiación {RADIATION_LABEL[radiation].toLowerCase()}
@@ -918,13 +932,13 @@ export default function Phase2Bunker() {
                                 </span>
                               )}
                             </p>
-                            <h2 className="mt-1 text-2xl font-bold leading-tight text-slate-900 xl:text-3xl">{event.title}</h2>
+                            <h2 className="mt-0.5 text-[clamp(1.15rem,3.6dvh,1.875rem)] font-bold leading-tight text-slate-900">{event.title}</h2>
                           </div>
-                          <p className="line-clamp-4 text-lg leading-relaxed text-slate-700" title={`${event.ariaVoiceAlert}\n\n${event.description}`}>
+                          <p className="line-clamp-4 text-[clamp(0.95rem,2.5dvh,1.125rem)] leading-snug text-slate-700" title={`${event.ariaVoiceAlert}\n\n${event.description}`}>
                             {event.description}
                           </p>
-                          <div className="rounded-xl bg-amber-50 px-4 py-3" title={event.nasaSource}>
-                            <p className="text-base leading-relaxed text-amber-950">
+                          <div className="rounded-xl bg-amber-50 px-3 py-[clamp(0.4rem,1.3dvh,0.75rem)]" title={event.nasaSource}>
+                            <p className="text-[clamp(0.85rem,2.2dvh,1rem)] leading-snug text-amber-950">
                               <FlaskConical className="mr-1 inline h-4 w-4 align-[-2px]" strokeWidth={1.75} />
                               <b>Dato Real NASA ({event.radiationLevel === 'high' || event.radiationLevel === 'extreme' ? 'DONKI' : 'DONKI / OSDR'}) ·</b> {event.nasaFact}
                             </p>
@@ -932,7 +946,7 @@ export default function Phase2Bunker() {
                         </div>
 
                         {/* Las decisiones */}
-                        <div className="thin-scroll flex min-h-0 flex-col gap-2.5 overflow-y-auto overflow-x-hidden p-1">
+                        <div className="thin-scroll flex min-h-0 flex-col gap-[clamp(0.4rem,1.2dvh,0.625rem)] overflow-x-hidden p-0.5 md:overflow-y-auto [&>*]:shrink-0">
                           {event.options.map((opt) => (
                             <OptionButton
                               key={opt.id}
@@ -956,7 +970,7 @@ export default function Phase2Bunker() {
                         initial={{ opacity: 0, scale: 0.97 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0 }}
-                        className="thin-scroll flex min-h-0 h-full flex-col items-center justify-start gap-4 overflow-y-auto px-1 pb-1 text-center"
+                        className="thin-scroll flex min-h-0 flex-1 flex-col items-center justify-start gap-[clamp(0.5rem,1.8dvh,1rem)] overflow-y-auto px-1 pb-1 text-center [&>*]:shrink-0"
                       >
                         <div className="w-full max-w-3xl rounded-xl border border-slate-300 bg-slate-50 p-4 text-left shadow-sm">
                           <p className="font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">INFORME DE TELEMETRÍA // SOL {sol}</p>

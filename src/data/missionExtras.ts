@@ -4,6 +4,10 @@ import type { BadgeId, HoustonPackageId, MinigameKind, RepairTarget, VitalKey } 
 export const HOUSTON_COST_POWER = 10;
 export const HOUSTON_MIN_POWER = 15;
 export const HOUSTON_DELAY_SOLS = 2;
+/** Pedidos máximos a Houston en toda la partida. */
+export const HOUSTON_MAX_ORDERS = 3;
+/** Envíos que pueden estar en camino a la vez (hasta que no llegue uno, no se puede pedir otro). */
+export const HOUSTON_MAX_IN_TRANSIT = 2;
 
 export const HOUSTON_PACKAGES: Record<HoustonPackageId, { label: string; vital: VitalKey; amount: number }> = {
   oxygen_reserve: { label: 'Inyección de Oxígeno de Reserva', vital: 'oxygen', amount: 25 },

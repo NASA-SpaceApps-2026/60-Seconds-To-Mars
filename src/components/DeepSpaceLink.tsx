@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Award, PackageCheck, PackageOpen, SatelliteDish, Timer, Wrench } from 'lucide-react';
-import { HOUSTON_COST_POWER, HOUSTON_DELAY_SOLS, HOUSTON_ORDER, HOUSTON_PACKAGES } from '../data/missionExtras';
+import {
+  HOUSTON_COST_POWER,
+  HOUSTON_DELAY_SOLS,
+  HOUSTON_MAX_IN_TRANSIT,
+  HOUSTON_MAX_ORDERS,
+  HOUSTON_ORDER,
+  HOUSTON_PACKAGES,
+} from '../data/missionExtras';
 import { useGameStore } from '../store/useGameStore';
 import { earthMarsLink } from '../utils/marsEphemeris';
 import { playErrorBuzz } from '../utils/soundEffects';
@@ -24,9 +31,20 @@ export default function DeepSpaceLink({
   const power = useGameStore((s) => s.vitals.power);
   const orders = useGameStore((s) => s.houstonOrders);
   const orderedSol = useGameStore((s) => s.houstonOrderedSol);
+  const placed = useGameStore((s) => s.houstonOrdersPlaced);
   const [error, setError] = useState<string | null>(null);
   const delay = Math.round(earthMarsLink().lightDelayMinutes);
   const sentToday = orderedSol === sol;
+  const remaining = Math.max(0, HOUSTON_MAX_ORDERS - placed);
+  const linesFull = orders.length >= HOUSTON_MAX_IN_TRANSIT;
+  const blockReason =
+    remaining === 0
+      ? `Has usado los ${HOUSTON_MAX_ORDERS} pedidos de la misión.`
+      : linesFull
+        ? `Hay ${HOUSTON_MAX_IN_TRANSIT} envíos en camino: cuando llegue uno podrás pedir otro.`
+        : sentToday
+          ? 'La antena ya transmitió hoy. Mañana puedes pedir otro paquete.'
+          : null;
 
   return (
     <section className="shrink-0 rounded-2xl border-2 border-slate-200 bg-white p-3 shadow-sm">
@@ -38,11 +56,17 @@ export default function DeepSpaceLink({
         Señal a Houston: ≈ {delay} min · Envío: {HOUSTON_DELAY_SOLS} Soles · Coste hoy: −{HOUSTON_COST_POWER} Energía
       </p>
 
-      <p className="mt-2 font-mono text-xs font-bold tracking-[0.18em] text-nasa-blue">PEDIR SUMINISTROS</p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="font-mono text-xs font-bold tracking-[0.18em] text-nasa-blue">PEDIR SUMINISTROS</p>
+        <p className="text-xs font-semibold text-slate-600" title={`Máximo ${HOUSTON_MAX_ORDERS} pedidos por misión y ${HOUSTON_MAX_IN_TRANSIT} en camino a la vez`}>
+          Quedan <b className="text-nasa-blue">{remaining}/{HOUSTON_MAX_ORDERS}</b> · En camino{' '}
+          <b className="text-nasa-blue">{orders.length}/{HOUSTON_MAX_IN_TRANSIT}</b>
+        </p>
+      </div>
       <div className="mt-1 grid grid-cols-3 gap-2">
         {HOUSTON_ORDER.map((id) => {
           const pkg = HOUSTON_PACKAGES[id];
-          const disabled = stage !== 'event' || sentToday;
+          const disabled = stage !== 'event' || blockReason !== null;
           return (
             <button
               key={id}
@@ -78,7 +102,7 @@ export default function DeepSpaceLink({
           <PackageOpen className="h-5 w-5" strokeWidth={1.75} /> ABRIR CONTENEDOR DE HOUSTON ({crates})
         </motion.button>
       )}
-      {sentToday && <p className="mt-1.5 text-xs font-semibold text-slate-500">La antena ya transmitió hoy. Mañana puedes pedir otro paquete.</p>}
+      {blockReason && <p className="mt-1.5 text-xs font-semibold text-slate-500">{blockReason}</p>}
       {error && <p className="mt-1.5 text-xs font-bold text-nasa-red">{error}</p>}
 
       {orders.length > 0 && (
@@ -97,7 +121,7 @@ export default function DeepSpaceLink({
           })}
         </ul>
       )}
-      {power < 15 && stage === 'event' && !sentToday && <p className="mt-1.5 text-xs font-semibold text-amber-700">Energía baja: la antena necesita al menos 15.</p>}
+      {power < 15 && stage === 'event' && !blockReason &&<p className="mt-1.5 text-xs font-semibold text-amber-700">Energía baja: la antena necesita al menos 15.</p>}
     </section>
   );
 }

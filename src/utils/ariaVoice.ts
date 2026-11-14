@@ -2,7 +2,7 @@
 //  - 'beeps':   (POR DEFECTO) pitidos sci-fi musicales mientras el texto aparece letra a letra.
 //  - 'natural': window.speechSynthesis con la voz que elija el jugador (o la mejor en español).
 //  - 'silent':  solo texto.
-// speechSynthesis.cancel() se llama SIEMPRE antes de cada frase (sin colas infinitas).
+// La voz natural nunca corta a mitad de frase: termina la frase en curso y pasa al mensaje nuevo.
 
 import { playBlip } from './soundEffects';
 
@@ -41,6 +41,8 @@ const synth: SpeechSynthesis | null =
 
 // v2: el modo por defecto pasa a ser 'beeps' para todo el mundo
 const STORAGE_KEY = 'aria-voice-settings-v2';
+/** Más rápido que esto, varias voces se aceleran de más y se comen palabras. */
+const MAX_RATE = 1.2;
 interface Saved {
   mode?: VoiceMode;
   voiceId?: string | null;
@@ -75,7 +77,7 @@ let state: AriaVoiceState = {
   voiceId: saved.voiceId ?? null,
   voices: [],
   pitch: clampNum(saved.pitch, 0.5, 1.6, 1.0),
-  rate: clampNum(saved.rate, 0.7, 1.4, 1.02),
+  rate: clampNum(saved.rate, 0.7, MAX_RATE, 0.98),
   typingText: null,
   typedCount: 0,
 };
@@ -153,36 +155,137 @@ if (synth) {
 // ------------------------------------------------------------
 // Motores
 // ------------------------------------------------------------
+/*
+ * Voz natural SIN cortes a mitad de frase:
+ *  - El texto se trocea en frases cortas (Chrome corta en seco las locuciones de más de ~15 s
+ *    y algunas voces "se rayan" o se saltan palabras con textos largos).
+ *  - Las frases se encolan aquí (no en la cola del navegador): si llega un mensaje nuevo, la frase
+ *    que está sonando TERMINA y después empieza el mensaje nuevo; lo que quedaba del viejo se descarta.
+ *  - cancel() solo se usa al parar del todo o si el navegador se queda colgado, y siempre con un
+ *    respiro antes del siguiente speak() (Chrome descarta o acelera un speak() pegado a un cancel()).
+ */
+const MAX_CHUNK = 160;
+const AFTER_CANCEL_MS = 180;
+const DUPLICATE_MS = 2500;
+
+/**
+ * Sincronización con las pantallas: mientras una pantalla se está montando ('screen') o hay una
+ * historia abierta ('story'), los mensajes del juego esperan; solo habla la historia (force).
+ */
+export type HoldReason = 'screen' | 'story';
+const HOLD_SAFETY_MS = 3000;
+const holds = new Set<HoldReason>();
+const holdTimers: Partial<Record<HoldReason, ReturnType<typeof setTimeout>>> = {};
+let pendingText: string | null = null;
+
+let chunkQueue: string[] = [];
+let chunkActive = false;
+let watchdog: ReturnType<typeof setTimeout> | null = null;
+let lastSpoken = { text: '', at: 0 };
+
+function splitIntoChunks(text: string): string[] {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  // Solo se corta tras un signo seguido de espacio (así "A.R.I.A." no se trocea letra a letra)
+  const pieces = clean.split(/(?<=[.!?;])\s+/);
+  // Unir frases muy cortas con la siguiente para que la voz no suene a trompicones
+  const sentences: string[] = [];
+  for (const p of pieces) {
+    const prev = sentences[sentences.length - 1];
+    if (prev !== undefined && prev.length < 40 && prev.length + p.length + 1 <= MAX_CHUNK) sentences[sentences.length - 1] = `${prev} ${p}`;
+    else sentences.push(p);
+  }
+  const chunks: string[] = [];
+  for (const raw of sentences) {
+    const s = raw.trim();
+    if (!s) continue;
+    if (s.length <= MAX_CHUNK) {
+      chunks.push(s);
+      continue;
+    }
+    // Frase muy larga: partir por comas sin cortar palabras
+    let current = '';
+    for (const part of s.split(/(?<=,)\s+/)) {
+      if ((current + ' ' + part).trim().length > MAX_CHUNK && current) {
+        chunks.push(current.trim());
+        current = part;
+      } else current = `${current} ${part}`;
+    }
+    if (current.trim()) chunks.push(current.trim());
+  }
+  return chunks;
+}
+
+function clearWatchdog() {
+  if (watchdog) clearTimeout(watchdog);
+  watchdog = null;
+}
+
 function stopAll() {
   speakToken++;
   if (typeTimer) clearInterval(typeTimer);
   typeTimer = null;
+  chunkQueue = [];
+  chunkActive = false;
+  clearWatchdog();
   synth?.cancel();
 }
 
-function speakNatural(text: string, token: number) {
+function speakNextChunk(gen: number) {
+  if (!synth || gen !== speakToken) return;
+  const text = chunkQueue.shift();
+  if (!text) {
+    chunkActive = false;
+    clearWatchdog();
+    emit({ speaking: false });
+    return;
+  }
+  chunkActive = true;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = voice?.lang ?? 'es-ES';
+  if (voice) utter.voice = voice;
+  utter.pitch = state.pitch;
+  utter.rate = state.rate;
+  utter.volume = 1;
+  let finished = false;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    clearWatchdog();
+    // Pausa natural entre frases (y evita que el motor encadene a toda velocidad)
+    setTimeout(() => speakNextChunk(gen), 90);
+  };
+  utter.onend = done;
+  utter.onerror = done;
+  // Si el navegador no avisa del final (pasa en Chrome), seguir igualmente
+  clearWatchdog();
+  watchdog = setTimeout(() => {
+    if (finished || gen !== speakToken) return;
+    synth.cancel();
+    setTimeout(done, AFTER_CANCEL_MS);
+  }, 2500 + (text.length * 95) / state.rate);
+  emit({ speaking: true });
+  try {
+    synth.speak(utter);
+  } catch {
+    done();
+  }
+}
+
+function speakNatural(text: string) {
   if (!synth) return;
-  // Chrome descarta a veces un speak() inmediatamente posterior a cancel(): pequeño respiro.
-  setTimeout(() => {
-    if (token !== speakToken) return;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = voice?.lang ?? 'es-ES';
-    if (voice) utter.voice = voice;
-    utter.pitch = state.pitch;
-    utter.rate = state.rate;
-    utter.volume = 1;
-    const done = () => {
-      if (token === speakToken) emit({ speaking: false });
-    };
-    utter.onend = done;
-    utter.onerror = done;
-    emit({ speaking: true });
-    try {
-      synth.speak(utter);
-    } catch {
-      done();
-    }
-  }, 60);
+  const chunks = splitIntoChunks(text);
+  if (!chunks.length) return;
+  if (chunkActive) {
+    // Hay una frase sonando: se deja terminar y luego va el mensaje nuevo
+    chunkQueue = chunks;
+    return;
+  }
+  chunkQueue = chunks;
+  chunkActive = true;
+  const gen = speakToken;
+  const stale = synth.speaking || synth.pending;
+  if (stale) synth.cancel();
+  setTimeout(() => speakNextChunk(gen), stale ? AFTER_CANCEL_MS : 30);
 }
 
 function speakBeeps(text: string, token: number) {
@@ -192,8 +295,8 @@ function speakBeeps(text: string, token: number) {
     if (token !== speakToken) return;
     i++;
     const ch = text[i - 1] ?? '';
-    // Un pitido cada 2 letras (sin espacios ni signos) para que no sature
-    if (i % 2 === 0 && /[\p{L}\p{N}]/u.test(ch)) playBlip(ch);
+    // Un pitido cada 3 letras (sin espacios ni signos) para que no se solapen ni saturen
+    if (i % 3 === 0 && /[\p{L}\p{N}]/u.test(ch)) playBlip(ch);
     if (i >= text.length) {
       if (typeTimer) clearInterval(typeTimer);
       typeTimer = null;
@@ -205,18 +308,60 @@ function speakBeeps(text: string, token: number) {
 }
 
 export const ariaVoice = {
-  /** Dice el texto según el modo de audio. Siempre corta la frase anterior. */
-  speak(text: string) {
+  /**
+   * Dice el texto según el modo de audio. En voz natural no corta nunca a mitad de frase:
+   * termina la frase en curso y pasa al mensaje nuevo (lo que quedaba del anterior se descarta).
+   * Un mismo texto repetido en menos de 2,5 s se ignora (evita que la voz "se raye").
+   */
+  speak(text: string, opts: { force?: boolean } = {}) {
+    // Pantalla cambiando o historia abierta: se guarda y se dice cuando la pantalla sea visible
+    if (holds.size > 0 && !opts.force) {
+      pendingText = text || null;
+      return;
+    }
+    const now = Date.now();
+    if (text && text === lastSpoken.text && now - lastSpoken.at < DUPLICATE_MS) return;
+    lastSpoken = { text, at: now };
+    if (state.mode === 'natural' && synth && text) {
+      if (typeTimer) clearInterval(typeTimer);
+      typeTimer = null;
+      if (state.typingText) emit({ typingText: null, typedCount: 0 });
+      speakNatural(text);
+      return;
+    }
     stopAll();
     emit({ speaking: false, typingText: null, typedCount: 0 });
     if (!text || state.mode === 'silent') return;
-    const token = speakToken;
-    if (state.mode === 'natural' && synth) speakNatural(text, token);
-    else speakBeeps(text, token);
+    speakBeeps(text, speakToken);
   },
   stop() {
     stopAll();
+    pendingText = null;
     emit({ speaking: false, typingText: null, typedCount: 0 });
+  },
+  /** Corta en seco lo que está sonando (sin respetar la frase): cambio de pantalla o fin de la historia. */
+  interrupt({ keepPending = false }: { keepPending?: boolean } = {}) {
+    stopAll();
+    if (!keepPending) pendingText = null;
+    lastSpoken = { text: '', at: 0 };
+    emit({ speaking: false, typingText: null, typedCount: 0 });
+  },
+  /**
+   * Retiene la voz: lo que llegue mientras haya alguna retención se guarda (solo el último mensaje)
+   * y se dice al liberarla. 'screen' se libera sola tras HOLD_SAFETY_MS por si la pantalla no llega a montarse.
+   */
+  hold(reason: HoldReason) {
+    holds.add(reason);
+    if (holdTimers[reason]) clearTimeout(holdTimers[reason]);
+    holdTimers[reason] = reason === 'screen' ? setTimeout(() => this.release('screen'), HOLD_SAFETY_MS) : undefined;
+  },
+  release(reason: HoldReason) {
+    if (holdTimers[reason]) clearTimeout(holdTimers[reason]);
+    holdTimers[reason] = undefined;
+    if (!holds.delete(reason) || holds.size > 0 || !pendingText) return;
+    const text = pendingText;
+    pendingText = null;
+    this.speak(text);
   },
   setMode(mode: VoiceMode) {
     this.stop();
@@ -246,7 +391,7 @@ export const ariaVoice = {
     save();
   },
   setRate(rate: number) {
-    emit({ rate: clampNum(rate, 0.7, 1.4, 1.02) });
+    emit({ rate: clampNum(rate, 0.7, MAX_RATE, 0.98) });
     save();
   },
   /** Compatibilidad: true si está en modo silencio. */

@@ -69,7 +69,7 @@ export const DIFFICULTY_META: Record<Difficulty, { label: string; color: string 
 
 /** Duración de la trivia contrarreloj. */
 export const QUIZ_SECONDS = 60;
-/** Duración del resumen antes de abrir el búnker. */
+/** @deprecated El resumen ya no avanza solo (los niños leen a su ritmo). Se mantiene por compatibilidad. */
 export const SUMMARY_SECONDS = 4;
 
 function shuffle<T>(arr: T[]): T[] {

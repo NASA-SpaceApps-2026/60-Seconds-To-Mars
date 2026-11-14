@@ -22,7 +22,7 @@ npm install && npm run dev
 | `main` | Producción. Solo versiones listas para enseñar al jurado. **Nadie trabaja aquí directamente.** |
 | `develop` | Integración: aquí juntamos el trabajo de todos mediante Pull Requests. |
 | `feat/phase1-quiz-story` | Menú, trivia de 60 s, historia en viñetas y banco de preguntas. |
-| `feat/phase2-bunker-ui` | Pantalla del búnker, escena de Marte, velocímetros y minijuegos. |
+| `feat/phase2-bunker-ui` | Pantalla de la base espacial, escena de Marte, velocímetros y minijuegos. |
 | `feat/ai-nasa-data` | Gemini, NASA DONKI, Cápsula Orbital (CS:GO), voz de A.R.I.A. y pantalla final. |
 
 ## 3. Qué archivos toca cada rama (así no hay conflictos de merge)
@@ -91,7 +91,7 @@ git push origin feat/TU-RAMA
 Espera a que la CI salga en verde y a que otra persona la revise. Luego **Squash and merge**.
 
 **Paso 3 · De `develop` a `main` (solo cuando esté probado).** Una persona del equipo (Yeray) abre la PR **`main` ← `develop`**, prueba el juego entero
-(Menú → trivia → búnker 10 Soles → debriefing) y la fusiona con **Merge** (no squash, para que `main` y `develop` sigan iguales).
+(Menú → trivia → base espacial 10 Soles → debriefing) y la fusiona con **Merge** (no squash, para que `main` y `develop` sigan iguales).
 Si Cloudflare Pages está conectado al repo, publica `main` automáticamente.
 
 **Reglas de oro**

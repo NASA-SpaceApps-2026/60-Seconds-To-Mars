@@ -1,3 +1,4 @@
+import { useAriaScreenReady } from '../utils/useAriaVoiceState';
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -15,12 +16,13 @@ import {
   RotateCcw,
   Sparkles,
   Star,
+  TriangleAlert,
   UserRound,
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import { ItemIcon, ResourceIcon } from './icons';
-import type { Rank } from '../types/game';
+import type { Rank, SolReport, VitalKey } from '../types/game';
 import { ITEMS_BY_ID, RARITY_META } from '../data/stationItems';
 import { TOTAL_SOLS, VITAL_META, VITAL_ORDER, useGameStore } from '../store/useGameStore';
 import { playButtonClick } from '../utils/soundEffects';
@@ -30,7 +32,7 @@ import { BadgeShelf } from './PeriscopeModal';
 
 const RANK_STYLE: Record<Rank, { Icon: LucideIcon; text: string }> = {
   'Cadete Espacial': { Icon: UserRound, text: '¡Todo gran astronauta empezó como cadete! Prueba otra estrategia.' },
-  'Ingeniero de Sistemas Artemisa': { Icon: Wrench, text: 'Mantuviste el búnker en marcha 10 Soles. ¡La NASA te quiere en Artemisa!' },
+  'Ingeniero de Sistemas Artemisa': { Icon: Wrench, text: 'Mantuviste la base espacial en marcha 10 Soles. ¡La NASA te quiere en Artemisa!' },
   'Comandante Marciano': { Icon: Medal, text: 'Supervivencia y ciencia a la vez: ¡el máximo rango de la misión!' },
 };
 
@@ -39,6 +41,50 @@ const CREW = [
   { name: 'Dra. Vega', role: 'Botánica', accent: '#22c55e' },
   { name: 'Max', role: 'Ingeniero', accent: '#3b82f6' },
 ] as const;
+
+/** Consejo corto según la barra que llegó a cero. */
+const FIX_BY_VITAL: Record<VitalKey, string> = {
+  oxygen: 'Mantén encendido el reciclador de O2 y pide oxígeno a Houston antes de bajar de 35.',
+  power: 'Apaga las máquinas que no necesites cuando la Energía baje de 30.',
+  food: 'Enciende las semillas OSDR (+20 cada 2 Soles) y pide raciones a tiempo.',
+  shield: 'En días de radiación alta elige opciones que protejan el blindaje.',
+  crewHealth: 'La salud baja si O2, comida o blindaje caen por debajo de 25-30: no dejes que lleguen ahí.',
+};
+
+/** Análisis breve de la derrota: qué falló y qué mejorar (máx. 3 + 3 puntos). */
+function defeatAnalysis(input: {
+  failedVital: VitalKey | null;
+  sol: number;
+  history: SolReport[];
+  complications: VitalKey[];
+  brokenMachines: number;
+  houstonOrdersPlaced: number;
+  correctAnswers: number;
+}): { failed: string[]; improve: string[] } {
+  const failed: string[] = [];
+  const improve: string[] = [];
+  const fv = input.failedVital;
+  failed.push(`${fv ? VITAL_META[fv].label : 'Una barra'} llegó a 0 en el Sol ${input.sol}.`);
+
+  // Barra que más se gastó con las decisiones tomadas
+  const drain = VITAL_ORDER.map((k) => ({ k, total: input.history.reduce((sum, r) => sum + Math.min(0, r.deltas[k]), 0) })).sort(
+    (a, b) => a.total - b.total,
+  )[0];
+  if (drain && drain.total < -15 && drain.k !== fv) failed.push(`${VITAL_META[drain.k].label} fue la barra que más gastaste (${drain.total}).`);
+
+  if (input.complications.length || input.brokenMachines) {
+    const n = input.complications.length + input.brokenMachines;
+    failed.push(`Terminaste con ${n} ${n === 1 ? 'avería' : 'averías'} sin reparar.`);
+  } else if (input.correctAnswers <= 3) {
+    failed.push(`Solo ${input.correctAnswers} aciertos en la trivia: la base espacial empezó con poco equipo.`);
+  }
+
+  if (fv) improve.push(FIX_BY_VITAL[fv]);
+  if (input.complications.length || input.brokenMachines) improve.push('Repara las averías pronto con el botón Reparar: vuelven a encender sus máquinas.');
+  if (input.houstonOrdersPlaced === 0) improve.push('Pide suministros a Houston por la antena: tardan 2 Soles, así que anticípate.');
+  else improve.push('Vigila las barras por debajo de 35: actuar un Sol antes lo cambia todo.');
+  return { failed: failed.slice(0, 3), improve: improve.slice(0, 3) };
+}
 
 /**
  * Informe corto: solo la primera frase de valoración (sin el listado de objetos elegidos)
@@ -51,6 +97,7 @@ function shortReport(report: string, science: number): string {
 }
 
 export default function GameOverScreen() {
+  useAriaScreenReady();
   const outcome = useGameStore((s) => s.outcome);
   const rank = useGameStore((s) => s.rank) ?? 'Cadete Espacial';
   const failedVital = useGameStore((s) => s.failedVital);
@@ -61,8 +108,24 @@ export default function GameOverScreen() {
   const debrief = useGameStore((s) => s.debrief);
   const debriefLoading = useGameStore((s) => s.debriefLoading);
   const { loadDebrief, playAgain, resetToMenu, ariaSay } = useGameStore.getState();
+  const complications = useGameStore((s) => s.complications);
+  const brokenMachines = useGameStore((s) => s.brokenMachines);
+  const houstonOrdersPlaced = useGameStore((s) => s.houstonOrdersPlaced);
+  const quizAnswers = useGameStore((s) => s.quizAnswers);
   const victory = outcome === 'victory';
   const solsSurvived = victory ? TOTAL_SOLS : Math.max(0, history.length - 1);
+  const failSol = Math.max(1, history.length);
+  const analysis = victory
+    ? null
+    : defeatAnalysis({
+        failedVital,
+        sol: failSol,
+        history,
+        complications,
+        brokenMachines: brokenMachines.length,
+        houstonOrdersPlaced,
+        correctAnswers: quizAnswers.filter((a) => a.correct).length,
+      });
 
   const announced = useRef(false);
   useEffect(() => {
@@ -111,7 +174,7 @@ export default function GameOverScreen() {
               <p className="mt-1 text-sm text-slate-300 sm:text-base">
                 {victory
                   ? `La tripulación resistió los ${TOTAL_SOLS} Soles de la tormenta solar hasta el regreso del rover.`
-                  : `En el Sol ${history.length}, el nivel de ${failedVital ? VITAL_META[failedVital].label : 'una barra'} llegó a cero. La nave de rescate llevó a la tripulación a la órbita, sana y salva.`}
+                  : `En el Sol ${failSol}, el nivel de ${failedVital ? VITAL_META[failedVital].label : 'una barra'} llegó a cero. La nave de rescate llevó a la tripulación a la órbita, sana y salva.`}
               </p>
             </div>
             <span
@@ -190,8 +253,39 @@ export default function GameOverScreen() {
               </div>
             </section>
 
-            {/* Insignias (movidas aquí para equilibrar las columnas) */}
-            <section className="hw-panel p-4">
+            {/* Derrota: qué falló y qué mejorar (breve) */}
+            {analysis && (
+              <section className="hw-panel border-l-4 border-l-nasa-red p-4" aria-label="Qué falló y cómo mejorar">
+                <p className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-[0.2em] text-nasa-red">
+                  <TriangleAlert className="h-4 w-4" strokeWidth={1.75} /> ANÁLISIS DE LA EVACUACIÓN
+                </p>
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-800">Qué falló</p>
+                    <ul className="mt-1 space-y-1">
+                      {analysis.failed.map((t) => (
+                        <li key={t} className="flex gap-1.5 text-sm text-slate-700">
+                          <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-nasa-red" /> {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-800">Qué mejorar</p>
+                    <ul className="mt-1 space-y-1">
+                      {analysis.improve.map((t) => (
+                        <li key={t} className="flex gap-1.5 text-sm text-slate-700">
+                          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-nasa-blue" strokeWidth={1.75} /> {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Insignias: crece para que la columna llegue hasta abajo (sin huecos) */}
+            <section className="hw-panel flex flex-1 flex-col p-4">
               <p className="mb-3 font-mono text-xs font-bold tracking-[0.2em] text-slate-500">INSIGNIAS DE MISIÓN</p>
               <BadgeShelf size={64} compact />
             </section>
@@ -199,8 +293,8 @@ export default function GameOverScreen() {
 
           {/* ================= COLUMNA DERECHA ================= */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 }} className="flex flex-col gap-4">
-            {/* Informe de ingeniería (corto) */}
-            <section className="hw-panel p-4 sm:p-5">
+            {/* Informe de ingeniería (corto): ocupa todo el alto de la columna */}
+            <section className="hw-panel flex-1 p-4 sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-mono text-xs font-bold tracking-[0.2em] text-slate-500">INFORME DE INGENIERÍA</p>
                 {debrief && (
@@ -255,7 +349,7 @@ export default function GameOverScreen() {
             </section>
           </motion.div>
 
-          {/* ================= A TODO EL ANCHO: carga (solo lo que SÍ entró en el búnker) ================= */}
+          {/* ================= A TODO EL ANCHO: carga (solo lo que SÍ entró en la base espacial) ================= */}
           <motion.section
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -267,7 +361,7 @@ export default function GameOverScreen() {
                 <span className="rounded bg-nasa-blue px-1.5 text-white">{inventory.length}</span>
               </p>
               {inventory.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-500">Esta vez no entró ningún suministro en el búnker.</p>
+                <p className="mt-2 text-sm text-slate-500">Esta vez no entró ningún suministro en la base espacial.</p>
               ) : (
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                   {inventory.map((id) => (

@@ -20,7 +20,7 @@ const DIFFICULTY_CLS: Record<Difficulty, string> = {
 };
 
 const READY_RULES = [
-  { Icon: Check, title: 'Aciertas', text: 'un objeto de esa rama vuela a tu búnker.' },
+  { Icon: Check, title: 'Aciertas', text: 'un objeto de esa rama vuela a tu base espacial.' },
   { Icon: Star, title: 'Difícil', text: 'objetos Épicos y Legendarios NASA.' },
   { Icon: Wrench, title: '0 aciertos en una rama', text: 'empezarás con una avería en ella.' },
   { Icon: PackageOpen, title: 'Si te va mal', text: 'tendrás una cápsula de rescate gratis.' },
@@ -76,7 +76,12 @@ export default function Phase1Quiz() {
   const { beginQuiz, answerQuiz, nextQuizQuestion, tickTimer } = useGameStore.getState();
 
   const q = queue[index];
-  const shuffled = useMemo(() => (q ? shuffle([...q.answers]) : []), [q]);
+  const answerOptions = getMissionProfile(missionDifficulty).answerOptions;
+  // Modo fácil: la correcta (answers[0]) + una incorrecta al azar; modo normal: las 4
+  const shuffled = useMemo(
+    () => (q ? shuffle([q.answers[0], ...shuffle(q.answers.slice(1)).slice(0, Math.max(1, answerOptions - 1))]) : []),
+    [q, answerOptions],
+  );
   const [chosen, setChosen] = useState<string | null>(null);
   const [result, setResult] = useState<QuizAnswerRecord | null>(null);
   const [flyers, setFlyers] = useState<Flyer[]>([]);
@@ -144,7 +149,7 @@ export default function Phase1Quiz() {
       <Phase1Header
         step={stage === 'ready' ? 1 : 2}
         title="Trivia Contrarreloj NASA"
-        subtitle="Cada acierto manda un objeto de esa rama al búnker. ¡Las difíciles dan objetos legendarios!"
+        subtitle="Cada acierto manda un objeto de esa rama a la base espacial. ¡Las difíciles dan objetos legendarios!"
         triviaSeconds={quizSeconds}
         right={stage === 'quiz' ? <GiantTimer timeLeft={timeLeft} totalSeconds={quizSeconds} /> : undefined}
       />
@@ -226,15 +231,15 @@ export default function Phase1Quiz() {
                           title={q.fact}
                         >
                           {reward && <ItemIcon id={reward.id} className="h-7 w-7" />}
-                          {result.correct ? (reward ? `¡Correcto! ${reward.shortName} (${RARITY_META[reward.rarity].label}) al búnker` : '¡Correcto!') : 'Casi... ¡a por la siguiente!'}
+                          {result.correct ? (reward ? `¡Correcto! ${reward.shortName} (${RARITY_META[reward.rarity].label}) a la base espacial` : '¡Correcto!') : 'Casi... ¡a por la siguiente!'}
                         </motion.p>
                       )}
                     </AnimatePresence>
                   </div>
                 </div>
 
-                {/* Mitad inferior (~60 %): 4 respuestas en cuadrícula 2x2 */}
-                <div className="grid flex-1 basis-3/5 grid-cols-2 grid-rows-2 gap-4">
+                {/* Mitad inferior (~60 %): 4 respuestas en cuadrícula 2x2 (modo fácil: 2 en una fila) */}
+                <div className={`grid flex-1 basis-3/5 grid-cols-2 gap-4 ${shuffled.length > 2 ? 'grid-rows-2' : 'grid-rows-1'}`}>
                   {shuffled.map((ans, i) => {
                     const isCorrect = ans === q.answers[0];
                     const picked = chosen === ans;
