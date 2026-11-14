@@ -9,6 +9,7 @@ import { DIFFICULTY_META } from '../../data/triviaQuestions';
 import { VITAL_ORDER, categoryStats, getMissionProfile, useGameStore } from '../../store/useGameStore';
 import { playButtonClick, playUnlock } from '../../utils/soundEffects';
 import { Phase1Header, SystemLabel } from './Phase1Shared';
+import { tr } from '../../i18n/core';
 
 const FEEDBACK_MS = 1100;
 
@@ -19,11 +20,11 @@ const DIFFICULTY_CLS: Record<Difficulty, string> = {
   hard: 'border-nasa-red bg-nasa-red text-white',
 };
 
-const READY_RULES = [
-  { Icon: Check, title: 'Aciertas', text: 'un objeto de esa rama vuela a tu base espacial.' },
-  { Icon: Star, title: 'Difícil', text: 'objetos Épicos y Legendarios NASA.' },
-  { Icon: Wrench, title: '0 aciertos en una rama', text: 'empezarás con una avería en ella.' },
-  { Icon: PackageOpen, title: 'Si te va mal', text: 'tendrás una cápsula de rescate gratis.' },
+const getReadyRules = () => [
+  { Icon: Check, title: tr('Aciertas', 'Right answer'), text: tr('un objeto de esa rama vuela a tu base espacial.', 'an item from that branch flies to your space base.') },
+  { Icon: Star, title: tr('Difícil', 'Hard'), text: tr('objetos Épicos y Legendarios NASA.', 'Epic and NASA Legendary items.') },
+  { Icon: Wrench, title: tr('0 aciertos en una rama', '0 right in a branch'), text: tr('empezarás con una avería en ella.', 'you will start with a breakdown in it.') },
+  { Icon: PackageOpen, title: tr('Si te va mal', 'If it goes badly'), text: tr('tendrás una cápsula de rescate gratis.', 'you get a free rescue capsule.') },
 ];
 
 function shuffle<T>(arr: T[]): T[] {
@@ -52,9 +53,9 @@ function GiantTimer({ timeLeft, totalSeconds }: { timeLeft: number; totalSeconds
       className={`font-display relative overflow-hidden rounded-2xl border-2 px-7 py-1 text-center shadow ${
         urgent ? 'glow-red border-nasa-red bg-red-50 text-nasa-red' : 'border-nasa-blue bg-white text-nasa-blue'
       }`}
-      aria-label={`Quedan ${timeLeft} segundos`}
+      aria-label={tr(`Quedan ${timeLeft} segundos`, `${timeLeft} seconds left`)}
     >
-      <div className="text-xs font-bold tracking-[0.3em] opacity-80">TIEMPO</div>
+      <div className="text-xs font-bold tracking-[0.3em] opacity-80">{tr('TIEMPO', 'TIME')}</div>
       <div className="text-6xl font-black tabular-nums leading-none">{timeLeft}s</div>
       <div className="absolute inset-x-0 bottom-0 h-1.5 bg-slate-200">
         <motion.div className={`h-full ${urgent ? 'bg-nasa-red' : 'bg-nasa-blue'}`} animate={{ width: `${pct}%` }} transition={{ duration: 0.4 }} />
@@ -148,8 +149,8 @@ export default function Phase1Quiz() {
       )}
       <Phase1Header
         step={stage === 'ready' ? 1 : 2}
-        title="Trivia Contrarreloj NASA"
-        subtitle="Cada acierto manda un objeto de esa rama a la base espacial. ¡Las difíciles dan objetos legendarios!"
+        title={tr('Trivia Contrarreloj NASA', 'NASA Countdown Trivia')}
+        subtitle={tr('Cada acierto manda un objeto de esa rama a la base espacial. ¡Las difíciles dan objetos legendarios!', 'Every right answer sends an item from that branch to the space base. Hard ones give legendary items!')}
         triviaSeconds={quizSeconds}
         right={stage === 'quiz' ? <GiantTimer timeLeft={timeLeft} totalSeconds={quizSeconds} /> : undefined}
       />
@@ -166,12 +167,13 @@ export default function Phase1Quiz() {
               >
                 <Rocket className="h-11 w-11" strokeWidth={1.75} />
               </motion.div>
-              <h2 className="font-display text-4xl font-black text-nasa-blue">¿Listos, cadetes?</h2>
+              <h2 className="font-display text-4xl font-black text-nasa-blue">{tr('¿Listos, cadetes?', 'Ready, cadets?')}</h2>
               <p className="max-w-xl text-lg text-slate-700">
-                Tienes <b>{quizSeconds} segundos</b> para responder todas las preguntas que puedas. Empiezan fáciles y se ponen difíciles.
+                {tr('Tienes', 'You have')} <b>{tr(`${quizSeconds} segundos`, `${quizSeconds} seconds`)}</b>{' '}
+                {tr('para responder todas las preguntas que puedas. Empiezan fáciles y se ponen difíciles.', 'to answer as many questions as you can. They start easy and get harder.')}
               </p>
               <div className="grid max-w-2xl gap-2 text-left text-base text-slate-700 sm:grid-cols-2">
-                {READY_RULES.map(({ Icon, title, text }) => (
+                {getReadyRules().map(({ Icon, title, text }) => (
                   <p key={title} className="flex items-start gap-2 rounded-lg border border-slate-300 bg-white p-3">
                     <Icon className="mt-0.5 h-5 w-5 shrink-0 text-nasa-blue" strokeWidth={1.75} />
                     <span>
@@ -190,7 +192,7 @@ export default function Phase1Quiz() {
                 }}
                 className="font-display glow-red mt-2 flex items-center gap-3 rounded-2xl bg-nasa-red px-10 py-5 text-2xl font-black tracking-wider text-white"
               >
-                <Rocket /> ¡EMPEZAR LA MISIÓN!
+                <Rocket /> {tr('¡EMPEZAR LA MISIÓN!', 'START THE MISSION!')}
               </motion.button>
             </div>
           )}
@@ -231,7 +233,11 @@ export default function Phase1Quiz() {
                           title={q.fact}
                         >
                           {reward && <ItemIcon id={reward.id} className="h-7 w-7" />}
-                          {result.correct ? (reward ? `¡Correcto! ${reward.shortName} (${RARITY_META[reward.rarity].label}) a la base espacial` : '¡Correcto!') : 'Casi... ¡a por la siguiente!'}
+                          {result.correct
+                            ? reward
+                              ? tr(`¡Correcto! ${reward.shortName} (${RARITY_META[reward.rarity].label}) a la base espacial`, `Correct! ${reward.shortName} (${RARITY_META[reward.rarity].label}) to the space base`)
+                              : tr('¡Correcto!', 'Correct!')
+                            : tr('Casi... ¡a por la siguiente!', 'Almost... on to the next one!')}
                         </motion.p>
                       )}
                     </AnimatePresence>
@@ -276,7 +282,7 @@ export default function Phase1Quiz() {
         {/* ===== Inventario por ramas ===== */}
         <aside ref={inventoryRef} className="hw-panel flex w-full shrink-0 flex-col gap-2 p-4 lg:w-80">
           <p className="flex items-center gap-2 text-sm font-extrabold text-nasa-blue">
-            <Backpack className="h-5 w-5" strokeWidth={1.75} /> {inventory.length} objetos conseguidos
+            <Backpack className="h-5 w-5" strokeWidth={1.75} /> {inventory.length} {inventory.length === 1 ? tr('objeto conseguido', 'item obtained') : tr('objetos conseguidos', 'items obtained')}
           </p>
           <div className="thin-scroll grid min-h-0 flex-1 gap-2 overflow-y-auto">
             {VITAL_ORDER.map((cat: VitalKey) => {
@@ -287,11 +293,11 @@ export default function Phase1Quiz() {
                   <div className="flex items-center justify-between text-xs">
                     <SystemLabel cat={cat} />
                     <span className={`font-extrabold ${st.answered > 0 && st.correct === 0 ? 'text-nasa-red' : 'text-slate-500'}`}>
-                      {st.correct}/{st.answered} aciertos
+                      {st.correct}/{st.answered} {tr('aciertos', 'right')}
                     </span>
                   </div>
                   <div className="mt-1 flex min-h-[30px] flex-wrap gap-1">
-                    {items.length === 0 && <span className="text-xs text-slate-400">Sin objetos todavía</span>}
+                    {items.length === 0 && <span className="text-xs text-slate-400">{tr('Sin objetos todavía', 'No items yet')}</span>}
                     <AnimatePresence>
                       {items.map((id) => (
                         <motion.span

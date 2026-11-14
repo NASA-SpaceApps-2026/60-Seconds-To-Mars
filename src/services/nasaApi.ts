@@ -1,3 +1,4 @@
+import { getLang } from '../i18n/core';
 import type { MarsPhoto, NASAWeather, OsdrStudy, RadiationLevel } from '../types/game';
 import { ARCHIVED_FLARES } from '../data/fallbackNasaData';
 
@@ -233,7 +234,7 @@ export function strongestFlare(flares: NASAWeather[]): NASAWeather | null {
 export function formatFlareDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  return d.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 // ============================================================
@@ -267,6 +268,11 @@ const FALLBACK_MARS_PHOTOS: MarsPhoto[] = [
     whoEs: 'el rover Perseverance',
     cameraEs: 'la cámara de navegación',
     topicEs: 'las huellas del rover en una arena muy resbaladiza',
+    summaryEn:
+      "Real photo from Perseverance's navigation camera while climbing the rim of Jezero Crater (Sol 1,326). You can see its wheels and the tracks it leaves in sand so slippery it struggled to move forward.",
+    whoEn: 'the Perseverance rover',
+    cameraEn: 'its navigation camera',
+    topicEn: "the rover's tracks in very slippery sand",
     originalDescription:
       "NASA's Perseverance Mars rover used its navigation cameras, or navcams, to capture this scene while driving up to Jezero Crater's rim on Nov. 11, 2024, the 1,326th Martian day, or sol, of the mission.",
     link: 'https://images.nasa.gov/details/PIA26479',
@@ -282,6 +288,10 @@ const FALLBACK_MARS_PHOTOS: MarsPhoto[] = [
     whoEs: 'el rover Perseverance',
     cameraEs: 'la cámara de navegación',
     topicEs: 'el paisaje desde lo alto del borde del cráter',
+    summaryEn: "Perseverance's first view over the rim of Jezero Crater, on Sol 1,354, at the end of a very long climb up from the crater floor.",
+    whoEn: 'the Perseverance rover',
+    cameraEn: 'its navigation camera',
+    topicEn: 'the landscape from the top of the crater rim',
     originalDescription:
       "NASA's Perseverance Mars rover used its right-front navigation camera to capture this first view over the rim of Jezero Crater on Dec. 10, 2024, the 1,354th Martian day, or sol, of the mission.",
     link: 'https://images.nasa.gov/details/PIA26511',
@@ -297,6 +307,10 @@ const FALLBACK_MARS_PHOTOS: MarsPhoto[] = [
     whoEs: 'el rover Perseverance',
     cameraEs: 'la cámara que evita obstáculos',
     topicEs: 'su brazo robótico perforando una roca',
+    summaryEn: "Perseverance's robotic arm drills a rock to store a sample near the crater rim (Sol 1,490), while a dust devil passes in the distance.",
+    whoEn: 'the Perseverance rover',
+    cameraEn: 'its hazard-avoidance camera',
+    topicEn: 'its robotic arm drilling into a rock',
     originalDescription:
       "A dust devil whirled by in the distance as one of the cameras on NASA's Perseverance captured the Mars rover coring a sample near the rim of Jezero Crater on April 29, 2025, the 1,490th Martian day, or sol, of the mission.",
     link: 'https://images.nasa.gov/details/PIA26572',
@@ -312,6 +326,10 @@ const FALLBACK_MARS_PHOTOS: MarsPhoto[] = [
     whoEs: 'el rover Perseverance',
     cameraEs: 'la cámara Mastcam-Z',
     topicEs: 'una roca vaciada por el viento marciano',
+    summaryEn: "A rock full of holes that the Martian wind has been \"sanding\" with grit for millions of years. Perseverance's Mastcam-Z camera photographed it on Sol 836.",
+    whoEn: 'the Perseverance rover',
+    cameraEn: 'its Mastcam-Z camera',
+    topicEn: 'a rock hollowed out by the Martian wind',
     originalDescription:
       "NASA's Perseverance Mars rover spotted this hollowed-out rock in Jezero Crater using its Mastcam-Z instrument on June 26, 2023, the 836th Martian day, or sol, of the mission.",
     link: 'https://images.nasa.gov/details/PIA25917',
@@ -354,33 +372,61 @@ function pickImageHref(links: { href?: string; render?: string }[] | undefined):
  * Datos fiables sacados del texto oficial (Sol de la misión, quién, cámara y tema) y
  * resumen sencillo en español. El texto original se conserva aparte.
  */
-function describePhoto(title: string, description: string): Pick<MarsPhoto, 'summaryEs' | 'sol' | 'whoEs' | 'cameraEs' | 'topicEs'> {
+function describePhoto(
+  title: string,
+  description: string,
+): Pick<MarsPhoto, 'summaryEs' | 'sol' | 'whoEs' | 'cameraEs' | 'topicEs' | 'summaryEn' | 'whoEn' | 'cameraEn' | 'topicEn'> {
   const text = `${title} ${description}`;
   const solMatch = description.match(/(\d[\d,]*)(?:st|nd|rd|th)?\s+(?:Martian day|sol)/i);
   const sol = solMatch ? Number(solMatch[1].replace(/,/g, '')).toLocaleString('es-ES') : null;
 
   let who = 'el rover Perseverance';
-  if (/ingenuity|helicopter/i.test(text)) who = 'el helicóptero Ingenuity o el rover Perseverance';
-  else if (/orbiter|HiRISE|Mars Express|CTX/i.test(text)) who = 'una nave que orbita Marte';
+  let whoEn = 'the Perseverance rover';
+  if (/ingenuity|helicopter/i.test(text)) {
+    who = 'el helicóptero Ingenuity o el rover Perseverance';
+    whoEn = 'the Ingenuity helicopter or the Perseverance rover';
+  } else if (/orbiter|HiRISE|Mars Express|CTX/i.test(text)) {
+    who = 'una nave que orbita Marte';
+    whoEn = 'a spacecraft orbiting Mars';
+  }
 
   let camera = '';
-  if (/Mastcam-Z/i.test(text)) camera = 'la cámara Mastcam-Z';
-  else if (/navigation camera|Navcam/i.test(text)) camera = 'la cámara de navegación';
-  else if (/Hazcam|hazard/i.test(text)) camera = 'la cámara que evita obstáculos';
-  else if (/WATSON|SHERLOC/i.test(text)) camera = 'la cámara de primer plano WATSON';
+  let cameraEn = '';
+  if (/Mastcam-Z/i.test(text)) [camera, cameraEn] = ['la cámara Mastcam-Z', 'its Mastcam-Z camera'];
+  else if (/navigation camera|Navcam/i.test(text)) [camera, cameraEn] = ['la cámara de navegación', 'its navigation camera'];
+  else if (/Hazcam|hazard/i.test(text)) [camera, cameraEn] = ['la cámara que evita obstáculos', 'its hazard-avoidance camera'];
+  else if (/WATSON|SHERLOC/i.test(text)) [camera, cameraEn] = ['la cámara de primer plano WATSON', 'its WATSON close-up camera'];
 
-  const topics: string[] = [];
-  if (/dust devil/i.test(text)) topics.push('un remolino de polvo marciano');
-  if (/\brim\b/i.test(text)) topics.push('el borde del cráter');
-  if (/delta/i.test(text)) topics.push('el antiguo delta de un río que llenó el cráter de agua hace miles de millones de años');
-  if (/abrasion|\bcores?\b|coring|rock sample/i.test(text)) topics.push('rocas que guardan pistas de si hubo vida en Marte');
-  if (/mosaic|composed of/i.test(text)) topics.push('una foto gigante hecha uniendo muchas imágenes');
-  if (/boulder|rock/i.test(text) && !topics.some((t) => t.includes('rocas'))) topics.push('rocas y piedras marcianas');
-  if (/slippery|slope|climb|hill/i.test(text)) topics.push('una subida difícil por una colina');
+  // [español, inglés]
+  const topics: [string, string][] = [];
+  if (/dust devil/i.test(text)) topics.push(['un remolino de polvo marciano', 'a Martian dust devil']);
+  if (/\brim\b/i.test(text)) topics.push(['el borde del cráter', 'the crater rim']);
+  if (/delta/i.test(text)) topics.push(['el antiguo delta de un río que llenó el cráter de agua hace miles de millones de años', 'the ancient delta of a river that filled the crater with water billions of years ago']);
+  if (/abrasion|\bcores?\b|coring|rock sample/i.test(text)) topics.push(['rocas que guardan pistas de si hubo vida en Marte', 'rocks that hold clues about whether there was life on Mars']);
+  if (/mosaic|composed of/i.test(text)) topics.push(['una foto gigante hecha uniendo muchas imágenes', 'a giant photo made by joining many images']);
+  if (/boulder|rock/i.test(text) && !topics.some(([es]) => es.includes('rocas'))) topics.push(['rocas y piedras marcianas', 'Martian rocks and stones']);
+  if (/slippery|slope|climb|hill/i.test(text)) topics.push(['una subida difícil por una colina', 'a tough climb up a hill']);
 
+  const solEn = sol ? sol.replace(/\./g, ',') : null;
   const base = `Foto real tomada por ${who}${camera ? ` con ${camera}` : ''} en el Cráter Jezero${sol ? `, en el Sol ${sol} de la misión` : ''}.`;
-  const summaryEs = topics.length ? `${base} Muestra ${topics.slice(0, 2).join(' y ')}.` : `${base} Así es de verdad el paisaje que exploran los rovers de la NASA.`;
-  return { summaryEs, sol, whoEs: who, cameraEs: camera, topicEs: topics[0] ?? null };
+  const baseEn = `Real photo taken by ${whoEn}${cameraEn ? ` with ${cameraEn}` : ''} in Jezero Crater${solEn ? `, on Sol ${solEn} of the mission` : ''}.`;
+  const summaryEs = topics.length
+    ? `${base} Muestra ${topics.slice(0, 2).map(([es]) => es).join(' y ')}.`
+    : `${base} Así es de verdad el paisaje que exploran los rovers de la NASA.`;
+  const summaryEn = topics.length
+    ? `${baseEn} It shows ${topics.slice(0, 2).map(([, en]) => en).join(' and ')}.`
+    : `${baseEn} This is what the landscape explored by NASA's rovers really looks like.`;
+  return {
+    summaryEs,
+    sol,
+    whoEs: who,
+    cameraEs: camera,
+    topicEs: topics[0]?.[0] ?? null,
+    summaryEn,
+    whoEn,
+    cameraEn,
+    topicEn: topics[0]?.[1] ?? null,
+  };
 }
 
 interface NasaImagesResponse {

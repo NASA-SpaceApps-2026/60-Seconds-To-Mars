@@ -5,6 +5,7 @@
 // La voz natural nunca corta a mitad de frase: termina la frase en curso y pasa al mensaje nuevo.
 
 import { playBlip } from './soundEffects';
+import { getLang, type Lang } from '../i18n/core';
 
 export type VoiceMode = 'natural' | 'beeps' | 'silent';
 export type VoiceGender = 'female' | 'male' | 'unknown';
@@ -105,7 +106,9 @@ const NAME_PRIORITY: string[][] = [
   ['paulina'],
   ['monica', 'mónica'],
 ];
-const LANG_PRIORITY = ['es-es', 'es-mx', 'es-us'];
+const LANG_PRIORITY: Record<Lang, string[]> = { es: ['es-es', 'es-mx', 'es-us'], en: ['en-us', 'en-gb', 'en-au'] };
+/** Idioma en el que habla A.R.I.A. (lo cambia el selector ES / EN). */
+let speechLang: Lang = getLang();
 
 const FEMALE_HINTS = ['female', 'mujer', 'elvira', 'paulina', 'monica', 'mónica', 'helena', 'laura', 'sabina', 'dalia', 'elena', 'lucia', 'lucía', 'ximena', 'abril', 'paloma', 'marisol', 'esperanza', 'zira', 'hazel', 'susan', 'samantha', 'victoria', 'karen', 'catherine', 'linda', 'salome', 'salomé'];
 const MALE_HINTS = ['male', 'hombre', 'alvaro', 'álvaro', 'jorge', 'pablo', 'raul', 'raúl', 'diego', 'tomas', 'tomás', 'gerardo', 'alonso', 'arnau', 'dario', 'darío', 'david', 'mark', 'george', 'james', 'daniel', 'juan', 'carlos'];
@@ -125,12 +128,14 @@ function scoreVoice(v: SpeechSynthesisVoice): number {
   const lang = v.lang.toLowerCase().replace('_', '-');
   const nameIdx = NAME_PRIORITY.findIndex((group) => group.some((k) => name.includes(k)));
   const nameScore = nameIdx === -1 ? 100 : nameIdx * 10;
-  const langIdx = LANG_PRIORITY.indexOf(lang);
+  const langIdx = LANG_PRIORITY[speechLang].indexOf(lang);
   const langScore = langIdx === -1 ? 5 : langIdx;
   const sapiPenalty = nameIdx === -1 && v.localService ? 50 : 0;
-  const notSpanish = lang.startsWith('es') ? 0 : 1000;
-  return nameScore + langScore + sapiPenalty + notSpanish;
+  const otherLanguage = lang.startsWith(speechLang) ? 0 : 1000;
+  return nameScore + langScore + sapiPenalty + otherLanguage;
 }
+
+const matchesLang = (v: SpeechSynthesisVoice) => v.lang.toLowerCase().startsWith(speechLang);
 
 function loadVoices() {
   if (!synth) return;
@@ -140,10 +145,11 @@ function loadVoices() {
     name: v.name,
     lang: v.lang,
     gender: guessGender(v.name),
-    isSpanish: v.lang.toLowerCase().startsWith('es'),
+    isSpanish: matchesLang(v),
   }));
-  // Respetar la voz elegida a mano; si no existe, la mejor automática
-  voice = rawVoices.find((v) => voiceId(v) === state.voiceId) ?? rawVoices[0] ?? null;
+  // Respetar la voz elegida a mano si es del idioma activo; si no, la mejor automática
+  const chosen = rawVoices.find((v) => voiceId(v) === state.voiceId);
+  voice = (chosen && matchesLang(chosen) ? chosen : null) ?? rawVoices[0] ?? null;
   emit({ voices, voiceName: voice ? `${voice.name} (${voice.lang})` : null });
 }
 
@@ -241,7 +247,7 @@ function speakNextChunk(gen: number) {
   }
   chunkActive = true;
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = voice?.lang ?? 'es-ES';
+  utter.lang = voice?.lang ?? (speechLang === 'en' ? 'en-US' : 'es-ES');
   if (voice) utter.voice = voice;
   utter.pitch = state.pitch;
   utter.rate = state.rate;
@@ -370,6 +376,13 @@ export const ariaVoice = {
   },
   getMode(): VoiceMode {
     return state.mode;
+  },
+  /** Cambia el idioma de la voz: corta lo que suena y elige la mejor voz de ese idioma. */
+  setLanguage(lang: Lang) {
+    if (lang === speechLang) return;
+    speechLang = lang;
+    this.interrupt();
+    loadVoices();
   },
   /** Elegir manualmente una voz instalada (por su id). */
   setVoice(id: string) {

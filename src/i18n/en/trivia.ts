@@ -1,0 +1,59 @@
+import type { TriviaQuestion } from '../../types/game';
+
+/** English version of the 45 trivia questions (the FIRST answer is always the correct one). */
+export const TRIVIA_EN: Record<string, Pick<TriviaQuestion, 'question' | 'answers' | 'fact'>> = {
+  // ======================= OXYGEN =======================
+  ox_e1: { question: 'Which gas do we need to breathe to stay alive?', answers: ['Oxygen', 'Helium', 'Carbon dioxide', 'Hydrogen'], fact: 'On the ISS, oxygen is made on board so the astronauts can breathe.' },
+  ox_e2: { question: 'Is there air to breathe on the Moon?', answers: ['No, it has almost no atmosphere', 'Yes, just like on Earth', 'Only at night', 'Only inside craters'], fact: 'That is why the Apollo astronauts needed suits with their own oxygen.' },
+  ox_e3: { question: 'Which gas do we breathe out?', answers: ['Carbon dioxide', 'Pure oxygen', 'Helium', 'Gold vapor'], fact: 'In a spacecraft that CO2 has to be cleaned from the air with filters, or the crew gets dizzy.' },
+  ox_m1: { question: 'Which gas makes up almost all of the atmosphere of Mars?', answers: ['Carbon dioxide', 'Oxygen', 'Helium', 'Water vapor'], fact: 'About 95% of the air on Mars is CO2: you cannot breathe it.' },
+  ox_m2: { question: 'What do plants do with sunlight?', answers: ['They make oxygen through photosynthesis', 'They just get warm', 'They glow in the dark', 'Nothing, they only need water'], fact: 'That is why space greenhouses help with both food and air.' },
+  ox_m3: { question: 'Which NASA rover made oxygen on Mars?', answers: ['Perseverance', 'Curiosity', 'Sojourner', 'Opportunity'], fact: 'Its MOXIE experiment pulled oxygen out of the Martian air, which is almost all CO2.' },
+  ox_h1: { question: 'How is oxygen made on the Space Station?', answers: ['By splitting water with electricity', 'With tanks that arrive every day', 'Only with plants', 'By collecting it from space'], fact: 'It is called electrolysis: electricity splits water into hydrogen and oxygen.' },
+  ox_h2: { question: 'Which mission had a CO2 problem and was saved with duct tape?', answers: ['Apollo 13', 'Apollo 11', 'Artemis I', 'Voyager 1'], fact: 'They fitted square filters into round holes using tape, cardboard and plastic bags.' },
+  ox_h3: { question: "How does the atmosphere of Mars compare to Earth's?", answers: ['About 100 times thinner', 'Just as thick', 'Twice as thick', 'Only 10% thinner'], fact: "The pressure on Mars is less than 1% of Earth's: liquid water boils or freezes right away." },
+
+  // ======================= POWER =======================
+  pw_e1: { question: 'What is the closest star to Earth?', answers: ['The Sun', 'The Moon', 'Mars', 'The North Star'], fact: 'The Sun is a star. Its light takes about 8 minutes to reach us.' },
+  pw_e2: { question: 'What do many spacecraft use to get electricity from light?', answers: ['Solar panels', 'Candles', 'Windmills', 'Toy batteries'], fact: 'With its huge solar panel wings, the whole ISS is almost as big as a football field.' },
+  pw_e3: { question: 'What happens to a solar panel at night?', answers: ['It stops giving power because there is no light', 'It gives twice as much power', 'It works the same', 'It turns into a battery'], fact: 'That is why bases need batteries to store energy for the night.' },
+  pw_m1: { question: 'Which rover worked almost 15 years on Mars with solar panels?', answers: ['Opportunity', 'Perseverance', 'Curiosity', 'Ingenuity'], fact: 'Opportunity was meant to last 90 days and lasted from 2004 to 2018. A dust storm covered its panels!' },
+  pw_m2: { question: 'Why are dust storms a power problem on Mars?', answers: ['They block the Sun and dirty the panels', 'They freeze the batteries until they break', 'They make it rain', 'They are no problem at all'], fact: 'Martian dust storms can cover the whole planet for weeks.' },
+  pw_m3: { question: 'How long is a day on Mars (a "Sol")?', answers: ['About 24 hours and 39 minutes', 'About 12 hours', 'About 48 hours', 'One week'], fact: 'Rover teams lived on "Mars time" and started each day 40 minutes later.' },
+  pw_h1: { question: 'What power source do Curiosity and Perseverance use?', answers: ['A nuclear generator (RTG)', 'Solar panels', 'Gasoline', 'Martian wind'], fact: 'An MMRTG turns heat from plutonium into electricity, day and night.' },
+  pw_h2: { question: 'Which probes launched in 1977 still work thanks to RTG generators?', answers: ['Voyager 1 and 2', 'Apollo 11 and 12', 'The Hubble telescope', 'Mars Pathfinder'], fact: "The Voyagers are the most distant human-made objects: they have already left the Sun's bubble!" },
+  pw_h3: { question: 'Which NASA project tested a mini reactor for the Moon and Mars in 2018?', answers: ['Kilopower', 'MOXIE', 'Veggie', 'MAVEN'], fact: 'Its test was called KRUSTY and it proved a small reactor can power a base.' },
+
+  // ======================= FOOD =======================
+  fd_e1: { question: 'What do astronauts eat instead of bread so they make no crumbs?', answers: ['Tortillas', 'Cookies', 'Sponge cake', 'Sliced bread'], fact: 'Crumbs would float around the station and could get into eyes or equipment.' },
+  fd_e2: { question: 'What does a plant need to grow?', answers: ['Light, water and nutrients', 'Only darkness', 'Only sand', 'Only ice'], fact: 'In space, LED lights and little nutrient pouches are used to grow crops.' },
+  fd_e3: { question: 'What do we call food that has its water removed so it weighs less?', answers: ['Freeze-dried', 'Frozen', 'Fried', 'Boiled'], fact: 'Astronauts add water before eating it. It weighs much less at launch!' },
+  fd_m1: { question: 'Which vegetable grown on the ISS did astronauts eat in 2015?', answers: ['Red lettuce', 'Potato', 'Carrot', 'Pumpkin'], fact: 'It was the Veggie experiment. Its data is in the NASA Open Science Data Repository.' },
+  fd_m2: { question: 'Why do space greenhouses have pink light?', answers: ['Plants mostly use red and blue light', 'For decoration', 'To scare away insects', 'To heat the station'], fact: 'By mixing red and blue LEDs, plants grow while using little energy.' },
+  fd_m3: { question: 'Why do astronauts like spicy food in space?', answers: ['Taste fades a bit as fluids move up to the head', 'Because it is very cold', 'Because then it floats less', 'Because it glows in the dark'], fact: 'It is like having a cold: a stuffy nose makes food taste weaker.' },
+  fd_h1: { question: 'Which NASA repository stores data on plants and bacteria in space?', answers: ['OSDR (Open Science Data Repository)', 'DONKI', 'Hubble', 'Deep Space Network'], fact: 'Any scientist in the world can use that data for free in their research.' },
+  fd_h2: { question: 'How long should food last without spoiling on a mission to Mars?', answers: ['Up to about 5 years', 'One week', 'One month', '100 years'], fact: 'A round trip to Mars could take 2 to 3 years, and you need reserves.' },
+  fd_h3: { question: 'What was harvested for the first time on the ISS in 2021?', answers: ['Chile peppers', 'Strawberries', 'Bananas', 'Rice'], fact: 'It was the Plant Habitat-04 experiment: the astronauts made tacos with them.' },
+
+  // ======================= SHIELDING =======================
+  sh_e1: { question: "What protects us on Earth from much of the Sun's radiation?", answers: ['The atmosphere and the magnetic field', 'Cotton clouds', 'Trees', 'The Moon'], fact: 'The northern lights appear when particles from the Sun hit that shield.' },
+  sh_e2: { question: 'How do we protect ourselves from the Sun at the beach in summer?', answers: ['With sunscreen, a cap and shade', 'By staring at the Sun', 'By running faster', 'By eating ice cream'], fact: 'In space it is the same, but you need much stronger shields.' },
+  sh_e3: { question: 'What is a solar storm?', answers: ['Energy and particles thrown out by the Sun', 'Rain falling on the Sun', 'A cloud of Martian dust', 'A comet'], fact: 'NASA scientists watch the Sun day and night to warn astronauts.' },
+  sh_m1: { question: 'What is a Coronal Mass Ejection (CME)?', answers: ['A giant cloud of particles from the Sun', 'A comet crashing into Mars', 'A Martian volcano', 'A lunar dust storm'], fact: 'CMEs can travel at more than 1,000 km per second.' },
+  sh_m2: { question: 'Which NASA database records solar storms?', answers: ['DONKI', 'OSDR', 'Hubble', 'Artemis'], fact: 'DONKI stands for "Database Of Notifications, Knowledge, Information". This game uses its data!' },
+  sh_m3: { question: 'Does Mars have a global magnetic shield like Earth?', answers: ['No, it lost it billions of years ago', 'Yes, stronger than ours', 'Yes, just like ours', 'Only on weekends'], fact: 'Without that shield, the solar wind slowly stripped away the air of Mars.' },
+  sh_h1: { question: 'Which class of solar flare is the most powerful?', answers: ['Class X', 'Class A', 'Class C', 'Class M'], fact: 'The scale goes A, B, C, M and X. Each letter is 10 times more powerful than the one before.' },
+  sh_h2: { question: 'Which material best protects a spacecraft from cosmic rays?', answers: ['Materials rich in hydrogen, like water', 'Cardboard', 'Glass', 'Air'], fact: 'Hydrogen slows particles down without creating as much secondary radiation as heavy metals.' },
+  sh_h3: { question: "Which NASA mission studies how the solar wind strips away Mars's atmosphere?", answers: ['MAVEN', 'Hubble', 'Voyager 1', 'Apollo 11'], fact: 'MAVEN has orbited Mars since 2014, watching its atmosphere escape into space.' },
+
+  // ======================= HEALTH =======================
+  hp_e1: { question: 'What do we call the special clothing for going out into space?', answers: ['Spacesuit', 'Pajamas', 'Swimsuit', 'Raincoat'], fact: 'A spacesuit is like a tiny spacecraft: it carries air, heating and a radio.' },
+  hp_e2: { question: 'What is the natural satellite that orbits the Earth called?', answers: ['The Moon', 'The Sun', 'Jupiter', 'A comet'], fact: 'With the Artemis program, NASA wants to take astronauts back to the Moon.' },
+  hp_e3: { question: 'Why do astronauts exercise in space?', answers: ['So their muscles and bones do not get weak', 'Just so they do not get bored', 'To heat the station', 'To make the station go faster'], fact: 'Without gravity the body works less and muscles get weaker.' },
+  hp_m1: { question: 'Why do astronauts float on the Space Station?', answers: ['Because they are falling around the Earth all the time', 'Because there is no gravity at all in space', 'Because they wear magnets', 'Because the station is full of balloons'], fact: 'At the height of the ISS, gravity is almost the same as on the ground: they float because they are in free fall.' },
+  hp_m2: { question: 'How much exercise do astronauts do every day on the ISS?', answers: ['About 2 hours', 'None', '10 hours', '5 minutes'], fact: 'They use a bike, a treadmill with harnesses and a special weight machine.' },
+  hp_m3: { question: 'Which vitamin do astronauts lack because they hardly get any sunlight?', answers: ['Vitamin D', 'Vitamin C', 'Vitamin A', 'Vitamin K'], fact: 'Our skin makes vitamin D from sunlight. On the ISS they take it as pills.' },
+  hp_h1: { question: 'If you weigh 30 kg on Earth, how much would the scale show on Mars?', answers: ['About 11 kg', 'About 30 kg', 'About 60 kg', 'About 2 kg'], fact: "Mars's gravity is about 38% of Earth's. You could jump almost 3 times higher!" },
+  hp_h2: { question: 'How much bone mass can astronauts lose each month in space?', answers: ['Between 1 and 1.5%', 'Half of it', 'None', '20%'], fact: 'That is why daily exercise and good food are so important on long missions.' },
+  hp_h3: { question: 'Which NASA mission simulates living on Mars for a year to study crew health?', answers: ['CHAPEA', 'MAVEN', 'Kilopower', 'Voyager'], fact: 'Four volunteers lived for a year in a 3D-printed habitat in Houston (2023-2024).' },
+};

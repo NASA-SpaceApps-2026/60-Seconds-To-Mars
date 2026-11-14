@@ -6,8 +6,12 @@ import { MAX_QUESTION_CHARS } from '../services/geminiSchemas';
 import { TOTAL_SOLS, availableItems, useGameStore } from '../store/useGameStore';
 import { useAriaTypedText } from '../utils/useAriaVoiceState';
 import { playButtonClick, playIncoming } from '../utils/soundEffects';
+import { useT } from '../i18n/useT';
 
-const QUICK_QUESTIONS = ['¿Cuál es el mayor peligro hoy?', '¿Qué máquina debería apagar?', 'Explícame el dato de la NASA'];
+const QUICK_QUESTIONS = {
+  es: ['¿Cuál es el mayor peligro hoy?', '¿Qué máquina debería apagar?', 'Explícame el dato de la NASA'],
+  en: ["What's the biggest danger today?", 'Which machine should I switch off?', 'Explain the NASA fact to me'],
+};
 const COOLDOWN_MS = 2500;
 
 /** Consultar al Ordenador A.R.I.A.: el jugador pregunta y Gemini (o el fallback) responde. */
@@ -18,6 +22,8 @@ export default function AriaConsole() {
   const [loading, setLoading] = useState(false);
   const lastAsk = useRef(0);
   const shown = useAriaTypedText(answer ?? '');
+  const t = useT();
+  const language = useGameStore((s) => s.language);
 
   const ask = async (text: string) => {
     const q = text.trim().slice(0, MAX_QUESTION_CHARS);
@@ -63,7 +69,7 @@ export default function AriaConsole() {
 
   return (
     <div className="hw-panel p-3">
-      <p className="flex items-center gap-2 text-base font-bold text-slate-800"><MessageCircle className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} /> Pregunta a A.R.I.A.</p>
+      <p className="flex items-center gap-2 text-base font-bold text-slate-800"><MessageCircle className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} /> {t('Pregunta a A.R.I.A.', 'Ask A.R.I.A.')}</p>
 
       <form onSubmit={onSubmit} className="mt-2 flex gap-2">
         <input
@@ -71,8 +77,8 @@ export default function AriaConsole() {
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           maxLength={MAX_QUESTION_CHARS}
-          placeholder="Escribe tu duda sobre la misión..."
-          aria-label="Pregunta para A.R.I.A."
+          placeholder={t('Escribe tu duda sobre la misión...', 'Type your question about the mission...')}
+          aria-label={t('Pregunta para A.R.I.A.', 'Question for A.R.I.A.')}
           className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 placeholder:text-slate-400 outline-none focus:border-nasa-blue focus:ring-2 focus:ring-nasa-blue/25"
         />
         <button
@@ -80,12 +86,12 @@ export default function AriaConsole() {
           disabled={loading || !question.trim()}
           className="flex shrink-0 items-center gap-1 rounded-lg bg-nasa-blue px-3 py-2 text-base font-black text-white transition hover:bg-nasa-blue-light disabled:bg-slate-300 disabled:text-slate-500"
         >
-          {loading ? <LoaderCircle size={15} className="animate-spin" /> : <Send size={15} />} Preguntar
+          {loading ? <LoaderCircle size={15} className="animate-spin" /> : <Send size={15} />} {t('Preguntar', 'Ask')}
         </button>
       </form>
 
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {QUICK_QUESTIONS.map((q) => (
+        {QUICK_QUESTIONS[language].map((q) => (
           <button
             key={q}
             type="button"
@@ -108,10 +114,10 @@ export default function AriaConsole() {
             className="relative mt-3 rounded-xl border-2 border-nasa-blue/40 bg-blue-50 p-2.5"
           >
             <span className="absolute -top-2 left-6 h-3 w-3 rotate-45 border-l-2 border-t-2 border-nasa-blue/40 bg-blue-50" />
-            {asked && <p className="mb-1 text-sm italic text-slate-500">Tú: «{asked}»</p>}
+            {asked && <p className="mb-1 text-sm italic text-slate-500">{t('Tú', 'You')}: «{asked}»</p>}
             {loading ? (
               <p className="flex items-center gap-2 text-base text-nasa-blue">
-                <LoaderCircle size={15} className="animate-spin" /> A.R.I.A. está consultando sus bases de datos...
+                <LoaderCircle size={15} className="animate-spin" /> {t('A.R.I.A. está consultando sus bases de datos...', 'A.R.I.A. is checking her databases...')}
               </p>
             ) : (
               <p className="text-base leading-relaxed text-slate-800">

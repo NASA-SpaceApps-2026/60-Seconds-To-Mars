@@ -6,6 +6,8 @@ import { MISSION_DIFFICULTY_META, getMissionProfile, useGameStore } from '../sto
 import type { MissionDifficulty } from '../types/game';
 import { playButtonClick, playToggle, unlockAudio } from '../utils/soundEffects';
 import MissionPatch from './MissionPatchLogo';
+import { useT } from '../i18n/useT';
+import { tr } from '../i18n/core';
 
 // ============================================================
 // Ilustraciones originales (SVG propio, sin logos ni emojis)
@@ -37,49 +39,41 @@ function CadetHelmet() {
   );
 }
 
-/** Insignia de Comandante Estelar con escudo de tormenta: Modo Comandante. */
-function CommanderBadge() {
+/** Medalla de mérito con cinta: Modo Comandante. */
+function CommanderMedal() {
   return (
     <svg viewBox="0 0 120 120" className="h-full w-full" aria-hidden>
+      {/* Cinta en V (azul NASA con franja roja) */}
+      <path d="M34 4 H56 L66 48 L50 56 Z" fill="#0b3d91" />
+      <path d="M86 4 H64 L54 48 L70 56 Z" fill="#1e5bc6" />
+      <path d="M43 4 H49 L60 50 L56 52 Z" fill="#fc3d21" />
+      <path d="M77 4 H71 L60 50 L64 52 Z" fill="#fc3d21" />
+      {/* Medalla que se balancea un poco */}
       <motion.g
-        style={{ transformOrigin: '60px 60px' }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
+        style={{ transformOrigin: '60px 44px' }}
+        animate={{ rotate: [-4, 4, -4] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
       >
-        {Array.from({ length: 12 }).map((_, i) => (
-          <rect key={i} x={57} y={2} width={6} height={14} rx={3} fill="#f97316" opacity={i % 2 ? 0.45 : 0.9} transform={`rotate(${i * 30} 60 60)`} />
-        ))}
+        <circle cx={60} cy={80} r={34} fill="#f59e0b" stroke="#ffffff" strokeWidth={4} />
+        <circle cx={60} cy={80} r={26} fill="#fbbf24" stroke="#d97706" strokeWidth={2.5} />
+        <path
+          d="M60 62 L65.3 73.2 L77.6 74.6 L68.5 83 L71 95.2 L60 89 L49 95.2 L51.5 83 L42.4 74.6 L54.7 73.2 Z"
+          fill="#ffffff"
+          stroke="#d97706"
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+        <motion.path
+          d="M44 64 Q52 56 62 56"
+          stroke="#ffffff"
+          strokeOpacity={0.8}
+          strokeWidth={4}
+          strokeLinecap="round"
+          fill="none"
+          animate={{ opacity: [0.2, 1, 0.2] }}
+          transition={{ duration: 2.2, repeat: Infinity }}
+        />
       </motion.g>
-      <path d="M60 18 L94 30 V60 C94 82 79 97 60 104 C41 97 26 82 26 60 V30 Z" fill="#0b3d91" stroke="#ffffff" strokeWidth={4} />
-      <path d="M60 26 L87 36 V60 C87 77 75 89 60 95 C45 89 33 77 33 60 V36 Z" fill="#1e5bc6" />
-      <motion.path
-        d="M64 36 L48 64 H60 L54 86 L74 56 H62 Z"
-        fill="#fc3d21"
-        stroke="#ffffff"
-        strokeWidth={2.5}
-        strokeLinejoin="round"
-        animate={{ opacity: [1, 0.55, 1] }}
-        transition={{ duration: 1.4, repeat: Infinity }}
-      />
-      <path d="M22 100 L60 112 L98 100" stroke="#f97316" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </svg>
-  );
-}
-
-/** Base en Marte con cúpula y antena (decoración del fondo). */
-function MarsBaseScene() {
-  return (
-    <svg viewBox="0 0 400 120" className="h-full w-full" preserveAspectRatio="xMidYMax slice" aria-hidden>
-      <path d="M0 80 Q60 60 120 76 T240 70 T400 74 V120 H0 Z" fill="#fdba74" opacity={0.55} />
-      <path d="M0 96 Q80 80 160 92 T320 88 T400 94 V120 H0 Z" fill="#fb923c" opacity={0.55} />
-      <g transform="translate(250 54)">
-        <path d="M0 34 Q0 4 34 4 Q68 4 68 34 Z" fill="#f8fafc" stroke="#cbd5e1" strokeWidth={2} />
-        <rect x={-6} y={32} width={80} height={10} rx={3} fill="#e2e8f0" stroke="#cbd5e1" strokeWidth={2} />
-        <rect x={20} y={16} width={28} height={9} rx={4.5} fill="#0b3d91" />
-        <path d="M80 34 V10" stroke="#94a3b8" strokeWidth={2.5} />
-        <path d="M72 12 Q80 2 90 10" stroke="#94a3b8" strokeWidth={2.5} fill="none" />
-        <motion.circle cx={80} cy={8} r={3} fill="#fc3d21" animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 1.1, repeat: Infinity }} />
-      </g>
     </svg>
   );
 }
@@ -138,11 +132,6 @@ function SpaceBackdrop() {
           <Rocket className="h-5 w-5 rotate-45" strokeWidth={2} />
         </motion.span>
       </motion.div>
-
-      {/* Base en Marte al fondo */}
-      <div className="absolute inset-x-0 bottom-0 h-[clamp(5rem,18dvh,9rem)] opacity-80">
-        <MarsBaseScene />
-      </div>
     </div>
   );
 }
@@ -164,27 +153,27 @@ function buildCards(): Record<MissionDifficulty, ModeCard> {
   const cmd = getMissionProfile('commander');
   return {
     explorer: {
-      badge: 'CREDENCIAL DE CADETE',
-      tagline: '¡Perfecto para tu primera misión!',
+      badge: tr('CREDENCIAL DE CADETE', 'CADET CREDENTIAL'),
+      tagline: tr('¡Perfecto para tu primera misión!', 'Perfect for your first mission!'),
       Art: CadetHelmet,
       stars: 1,
       accent: '#1e5bc6',
       facts: [
-        { Icon: ListChecks, text: `Preguntas con ${exp.answerOptions} respuestas` },
-        { Icon: ShieldHalf, text: 'Más reservas en la base' },
-        { Icon: Wrench, text: 'Pocas averías' },
+        { Icon: ListChecks, text: tr(`Preguntas con ${exp.answerOptions} respuestas`, `Questions with ${exp.answerOptions} answers`) },
+        { Icon: ShieldHalf, text: tr('Más reservas en la base', 'More supplies in the base') },
+        { Icon: Wrench, text: tr('Pocas averías', 'Few breakdowns') },
       ],
     },
     commander: {
-      badge: 'INSIGNIA DE COMANDANTE',
-      tagline: '¿Te atreves con la gran tormenta?',
-      Art: CommanderBadge,
+      badge: tr('MEDALLA DE COMANDANTE', 'COMMANDER MEDAL'),
+      tagline: tr('¿Te atreves con la gran tormenta?', 'Dare to face the great storm?'),
+      Art: CommanderMedal,
       stars: 3,
       accent: '#fc3d21',
       facts: [
-        { Icon: ListChecks, text: `Preguntas con ${cmd.answerOptions} respuestas` },
-        { Icon: ShieldHalf, text: 'Menos reservas, más radiación' },
-        { Icon: Wrench, text: 'Averías frecuentes' },
+        { Icon: ListChecks, text: tr(`Preguntas con ${cmd.answerOptions} respuestas`, `Questions with ${cmd.answerOptions} answers`) },
+        { Icon: ShieldHalf, text: tr('Menos reservas, más radiación', 'Fewer supplies, more radiation') },
+        { Icon: Wrench, text: tr('Averías frecuentes', 'Frequent breakdowns') },
       ],
     },
   };
@@ -192,8 +181,8 @@ function buildCards(): Record<MissionDifficulty, ModeCard> {
 
 function DifficultyMeter({ stars, accent }: { stars: number; accent: string }) {
   return (
-    <span className="flex items-center gap-2" aria-label={`Dificultad ${stars} de 3`}>
-      <span className="font-mono text-xs font-bold tracking-wider text-slate-500">RETO</span>
+    <span className="flex items-center gap-2" aria-label={tr(`Dificultad ${stars} de 3`, `Difficulty ${stars} of 3`)}>
+      <span className="font-mono text-xs font-bold tracking-wider text-slate-500">{tr('RETO', 'CHALLENGE')}</span>
       <span className="flex gap-0.5">
         {[1, 2, 3].map((n) => (
           <Star key={n} className="h-5 w-5" strokeWidth={1.75} style={{ color: n <= stars ? accent : '#cbd5e1' }} fill={n <= stars ? accent : 'none'} />
@@ -281,7 +270,7 @@ function ModeCredential({ difficulty, selected, onSelect }: { difficulty: Missio
           className="font-display absolute right-3 top-1 flex items-center gap-1 rounded-lg border-2 px-2 py-0.5 text-xs font-black tracking-widest shadow-sm"
           style={{ borderColor: card.accent, color: card.accent, background: 'rgba(255,255,255,0.92)' }}
         >
-          <Check className="h-4 w-4" strokeWidth={3} /> ELEGIDO
+          <Check className="h-4 w-4" strokeWidth={3} /> {tr('ELEGIDO', 'CHOSEN')}
         </motion.span>
       )}
     </motion.button>
@@ -297,6 +286,7 @@ export default function MissionSelector() {
   const setMissionDifficulty = useGameStore((s) => s.setMissionDifficulty);
   const startGame = useGameStore((s) => s.startGame);
   const resetToMenu = useGameStore((s) => s.resetToMenu);
+  const t = useT();
 
   return (
     <main className="relative flex h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900" onPointerDown={unlockAudio}>
@@ -317,7 +307,7 @@ export default function MissionSelector() {
               }}
               className="flex items-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-3 py-2 font-mono text-xs font-bold tracking-widest text-slate-500 shadow-sm transition hover:border-nasa-blue hover:text-nasa-blue"
             >
-              <ArrowLeft size={15} /> PORTADA
+              <ArrowLeft size={15} /> {t('PORTADA', 'HOME')}
             </button>
             <motion.div animate={{ rotate: [0, -4, 4, 0] }} transition={{ duration: 6, repeat: Infinity }}>
               <MissionPatch size={52} className="h-[clamp(2.5rem,7dvh,3.25rem)] w-auto" />
@@ -330,7 +320,7 @@ export default function MissionSelector() {
               animate={{ opacity: 1, y: 0 }}
               className="mx-auto inline-flex items-center gap-2 rounded-full bg-nasa-blue px-4 py-1 font-mono text-xs font-bold tracking-[0.25em] text-white"
             >
-              <Gauge className="h-4 w-4" strokeWidth={2} /> ELIGE TU MODO
+              <Gauge className="h-4 w-4" strokeWidth={2} /> {t('ELIGE TU MODO', 'CHOOSE YOUR MODE')}
             </motion.p>
             <motion.h1
               initial={{ opacity: 0, scale: 0.94 }}
@@ -338,14 +328,14 @@ export default function MissionSelector() {
               transition={{ type: 'spring', stiffness: 140 }}
               className="font-display mt-2 text-[clamp(1.6rem,min(4.2vw,6dvh),3.1rem)] font-black leading-tight text-nasa-blue"
             >
-              ¿Qué tipo de <span className="text-nasa-red">astronauta</span> eres?
+              {t('¿Qué tipo de ', 'What kind of ')}<span className="text-nasa-red">{t('astronauta', 'astronaut')}</span>{t(' eres?', ' are you?')}
             </motion.h1>
             <p className="mx-auto mt-1 max-w-xl text-[clamp(0.95rem,2.4dvh,1.15rem)] font-semibold text-slate-600">
-              Toca una credencial para elegirla. ¡Podrás cambiar de modo en la próxima misión!
+              {t('Toca una credencial para elegirla. ¡Podrás cambiar de modo en la próxima misión!', 'Tap a credential to choose it. You can switch modes on your next mission!')}
             </p>
           </section>
 
-          <section aria-label="Modo de juego" className="mx-auto mt-[clamp(0.75rem,3dvh,2rem)] grid w-full gap-[clamp(0.9rem,2.5dvh,1.5rem)] pb-4 sm:grid-cols-2">
+          <section aria-label={t('Modo de juego', 'Game mode')} className="mx-auto mt-[clamp(0.75rem,3dvh,2rem)] grid w-full gap-[clamp(0.9rem,2.5dvh,1.5rem)] pb-4 sm:grid-cols-2">
             {(Object.keys(MISSION_DIFFICULTY_META) as MissionDifficulty[]).map((difficulty, i) => (
               <motion.div
                 key={difficulty}
@@ -371,7 +361,7 @@ export default function MissionSelector() {
       <div className="relative z-20 shrink-0 border-t-2 border-slate-200 bg-white/90 px-4 py-[clamp(0.6rem,2dvh,1.1rem)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-center gap-4">
           <span className="hidden font-mono text-xs font-bold tracking-widest text-slate-500 sm:block">
-            MODO: <span className="text-nasa-blue">{MISSION_DIFFICULTY_META[missionDifficulty].label.toUpperCase()}</span>
+            <span className="text-nasa-blue">{MISSION_DIFFICULTY_META[missionDifficulty].label.toUpperCase()}</span>
           </span>
           <motion.button
             type="button"
@@ -387,7 +377,7 @@ export default function MissionSelector() {
             <motion.span animate={{ y: [0, -3, 0], rotate: [0, -8, 0] }} transition={{ duration: 1.4, repeat: Infinity }}>
               <Rocket size={22} />
             </motion.span>
-            INICIAR MISIÓN
+            {t('INICIAR MISIÓN', 'LAUNCH MISSION')}
           </motion.button>
         </div>
       </div>

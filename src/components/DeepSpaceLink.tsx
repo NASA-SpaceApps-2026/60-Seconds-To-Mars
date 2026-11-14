@@ -13,6 +13,7 @@ import { useGameStore } from '../store/useGameStore';
 import { earthMarsLink } from '../utils/marsEphemeris';
 import { playErrorBuzz } from '../utils/soundEffects';
 import { ResourceIcon } from './icons';
+import { tr } from '../i18n/core';
 
 /**
  * Enlace Deep Space Network (Tierra): pedir un Paquete de Ayuda a Houston cuesta Energía HOY
@@ -39,27 +40,27 @@ export default function DeepSpaceLink({
   const linesFull = orders.length >= HOUSTON_MAX_IN_TRANSIT;
   const blockReason =
     remaining === 0
-      ? `Has usado los ${HOUSTON_MAX_ORDERS} pedidos de la misión.`
+      ? tr(`Has usado los ${HOUSTON_MAX_ORDERS} pedidos de la misión.`, `You have used the mission's ${HOUSTON_MAX_ORDERS} orders.`)
       : linesFull
-        ? `Hay ${HOUSTON_MAX_IN_TRANSIT} envíos en camino: cuando llegue uno podrás pedir otro.`
+        ? tr('Ya hay un envío en camino: cuando llegue a la base podrás pedir otro.', 'A shipment is already on its way: once it reaches the base you can order another.')
         : sentToday
-          ? 'La antena ya transmitió hoy. Mañana puedes pedir otro paquete.'
+          ? tr('La antena ya transmitió hoy. Mañana puedes pedir otro paquete.', 'The antenna already transmitted today. You can order another package tomorrow.')
           : null;
 
   return (
     <section className="shrink-0 rounded-2xl border-2 border-slate-200 bg-white p-3 shadow-sm">
       <div className="flex items-center gap-2">
         <SatelliteDish className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} />
-        <h2 className="text-base font-bold text-slate-800">Enlace Deep Space Network (Tierra)</h2>
+        <h2 className="text-base font-bold text-slate-800">{tr('Enlace Deep Space Network (Tierra)', 'Deep Space Network Link (Earth)')}</h2>
       </div>
-      <p className="mt-0.5 text-sm text-slate-600" title="La luz tarda entre 3 y 22 minutos en viajar entre Marte y la Tierra; un envío orbital tarda días.">
-        Señal a Houston: ≈ {delay} min · Envío: {HOUSTON_DELAY_SOLS} Soles · Coste hoy: −{HOUSTON_COST_POWER} Energía
+      <p className="mt-0.5 text-sm text-slate-600" title={tr('La luz tarda entre 3 y 22 minutos en viajar entre Marte y la Tierra; un envío orbital tarda días.', 'Light takes 3 to 22 minutes to travel between Mars and Earth; an orbital shipment takes days.')}>
+        {tr('Señal a Houston', 'Signal to Houston')}: ≈ {delay} min · {tr('Envío', 'Shipment')}: {HOUSTON_DELAY_SOLS} {tr('Soles', 'Sols')} · {tr('Coste hoy', 'Cost today')}: −{HOUSTON_COST_POWER} {tr('Energía', 'Power')}
       </p>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <p className="font-mono text-xs font-bold tracking-[0.18em] text-nasa-blue">PEDIR SUMINISTROS</p>
-        <p className="text-xs font-semibold text-slate-600" title={`Máximo ${HOUSTON_MAX_ORDERS} pedidos por misión y ${HOUSTON_MAX_IN_TRANSIT} en camino a la vez`}>
-          Quedan <b className="text-nasa-blue">{remaining}/{HOUSTON_MAX_ORDERS}</b> · En camino{' '}
+        <p className="font-mono text-xs font-bold tracking-[0.18em] text-nasa-blue">{tr('PEDIR SUMINISTROS', 'ORDER SUPPLIES')}</p>
+        <p className="text-xs font-semibold text-slate-600" title={tr(`Máximo ${HOUSTON_MAX_ORDERS} pedidos por misión y solo ${HOUSTON_MAX_IN_TRANSIT} en camino a la vez`, `Up to ${HOUSTON_MAX_ORDERS} orders per mission and only ${HOUSTON_MAX_IN_TRANSIT} on its way at a time`)}>
+          {tr('Quedan', 'Left')} <b className="text-nasa-blue">{remaining}/{HOUSTON_MAX_ORDERS}</b> · {tr('En camino', 'On its way')}{' '}
           <b className="text-nasa-blue">{orders.length}/{HOUSTON_MAX_IN_TRANSIT}</b>
         </p>
       </div>
@@ -72,7 +73,7 @@ export default function DeepSpaceLink({
               key={id}
               type="button"
               disabled={disabled}
-              title={`${pkg.label}: +${pkg.amount}. Llega en ${HOUSTON_DELAY_SOLS} Soles.`}
+              title={tr(`${pkg.label}: +${pkg.amount}. Llega en ${HOUSTON_DELAY_SOLS} Soles.`, `${pkg.label}: +${pkg.amount}. Arrives in ${HOUSTON_DELAY_SOLS} Sols.`)}
               onClick={() => {
                 const r = order(id);
                 if ('error' in r) {
@@ -99,7 +100,7 @@ export default function DeepSpaceLink({
           onClick={onOpenCrate}
           className="font-display mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-nasa-blue px-3 py-2.5 text-sm font-black tracking-wider text-white"
         >
-          <PackageOpen className="h-5 w-5" strokeWidth={1.75} /> ABRIR CONTENEDOR DE HOUSTON ({crates})
+          <PackageOpen className="h-5 w-5" strokeWidth={1.75} /> {tr('ABRIR CONTENEDOR DE HOUSTON', 'OPEN HOUSTON CONTAINER')} ({crates})
         </motion.button>
       )}
       {blockReason && <p className="mt-1.5 text-xs font-semibold text-slate-500">{blockReason}</p>}
@@ -121,7 +122,7 @@ export default function DeepSpaceLink({
           })}
         </ul>
       )}
-      {power < 15 && stage === 'event' && !blockReason &&<p className="mt-1.5 text-xs font-semibold text-amber-700">Energía baja: la antena necesita al menos 15.</p>}
+      {power < 15 && stage === 'event' && !blockReason &&<p className="mt-1.5 text-xs font-semibold text-amber-700">{tr('Energía baja: la antena necesita al menos 15.', 'Low power: the antenna needs at least 15.')}</p>}
     </section>
   );
 }

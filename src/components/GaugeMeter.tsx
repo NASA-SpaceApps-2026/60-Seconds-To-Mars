@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { ResourceIcon, type ResourceKey } from './icons';
+import { tr } from '../i18n/core';
 
 interface Props {
   label: string;
@@ -43,7 +44,7 @@ export default function GaugeMeter({ label, resource, value, forecast, nativeTit
       className={`flex min-w-0 flex-col items-center ${className}`}
       title={nativeTitle ? `${label}: ${v}/100${forecast !== undefined ? ` · Previsión al acabar el Sol: ${forecast >= 0 ? '+' : ''}${forecast}` : ''}` : undefined}
     >
-      <svg viewBox="0 0 120 74" className="w-full max-w-[140px]" role="img" aria-label={`${label} ${v} de 100`}>
+      <svg viewBox="0 0 120 74" className="w-full max-w-[140px]" role="img" aria-label={tr(`${label} ${v} de 100`, `${label} ${v} of 100`)}>
         {/* Bisel del instrumento */}
         <path d={`M${CX - R - 8} ${CY} A${R + 8} ${R + 8} 0 0 1 ${CX + R + 8} ${CY} Z`} fill="#f8fafc" stroke="#cbd5e1" strokeWidth={1.5} />
         {/* Zonas de color */}
@@ -107,7 +108,7 @@ export default function GaugeMeter({ label, resource, value, forecast, nativeTit
             forecast >= 0 ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-rose-300 bg-rose-50 text-rose-700'
           }`}
         >
-          mañana {forecast >= 0 ? '+' : ''}
+          {tr('mañana', 'tomorrow')} {forecast >= 0 ? '+' : ''}
           {forecast}
         </span>
       )}

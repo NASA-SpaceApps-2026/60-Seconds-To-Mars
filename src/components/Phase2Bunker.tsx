@@ -28,7 +28,7 @@ import {
 import { ItemIcon, ResourceIcon, type ResourceKey } from './icons';
 import type { Effects, EventOption, ItemId, MinigameKind, RepairTarget, StationItem, VitalKey } from '../types/game';
 import { ITEMS_BY_ID, STATION_ITEMS } from '../data/stationItems';
-import { LOADING_MESSAGES } from '../data/fallbackNasaData';
+import { getLoadingMessages } from '../data/fallbackNasaData';
 import { COMPLICATIONS } from '../data/triviaQuestions';
 import {
   RADIATION_LABEL,
@@ -52,6 +52,7 @@ import ArrivalTransmission from './ArrivalTransmission';
 import { devInitialOverlay } from '../utils/devQa';
 import KidTooltip from './KidTooltip';
 import { GLOSSARY, VITAL_GLOSSARY } from '../data/glossary';
+import { tr } from '../i18n/core';
 import DeepSpaceLink, { MissionNoticeToast } from './DeepSpaceLink';
 import EmergencyMinigameModal from './minigames/EmergencyMinigameModal';
 import { HOUSTON_MAX_ORDERS, REPAIR_FAIL_POWER, pickMinigame, repairKey } from '../data/missionExtras';
@@ -60,9 +61,9 @@ const EFFECT_ORDER: (keyof Effects)[] = ['oxygen', 'power', 'food', 'shield', 'c
 
 const RADIATION_DOT = { low: 'bg-emerald-500', moderate: 'bg-amber-400', high: 'bg-orange-500', extreme: 'bg-red-600' } as const;
 const VITAL_GROUPS: { label: string; keys: VitalKey[] }[] = [
-  { label: 'VIDA', keys: ['oxygen', 'food', 'crewHealth'] },
-  { label: 'ENERGÍA', keys: ['power'] },
-  { label: 'PROTECCIÓN', keys: ['shield'] },
+  { get label() { return tr('VIDA', 'LIFE'); }, keys: ['oxygen', 'food', 'crewHealth'] },
+  { get label() { return tr('ENERGÍA', 'POWER'); }, keys: ['power'] },
+  { get label() { return tr('PROTECCIÓN', 'PROTECTION'); }, keys: ['shield'] },
 ];
 
 /** Cifra + icono vectorial del recurso: "−14 [Zap]". */
@@ -99,7 +100,7 @@ function MainEffect({ item }: { item: StationItem }) {
   } else if (item.kind === 'tool') {
     content = (
       <>
-        <Wrench className="h-4 w-4" strokeWidth={1.75} /> Reparaciones
+        <Wrench className="h-4 w-4" strokeWidth={1.75} /> {tr('Reparaciones', 'Repairs')}
       </>
     );
   } else if (item.id === 'lead_blanket' || item.radiationReduction) {
@@ -112,7 +113,7 @@ function MainEffect({ item }: { item: StationItem }) {
   } else if (item.id === 'osdr_seeds') {
     content = (
       <>
-        <Delta k="power" v={-2} /> {sep} <Delta k="food" v={20} /> <span className="font-mono">(2 Soles)</span>
+        <Delta k="power" v={-2} /> {sep} <Delta k="food" v={20} /> <span className="font-mono">{tr('(2 Soles)', '(2 Sols)')}</span>
       </>
     );
   } else {
@@ -165,7 +166,7 @@ function OptionButton({
   const req = option.requiredItemId ? ITEMS_BY_ID[option.requiredItemId] : null;
   const available = !req || inventory.includes(req.id);
   const advantage = req && available;
-  const lockReason = req && !available ? (loaded.includes(req.id) ? `Ya usaste ${req.shortName}` : `Falta: ${req.shortName}`) : '';
+  const lockReason = req && !available ? (loaded.includes(req.id) ? tr(`Ya usaste ${req.shortName}`, `Already used: ${req.shortName}`) : tr(`Falta: ${req.shortName}`, `Missing: ${req.shortName}`)) : '';
 
   return (
     <motion.button
@@ -195,7 +196,7 @@ function OptionButton({
           <span className={`block text-[clamp(0.95rem,2.6dvh,1.125rem)] font-bold leading-snug ${available ? 'text-slate-900' : 'text-slate-500'}`}>{option.label}</span>
           {advantage && (
             <span className="mt-0.5 flex items-center gap-1 text-base font-semibold text-emerald-700">
-              <Sparkles className="h-4 w-4" strokeWidth={1.75} /> Ventaja: <ItemIcon id={req.id} className="h-4 w-4" /> {req.shortName}
+              <Sparkles className="h-4 w-4" strokeWidth={1.75} /> {tr('Ventaja', 'Advantage')}: <ItemIcon id={req.id} className="h-4 w-4" /> {req.shortName}
             </span>
           )}
           {!available && (
@@ -205,13 +206,13 @@ function OptionButton({
           )}
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1">
-          <span className="text-xs font-bold uppercase tracking-wide text-slate-500">Decisión</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{tr('Decisión', 'Decision')}</span>
           <EffectNumbers effects={option.effects} />
         </span>
       </span>
       {available && projectedEffects && (
         <span className="ml-auto flex w-fit max-w-full flex-wrap items-center justify-end gap-x-2 gap-y-1 border-t border-slate-200 pt-[clamp(0.25rem,1dvh,0.5rem)] text-right text-xs font-bold uppercase tracking-wide text-slate-500 sm:min-w-[20.4375rem]">
-          Al terminar el Sol
+          {tr('Al terminar el Sol', 'At the end of the Sol')}
           <span className="block normal-case tracking-normal">
             <EffectNumbers effects={projectedEffects} />
           </span>
@@ -260,10 +261,10 @@ function RepairButton({ tried, onClick }: { tried: boolean; onClick: () => void 
       type="button"
       onClick={onClick}
       disabled={tried}
-      title={tried ? 'Ya lo intentaste este Sol: vuelve a probar mañana' : 'Reparar con un minijuego'}
+      title={tried ? tr('Ya lo intentaste este Sol: vuelve a probar mañana', 'You already tried this Sol: try again tomorrow') : tr('Reparar con un minijuego', 'Repair with a mini-game')}
       className="flex shrink-0 items-center gap-1.5 rounded-lg bg-nasa-red px-3 py-1.5 text-sm font-black text-white transition hover:brightness-110 disabled:bg-slate-300 disabled:text-slate-600"
     >
-      <Wrench className="h-4 w-4" strokeWidth={2} /> {tried ? 'Mañana' : 'Reparar Averías'}
+      <Wrench className="h-4 w-4" strokeWidth={2} /> {tried ? tr('Mañana', 'Tomorrow') : tr('Reparar Averías', 'Fix Breakdowns')}
     </button>
   );
 }
@@ -271,7 +272,7 @@ function RepairButton({ tried, onClick }: { tried: boolean; onClick: () => void 
 function LoadingTelemetry({ sol }: { sol: number }) {
   const [i, setI] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setI((n) => (n + 1) % LOADING_MESSAGES.length), 900);
+    const t = setInterval(() => setI((n) => (n + 1) % getLoadingMessages().length), 900);
     return () => clearInterval(t);
   }, []);
   return (
@@ -282,7 +283,7 @@ function LoadingTelemetry({ sol }: { sol: number }) {
       <p className="font-display text-lg font-bold text-nasa-blue">SOL {sol}</p>
       <AnimatePresence mode="wait">
         <motion.p key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-base text-slate-600">
-          {LOADING_MESSAGES[i]}
+          {getLoadingMessages()[i]}
         </motion.p>
       </AnimatePresence>
     </motion.div>
@@ -436,10 +437,10 @@ export default function Phase2Bunker() {
   const nextArrival = houstonOrders.length ? Math.min(...houstonOrders.map((o) => o.arrivalSol)) - sol : null;
   const terminalHeadline =
     stage === 'loading'
-      ? 'Conectando con NASA DONKI...'
+      ? tr('Conectando con NASA DONKI...', 'Connecting to NASA DONKI...')
       : stage === 'report'
-        ? `Informe del Sol ${sol} listo`
-        : `Alerta: ${event?.title ?? 'sin novedades'}`;
+        ? tr(`Informe del Sol ${sol} listo`, `Sol ${sol} report ready`)
+        : `${tr('Alerta', 'Alert')}: ${event?.title ?? tr('sin novedades', 'all quiet')}`;
 
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900">
@@ -447,7 +448,7 @@ export default function Phase2Bunker() {
       <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 md:grid-cols-[auto_1fr]">
         <div className="flex items-center gap-4">
           <NasaLogo size={52} />
-          <KidTooltip term={GLOSSARY.sol.term} text={GLOSSARY.sol.text} extra={`Hoy: Sol ${sol} de ${TOTAL_SOLS}`} align="left">
+          <KidTooltip term={GLOSSARY.sol.term} text={GLOSSARY.sol.text} extra={tr(`Hoy: Sol ${sol} de ${TOTAL_SOLS}`, `Today: Sol ${sol} of ${TOTAL_SOLS}`)} align="left">
           <div className="cursor-help">
             <p className="font-display text-2xl font-black leading-none text-nasa-blue">
               SOL {sol}
@@ -464,9 +465,9 @@ export default function Phase2Bunker() {
             type="button"
             onClick={() => openOverlay('periscope')}
             className="font-display relative flex items-center gap-2 rounded-lg border-2 border-nasa-blue bg-white px-4 py-2.5 text-sm font-black tracking-[0.12em] text-nasa-blue shadow-sm transition hover:bg-blue-50"
-            title="Periscopio: telemetría real del Cráter Jezero e insignias de misión"
+            title={tr('Periscopio: telemetría real del Cráter Jezero e insignias de misión', 'Periscope: real Jezero Crater telemetry and mission badges')}
           >
-            <Telescope className="h-5 w-5" strokeWidth={1.75} /> PERISCOPIO
+            <Telescope className="h-5 w-5" strokeWidth={1.75} /> {tr('PERISCOPIO', 'PERISCOPE')}
             <span className="rounded bg-nasa-blue px-1.5 font-mono text-xs text-white">{badgeCount}/5</span>
           </button>
         </div>
@@ -481,7 +482,7 @@ export default function Phase2Bunker() {
                     key={k}
                     term={VITAL_GLOSSARY[k].term}
                     text={VITAL_GLOSSARY[k].text}
-                    extra={`Ahora: ${Math.round(vitals[k])}/100 · al acabar el Sol: ${forecast.deltas[k] >= 0 ? '+' : ''}${forecast.deltas[k]}`}
+                    extra={`${tr('Ahora', 'Now')}: ${Math.round(vitals[k])}/100 · ${tr('al acabar el Sol', 'at the end of the Sol')}: ${forecast.deltas[k] >= 0 ? '+' : ''}${forecast.deltas[k]}`}
                     align={i === 0 ? 'left' : 'center'}
                     className="cursor-help"
                   >
@@ -501,7 +502,7 @@ export default function Phase2Bunker() {
           <KidTooltip term={VITAL_GLOSSARY.science.term} text={VITAL_GLOSSARY.science.text} align="right" className="cursor-help self-center">
           <div className="flex w-[clamp(64px,8vw,100px)] flex-col items-center justify-center text-center">
             <span className="flex items-center gap-1 text-sm font-bold text-slate-600">
-              <ResourceIcon k="science" className="h-4 w-4 text-nasa-blue" /> Ciencia
+              <ResourceIcon k="science" className="h-4 w-4 text-nasa-blue" /> {tr('Ciencia', 'Science')}
             </span>
             <span className="font-display text-2xl font-black tabular-nums text-nasa-blue">{science}</span>
           </div>
@@ -556,7 +557,7 @@ export default function Phase2Bunker() {
             <KidTooltip
               term={GLOSSARY.radiation.term}
               text={GLOSSARY.radiation.text}
-              extra={nasaWeather ? `Dato real: llamarada de clase ${nasaWeather.flareClass} detectada por NASA DONKI` : undefined}
+              extra={nasaWeather ? tr(`Dato real: llamarada de clase ${nasaWeather.flareClass} detectada por NASA DONKI`, `Real data: class ${nasaWeather.flareClass} flare detected by NASA DONKI`) : undefined}
               side="right"
               className="pointer-events-auto w-full cursor-help"
             >
@@ -566,7 +567,7 @@ export default function Phase2Bunker() {
                 transition={{ duration: 1.2, repeat: Infinity }}
               >
                 <Radiation className="h-5 w-5 shrink-0" strokeWidth={2} />
-                <span className="font-mono tracking-wider">ALERTA RADIACIÓN</span>
+                <span className="font-mono tracking-wider">{tr('ALERTA RADIACIÓN', 'RADIATION ALERT')}</span>
                 {nasaWeather && <span className="ml-auto font-mono text-xs text-amber-200">DONKI {nasaWeather.flareClass}</span>}
               </motion.p>
             </KidTooltip>
@@ -574,8 +575,8 @@ export default function Phase2Bunker() {
           {lowPower && (
             <p className="flex items-center gap-2 rounded-lg border border-sky-400 bg-slate-950/85 px-3 py-2 text-sm font-bold text-sky-300 shadow-lg">
               <BatteryLow className="h-5 w-5 shrink-0" strokeWidth={2} />
-              <span className="font-mono tracking-wider">MODO AHORRO</span>
-              <span className="ml-auto text-xs text-sky-200">Energía baja</span>
+              <span className="font-mono tracking-wider">{tr('MODO AHORRO', 'POWER SAVING')}</span>
+              <span className="ml-auto text-xs text-sky-200">{tr('Energía baja', 'Low power')}</span>
             </p>
           )}
           {repairCount > 0 && (
@@ -586,7 +587,7 @@ export default function Phase2Bunker() {
             >
               <Wrench className="h-5 w-5 shrink-0" strokeWidth={2} />
               <span>
-                {repairCount} {repairCount === 1 ? 'avería' : 'averías'} — Toca la base para reparar
+                {repairCount} {repairCount === 1 ? tr('avería', 'breakdown') : tr('averías', 'breakdowns')} — {tr('Toca la base para reparar', 'Tap the base to repair')}
               </span>
             </button>
           )}
@@ -599,8 +600,8 @@ export default function Phase2Bunker() {
               <Package className="h-5 w-5 shrink-0" strokeWidth={2} />
               <span>
                 {houstonCrates > 0
-                  ? 'Contenedor de Houston sin abrir'
-                  : `Envío de Houston: llega en ${nextArrival} ${nextArrival === 1 ? 'Sol' : 'Soles'}`}
+                  ? tr('Contenedor de Houston sin abrir', 'Unopened Houston container')
+                  : tr(`Envío de Houston: llega en ${nextArrival} ${nextArrival === 1 ? 'Sol' : 'Soles'}`, `Houston shipment: arrives in ${nextArrival} ${nextArrival === 1 ? 'Sol' : 'Sols'}`)}
               </span>
             </button>
           )}
@@ -608,35 +609,35 @@ export default function Phase2Bunker() {
 
         {/* ============ LEYENDA INTERACTIVA (abajo a la izquierda) ============ */}
         <nav
-          className="absolute bottom-[clamp(1rem,5%,2.5rem)] left-[clamp(1rem,2.5%,2.5rem)] z-20 flex w-[min(27rem,44vw)] flex-col gap-2 rounded-2xl border border-white/20 bg-slate-950/75 px-4 py-3.5 shadow-2xl backdrop-blur-sm"
-          aria-label="Qué puedes hacer en la base"
+          className="absolute bottom-[clamp(1rem,5%,2.5rem)] left-[clamp(0.75rem,2%,2rem)] z-20 flex w-[min(21rem,30vw)] min-w-[15rem] flex-col gap-1.5 rounded-2xl border border-white/20 bg-slate-950/75 px-2.5 py-2.5 shadow-2xl backdrop-blur-sm"
+          aria-label={tr('Qué puedes hacer en la base', 'What you can do at the base')}
         >
-          <p className="px-1.5 pb-0.5 font-mono text-xs font-bold tracking-[0.2em] text-sky-300">TOCA LA ESCENA</p>
+          <p className="px-1.5 pb-0.5 font-mono text-xs font-bold tracking-[0.2em] text-sky-300">{tr('TOCA LA ESCENA', 'TAP THE SCENE')}</p>
           <LegendButton
             icon={Wrench}
-            label="Base: Sistemas/Averías"
-            status={repairCount > 0 ? `${repairCount} ${repairCount === 1 ? 'avería' : 'averías'}` : 'Todo OK'}
+            label={tr('Base: Sistemas/Averías', 'Base: Systems/Breakdowns')}
+            status={repairCount > 0 ? `${repairCount} ${repairCount === 1 ? tr('avería', 'breakdown') : tr('averías', 'breakdowns')}` : tr('Todo OK', 'All OK')}
             tone={repairCount > 0 ? 'alert' : 'ok'}
             onClick={() => openOverlay('systems')}
           />
           <LegendButton
             icon={SatelliteDish}
-            label="Antena: Enlace Houston"
+            label={tr('Antena: Enlace Houston', 'Antenna: Houston Link')}
             status={
               houstonCrates > 0
-                ? 'Envío recibido'
+                ? tr('Envío recibido', 'Shipment received')
                 : nextArrival !== null
-                  ? `En camino (${nextArrival} ${nextArrival === 1 ? 'Sol' : 'Soles'})`
+                  ? tr(`En camino (${nextArrival} ${nextArrival === 1 ? 'Sol' : 'Soles'})`, `On its way (${nextArrival} ${nextArrival === 1 ? 'Sol' : 'Sols'})`)
                   : houstonOrdersPlaced >= HOUSTON_MAX_ORDERS
-                    ? 'Sin pedidos'
+                    ? tr('Sin pedidos', 'No orders left')
                     : houstonOrderedSol === sol
-                      ? 'Transmitido hoy'
-                      : 'Disponible'
+                      ? tr('Transmitido hoy', 'Sent today')
+                      : tr('Disponible', 'Available')
             }
             tone={houstonCrates > 0 ? 'alert' : 'info'}
             onClick={() => openOverlay('houston')}
           />
-          <LegendButton icon={Bot} label="Robot A.R.I.A." status="Consultar IA" tone="info" onClick={() => openOverlay('aria')} />
+          <LegendButton icon={Bot} label={tr('Robot A.R.I.A.', 'A.R.I.A. Robot')} status={tr('Consultar IA', 'Ask the AI')} tone="info" onClick={() => openOverlay('aria')} />
         </nav>
 
         {/* ============ CAJÓN LATERAL: ENLACE HOUSTON ============ */}
@@ -659,13 +660,13 @@ export default function Phase2Bunker() {
               aria-label="Enlace Houston"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="font-mono text-xs font-bold tracking-[0.25em] text-nasa-blue">ENLACE HOUSTON</p>
+                <p className="font-mono text-xs font-bold tracking-[0.25em] text-nasa-blue">{tr('ENLACE HOUSTON', 'HOUSTON LINK')}</p>
                 <button
                   type="button"
                   onClick={closeOverlay}
                   className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
                 >
-                  <ChevronLeft className="h-4 w-4" /> Cerrar
+                  <ChevronLeft className="h-4 w-4" /> {tr('Cerrar', 'Close')}
                 </button>
               </div>
               <DeepSpaceLink onOpenCrate={() => setRouletteOpen(true)} />
@@ -685,17 +686,17 @@ export default function Phase2Bunker() {
               transition={{ type: 'spring', stiffness: 260, damping: 28 }}
               className="absolute left-1/2 top-[3%] z-40 flex max-h-[min(82dvh,94%)] w-[min(96%,76rem)] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-white shadow-2xl"
               role="dialog"
-              aria-label="Sistemas e Inventario"
+              aria-label={tr('Sistemas e Inventario', 'Systems and Inventory')}
             >
               <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-slate-50 px-5 py-3">
                 <Wrench className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} />
-                <p className="font-mono text-sm font-bold tracking-[0.2em] text-nasa-blue">SISTEMAS E INVENTARIO // ARES-IV</p>
+                <p className="font-mono text-sm font-bold tracking-[0.2em] text-nasa-blue">{tr('SISTEMAS E INVENTARIO', 'SYSTEMS AND INVENTORY')} // ARES-IV</p>
                 <button
                   type="button"
                   onClick={closeOverlay}
                   className="ml-auto flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
                 >
-                  <X className="h-4 w-4" /> Cerrar
+                  <X className="h-4 w-4" /> {tr('Cerrar', 'Close')}
                 </button>
               </div>
 
@@ -705,11 +706,11 @@ export default function Phase2Bunker() {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <h2 className={`flex items-center gap-2 text-base font-bold ${repairCount ? 'text-nasa-red' : 'text-emerald-800'}`}>
                       {repairCount ? <TriangleExclamationPoint className="h-5 w-5" strokeWidth={1.75} /> : <CircleCheck className="h-5 w-5" strokeWidth={1.75} />}
-                      {repairCount ? `Averías activas (${repairCount})` : 'Todos los sistemas funcionan'}
+                      {repairCount ? tr(`Averías activas (${repairCount})`, `Active breakdowns (${repairCount})`) : tr('Todos los sistemas funcionan', 'All systems working')}
                     </h2>
                     <span className="text-sm text-slate-600">
-                      {machinesOn} {machinesOn === 1 ? 'máquina encendida' : 'máquinas encendidas'}
-                      {repairCount > 0 && ` · cada reparación es un minijuego (si falla: −${REPAIR_FAIL_POWER} Energía, reintento mañana)`}
+                      {machinesOn} {machinesOn === 1 ? tr('máquina encendida', 'machine on') : tr('máquinas encendidas', 'machines on')}
+                      {repairCount > 0 && tr(` · cada reparación es un minijuego (si falla: −${REPAIR_FAIL_POWER} Energía, reintento mañana)`, ` · each repair is a mini-game (if it fails: −${REPAIR_FAIL_POWER} Power, try again tomorrow)`)}
                     </span>
                   </div>
                   {repairCount > 0 && (
@@ -724,7 +725,7 @@ export default function Phase2Bunker() {
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-bold text-slate-900">{COMPLICATIONS[c].title}</p>
                               <p className="flex items-center gap-1 text-xs text-slate-600">
-                                Fase 1 · <Delta k={c} v={COMPLICATIONS[c].dailyPenalty} /> por Sol
+                                {tr('Fase 1', 'Phase 1')} · <Delta k={c} v={COMPLICATIONS[c].dailyPenalty} /> {tr('por Sol', 'per Sol')}
                               </p>
                             </div>
                             <RepairButton tried={triedToday(target)} onClick={() => startRepair(target)} />
@@ -740,7 +741,7 @@ export default function Phase2Bunker() {
                             </span>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-bold text-slate-900">{ITEMS_BY_ID[id].shortName}</p>
-                              <p className="text-xs text-slate-600">Avería puntual · apagada</p>
+                              <p className="text-xs text-slate-600">{tr('Avería puntual · apagada', 'Sudden breakdown · off')}</p>
                             </div>
                             <RepairButton tried={triedToday(target)} onClick={() => startRepair(target)} />
                           </article>
@@ -753,11 +754,11 @@ export default function Phase2Bunker() {
                 {/* ---- Bloque inferior: inventario y máquinas en cuadrícula compacta ---- */}
                 <section className="mt-3">
                   <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                    <Package className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} /> Máquinas y consumibles
+                    <Package className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} /> {tr('Máquinas y consumibles', 'Machines and consumables')}
                     <span className="rounded-md bg-nasa-blue px-2 py-0.5 font-mono text-xs text-white">{activeItems.length}</span>
                   </h2>
                   {activeItems.length === 0 ? (
-                    <p className="mt-2 rounded-xl border border-slate-200 p-4 text-base text-slate-500">No queda ningún objeto en la base espacial.</p>
+                    <p className="mt-2 rounded-xl border border-slate-200 p-4 text-base text-slate-500">{tr('No queda ningún objeto en la base espacial.', 'There are no items left in the space base.')}</p>
                   ) : (
                     <div className="mt-2 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                       {activeItems.map((item) => {
@@ -780,8 +781,8 @@ export default function Phase2Bunker() {
                               <MainEffect item={item} />
                             </div>
                             <div className="mt-auto flex items-center justify-center">
-                              {item.kind === 'machine' && broken && <span className="w-full rounded-md bg-red-100 py-1 text-center text-xs font-bold text-nasa-red">Averiada</span>}
-                              {item.kind === 'machine' && !broken && <Toggle on={on} onClick={() => toggleMachine(item.id)} label={`Encender o apagar ${item.name}`} />}
+                              {item.kind === 'machine' && broken && <span className="w-full rounded-md bg-red-100 py-1 text-center text-xs font-bold text-nasa-red">{tr('Averiada', 'Broken')}</span>}
+                              {item.kind === 'machine' && !broken && <Toggle on={on} onClick={() => toggleMachine(item.id)} label={tr(`Encender o apagar ${item.name}`, `Switch ${item.name} on or off`)} />}
                               {item.kind === 'consumable' && (
                                 <button
                                   type="button"
@@ -789,7 +790,7 @@ export default function Phase2Bunker() {
                                   onClick={() => useConsumable(item.id)}
                                   className="w-full rounded-md bg-nasa-red py-1.5 text-sm font-black text-white transition hover:brightness-110 disabled:bg-slate-300 disabled:text-slate-500"
                                 >
-                                  USAR
+                                  {tr('USAR', 'USE')}
                                 </button>
                               )}
                               {(item.kind === 'passive' || item.kind === 'tool') && (
@@ -807,7 +808,7 @@ export default function Phase2Bunker() {
                 <details className="group mt-3 rounded-2xl border-2 border-slate-200 bg-white shadow-sm">
                   <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-base font-bold text-slate-700">
                     <span className="flex items-center gap-2">
-                      <ChartColumn className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} /> Ver desglose y objetos perdidos
+                      <ChartColumn className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} /> {tr('Ver desglose y objetos perdidos', 'See breakdown and missed items')}
                     </span>
                     <ChevronDown size={20} className="transition group-open:rotate-180" />
                   </summary>
@@ -826,7 +827,7 @@ export default function Phase2Bunker() {
                     </ul>
                     {leftOut.length > 0 && (
                       <div className="text-sm text-slate-500">
-                        <b className="text-slate-700">No conseguidos ({leftOut.length}):</b>
+                        <b className="text-slate-700">{tr('No conseguidos', 'Not obtained')} ({leftOut.length}):</b>
                         <div className="mt-1 flex flex-wrap gap-1.5">
                           {leftOut.map((i) => (
                             <span key={i.id} title={i.name} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 bg-slate-50 text-slate-400">
@@ -868,7 +869,7 @@ export default function Phase2Bunker() {
                 </span>
                 <span className="min-w-0">
                   <span className="font-display flex items-center gap-2 text-lg font-black tracking-wider">
-                    {stage === 'loading' ? 'Recibiendo telemetría...' : stage === 'report' ? `Informe del Sol ${sol} listo` : `Resolver Misión Sol ${sol}`}
+                    {stage === 'loading' ? tr('Recibiendo telemetría...', 'Receiving telemetry...') : stage === 'report' ? tr(`Informe del Sol ${sol} listo`, `Sol ${sol} report ready`) : tr(`Resolver Misión Sol ${sol}`, `Solve Sol ${sol} Mission`)}
                     {stage !== 'loading' && <ArrowRight className="h-5 w-5 shrink-0" />}
                   </span>
                   <span className={`mt-1 inline-block max-w-full truncate rounded-md px-2 py-0.5 text-sm font-bold ${stage === 'loading' ? 'bg-slate-700' : 'bg-white/20'}`}>
@@ -892,11 +893,11 @@ export default function Phase2Bunker() {
                 transition={{ type: 'spring', stiffness: 220, damping: 28 }}
                 className="absolute bottom-[clamp(0.5rem,2%,1rem)] left-1/2 z-40 flex max-h-[min(85dvh,calc(100%-1rem))] w-[min(64rem,calc(100%-1rem))] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-white shadow-2xl"
                 role="dialog"
-                aria-label={`Terminal de misión, Sol ${sol}`}
+                aria-label={tr(`Terminal de misión, Sol ${sol}`, `Mission terminal, Sol ${sol}`)}
               >
                 <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-slate-50 px-4 py-[clamp(0.25rem,1dvh,0.625rem)]">
                   <Monitor className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} />
-                  <p className="font-mono text-sm font-bold tracking-[0.2em] text-nasa-blue">TERMINAL DE MISIÓN // SOL {sol} / {TOTAL_SOLS}</p>
+                  <p className="font-mono text-sm font-bold tracking-[0.2em] text-nasa-blue">{tr('TERMINAL DE MISIÓN', 'MISSION TERMINAL')} // SOL {sol} / {TOTAL_SOLS}</p>
                   <button
                     type="button"
                     onClick={() => {
@@ -904,9 +905,9 @@ export default function Phase2Bunker() {
                       closeOverlay();
                     }}
                     className="ml-auto flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
-                    title="Minimiza el ordenador para mirar a la tripulación, consultar a A.R.I.A. o encender máquinas"
+                    title={tr('Minimiza el ordenador para mirar a la tripulación, consultar a A.R.I.A. o encender máquinas', 'Minimize the computer to look at the crew, ask A.R.I.A. or switch machines on')}
                   >
-                    <Minus className="h-4 w-4" /> Minimizar ordenador
+                    <Minus className="h-4 w-4" /> {tr('Minimizar ordenador', 'Minimize computer')}
                   </button>
                 </div>
                 <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden p-[clamp(0.625rem,2dvh,1.25rem)]">
@@ -925,7 +926,7 @@ export default function Phase2Bunker() {
                         <div className="thin-scroll flex min-h-0 flex-col gap-[clamp(0.4rem,1.4dvh,0.75rem)] md:overflow-y-auto [&>*]:shrink-0">
                           <div>
                             <p className="flex items-center gap-2 text-base font-semibold text-slate-500">
-                              <span className={`h-2.5 w-2.5 rounded-full ${RADIATION_DOT[radiation]}`} /> Radiación {RADIATION_LABEL[radiation].toLowerCase()}
+                              <span className={`h-2.5 w-2.5 rounded-full ${RADIATION_DOT[radiation]}`} /> {tr(`Radiación ${RADIATION_LABEL[radiation].toLowerCase()}`, `${RADIATION_LABEL[radiation]} radiation`)}
                               {event.source === 'gemini' && (
                                 <span className="flex items-center gap-1">
                                   · <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} /> Gemini
@@ -940,7 +941,7 @@ export default function Phase2Bunker() {
                           <div className="rounded-xl bg-amber-50 px-3 py-[clamp(0.4rem,1.3dvh,0.75rem)]" title={event.nasaSource}>
                             <p className="text-[clamp(0.85rem,2.2dvh,1rem)] leading-snug text-amber-950">
                               <FlaskConical className="mr-1 inline h-4 w-4 align-[-2px]" strokeWidth={1.75} />
-                              <b>Dato Real NASA ({event.radiationLevel === 'high' || event.radiationLevel === 'extreme' ? 'DONKI' : 'DONKI / OSDR'}) ·</b> {event.nasaFact}
+                              <b>{tr('Dato Real NASA', 'Real NASA Fact')} ({event.radiationLevel === 'high' || event.radiationLevel === 'extreme' ? 'DONKI' : 'DONKI / OSDR'}) ·</b> {event.nasaFact}
                             </p>
                           </div>
                         </div>
@@ -973,13 +974,13 @@ export default function Phase2Bunker() {
                         className="thin-scroll flex min-h-0 flex-1 flex-col items-center justify-start gap-[clamp(0.5rem,1.8dvh,1rem)] overflow-y-auto px-1 pb-1 text-center [&>*]:shrink-0"
                       >
                         <div className="w-full max-w-3xl rounded-xl border border-slate-300 bg-slate-50 p-4 text-left shadow-sm">
-                          <p className="font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">INFORME DE TELEMETRÍA // SOL {sol}</p>
+                          <p className="font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">{tr('INFORME DE TELEMETRÍA', 'TELEMETRY REPORT')} // SOL {sol}</p>
                           <h2 className="mt-1 text-xl font-black text-slate-900">{report.optionLabel}</h2>
                           <p className="mt-1 text-base italic leading-relaxed text-slate-600">“{report.ariaReaction}”</p>
                         </div>
                         {report.harvested && (
                           <p className="w-full max-w-3xl rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-left text-sm font-bold text-emerald-700">
-                            <Sprout className="h-5 w-5" strokeWidth={1.75} /> ¡Cosecha de lechuga roja! +20 Comida
+                            <Sprout className="h-5 w-5" strokeWidth={1.75} /> {tr('¡Cosecha de lechuga roja! +20 Comida', 'Red lettuce harvest! +20 Food')}
                           </p>
                         )}
                         <div className="w-full max-w-3xl rounded-xl border-2 border-slate-200 bg-white p-4 text-left shadow-sm">
@@ -993,7 +994,7 @@ export default function Phase2Bunker() {
                           )}
                           {report.breakdown.length > 1 && (
                             <>
-                              <p className="mt-4 border-t border-slate-200 pt-4 font-mono text-xs font-black tracking-[0.16em] text-slate-500">OTROS EFECTOS DEL SOL</p>
+                              <p className="mt-4 border-t border-slate-200 pt-4 font-mono text-xs font-black tracking-[0.16em] text-slate-500">{tr('OTROS EFECTOS DEL SOL', 'OTHER EFFECTS OF THE SOL')}</p>
                               {report.breakdown.slice(1).map((entry, index) => (
                                 <div key={`${entry.source}-${index}`} className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                                   <p className="text-sm font-semibold text-slate-700">{entry.source}</p>
@@ -1018,7 +1019,7 @@ export default function Phase2Bunker() {
                             pendingOutcome === 'evacuation' ? 'bg-amber-500' : pendingOutcome === 'victory' ? 'bg-nasa-red' : 'bg-nasa-blue'
                           }`}
                         >
-                          {pendingOutcome === 'victory' ? 'Finalizar misión final' : pendingOutcome ? 'Finalizar misión (evacuación)' : 'CONTINUAR AL SIGUIENTE SOL'} <ArrowRight size={18} />
+                          {pendingOutcome === 'victory' ? tr('Finalizar misión final', 'Finish the final mission') : pendingOutcome ? tr('Finalizar misión (evacuación)', 'Finish mission (evacuation)') : tr('CONTINUAR AL SIGUIENTE SOL', 'CONTINUE TO THE NEXT SOL')} <ArrowRight size={18} />
                         </motion.button>
                       </motion.div>
                     )}
@@ -1040,7 +1041,10 @@ export default function Phase2Bunker() {
         kind={repair?.kind ?? null}
         stakes={
           repair
-            ? `Reparando: ${repair.name}. Si lo consigues, vuelve a funcionar. Si se acaba el tiempo, sigue averiada este Sol (−${REPAIR_FAIL_POWER} Energía).`
+            ? tr(
+                `Reparando: ${repair.name}. Si lo consigues, vuelve a funcionar. Si se acaba el tiempo, sigue averiada este Sol (−${REPAIR_FAIL_POWER} Energía).`,
+                `Repairing: ${repair.name}. If you make it, it works again. If time runs out, it stays broken this Sol (−${REPAIR_FAIL_POWER} Power).`,
+              )
             : ''
         }
         onResult={(success) => {

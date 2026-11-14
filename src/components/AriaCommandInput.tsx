@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Mic, MicOff, TerminalSquare } from 'lucide-react';
 import { useGameStore } from '../store/useGameStore';
 import { playButtonClick, playErrorBuzz } from '../utils/soundEffects';
+import { useT } from '../i18n/useT';
 
 /** Reconocimiento de voz del navegador (Chrome/Edge: webkitSpeechRecognition). */
 interface MiniRecognition {
@@ -24,13 +25,15 @@ function getRecognition(): RecognitionCtor | null {
 
 /**
  * Terminal de órdenes de A.R.I.A. (atajos para las presentaciones):
- *  - "supervivencia" → salta la trivia y empieza en la base espacial.
- *  - "final"         → termina la partida y abre la pantalla final.
- *  - "derrota"       → pantalla final de evacuación (con el análisis de fallos).
+ *  - "supervivencia" / "survival" → salta la trivia y empieza en la base espacial.
+ *  - "final" / "end"               → termina la partida y abre la pantalla final.
+ *  - "derrota" / "defeat"          → pantalla final de evacuación (con el análisis de fallos).
  * Se puede escribir o decir en voz alta (micrófono, si el navegador lo permite).
  */
 export default function AriaCommandInput({ className = '' }: { className?: string }) {
   const runAriaCommand = useGameStore((s) => s.runAriaCommand);
+  const language = useGameStore((s) => s.language);
+  const t = useT();
   const [text, setText] = useState('');
   const [listening, setListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +49,7 @@ export default function AriaCommandInput({ className = '' }: { className?: strin
       setError(null);
       playButtonClick();
     } else {
-      setError(`Comando no reconocido: «${value.trim().slice(0, 30)}»`);
+      setError(t(`Comando no reconocido: «${value.trim().slice(0, 30)}»`, `Unknown command: "${value.trim().slice(0, 30)}"`));
       playErrorBuzz();
     }
   };
@@ -63,14 +66,14 @@ export default function AriaCommandInput({ className = '' }: { className?: strin
       return;
     }
     const rec = new Recognition();
-    rec.lang = 'es-ES';
+    rec.lang = language === 'en' ? 'en-US' : 'es-ES';
     rec.interimResults = false;
     rec.maxAlternatives = 3;
     rec.onresult = (e) => {
       const alts = Array.from(e.results[0] ?? []).map((a) => a.transcript);
       setText(alts[0] ?? '');
       if (!alts.some((a) => useGameStore.getState().runAriaCommand(a))) {
-        setError(`No he entendido «${alts[0] ?? ''}»`);
+        setError(t(`No he entendido «${alts[0] ?? ''}»`, `I didn't understand "${alts[0] ?? ''}"`));
       }
     };
     rec.onend = () => setListening(false);
@@ -94,17 +97,17 @@ export default function AriaCommandInput({ className = '' }: { className?: strin
           value={text}
           onChange={(e) => setText(e.target.value)}
           maxLength={60}
-          placeholder="Orden para A.R.I.A...."
-          aria-label="Orden para A.R.I.A."
-          title="Órdenes rápidas: supervivencia · final · derrota"
+          placeholder={t('Orden para A.R.I.A....', 'Command for A.R.I.A....')}
+          aria-label={t('Orden para A.R.I.A.', 'Command for A.R.I.A.')}
+          title={t('Órdenes rápidas: supervivencia · final · derrota', 'Quick commands: survival · end · defeat')}
           className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
         />
         {Recognition && (
           <button
             type="button"
             onClick={toggleMic}
-            title={listening ? 'Escuchando... pulsa para parar' : 'Decir la orden en voz alta'}
-            aria-label={listening ? 'Parar micrófono' : 'Decir la orden en voz alta'}
+            title={listening ? t('Escuchando... pulsa para parar', 'Listening... tap to stop') : t('Decir la orden en voz alta', 'Say the command out loud')}
+            aria-label={listening ? t('Parar micrófono', 'Stop microphone') : t('Decir la orden en voz alta', 'Say the command out loud')}
             className={`rounded-lg p-1 transition ${listening ? 'animate-pulse bg-nasa-red text-white' : 'text-slate-500 hover:text-nasa-blue'}`}
           >
             {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}

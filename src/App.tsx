@@ -6,6 +6,7 @@ import { runDevQaScenario } from './utils/devQa';
 import MenuScreen from './components/MenuScreen';
 import MissionSelector from './components/MissionSelector';
 import ScreenErrorBoundary from './components/ScreenErrorBoundary';
+import { tr } from './i18n/core';
 
 // Las pantallas de juego se cargan bajo demanda (bundle inicial más ligero)
 const Phase1Scavenge = lazy(() => import('./components/Phase1Scavenge'));
@@ -16,7 +17,7 @@ const StoryComicModal = lazy(() => import('./components/StoryComicModal'));
 function ScreenLoader() {
   return (
     <div className="grid h-dvh place-items-center bg-slate-100">
-      <p className="font-display animate-pulse text-sm font-bold tracking-[0.3em] text-nasa-blue">CARGANDO MÓDULO...</p>
+      <p className="font-display animate-pulse text-sm font-bold tracking-[0.3em] text-nasa-blue">{tr('CARGANDO MÓDULO...', 'LOADING MODULE...')}</p>
     </div>
   );
 }
@@ -47,7 +48,7 @@ export default function App() {
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
       buffer = (buffer + e.key.toLowerCase()).slice(-20);
-      for (const cmd of ['supervivencia', 'final', 'derrota']) {
+      for (const cmd of ['supervivencia', 'survival', 'final', 'derrota', 'defeat']) {
         if (buffer.endsWith(cmd)) {
           buffer = '';
           useGameStore.getState().runAriaCommand(cmd);

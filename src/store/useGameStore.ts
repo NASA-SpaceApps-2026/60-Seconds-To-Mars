@@ -36,7 +36,7 @@ import type {
 } from '../types/game';
 import { DEBUG_INVENTORY, ITEMS_BY_ID, RARITY_ORDER, STATION_ITEMS, CATEGORY_META } from '../data/stationItems';
 import { COMPLICATIONS, QUIZ_SECONDS, buildQuizQueue, hasComplication } from '../data/triviaQuestions';
-import { SALVAGE_PRIZES, SPIN_COSTS, WHEELS } from '../data/salvagePrizes';
+import { SALVAGE_PRIZES, SPIN_COSTS, WHEELS, pickWeightedPrize } from '../data/salvagePrizes';
 import {
   BADGES,
   HOUSTON_COST_POWER,
@@ -58,6 +58,12 @@ import {
   type GeminiDiagnostics,
 } from '../services/geminiGameMaster';
 import { ariaVoice, type VoiceMode } from '../utils/ariaVoice';
+import { getLang, localizeRecord, setLangCore, tr, type Lang } from '../i18n/core';
+
+const ARIA_GREETING = {
+  es: 'Hola, soy A.R.I.A., la inteligencia de a bordo. ¡Estoy lista para ayudarte!',
+  en: "Hi, I'm A.R.I.A., the onboard intelligence. I'm ready to help you!",
+};
 import {
   playAlarmBeep,
   playErrorBuzz,
@@ -89,10 +95,16 @@ export const BASE_DECAY = { oxygen: -14, food: -14, power: -3 } as const;
 /** Daño al escudo según la radiación del día. */
 export const RADIATION_DAMAGE: Record<RadiationLevel, number> = { low: 4, moderate: 7, high: 11, extreme: 16 };
 
-export const MISSION_DIFFICULTY_META: Record<MissionDifficulty, { label: string; description: string }> = {
-  explorer: { label: 'Modo Explorador', description: 'Más margen para aprender y probar estrategias.' },
-  commander: { label: 'Modo Comandante', description: 'Menos reservas y más presión en cada Sol.' },
-};
+export const MISSION_DIFFICULTY_META: Record<MissionDifficulty, { label: string; description: string }> = localizeRecord(
+  {
+    explorer: { label: 'Modo Explorador', description: 'Más margen para aprender y probar estrategias.' },
+    commander: { label: 'Modo Comandante', description: 'Menos reservas y más presión en cada Sol.' },
+  },
+  {
+    explorer: { label: 'Explorer Mode', description: 'More room to learn and try out strategies.' },
+    commander: { label: 'Commander Mode', description: 'Fewer supplies and more pressure every Sol.' },
+  },
+);
 
 const MISSION_PROFILES: Record<
   MissionDifficulty,
@@ -129,10 +141,17 @@ export function getMissionProfile(difficulty: MissionDifficulty) {
 }
 
 export const RADIATION_LABEL: Record<RadiationLevel, string> = {
-  low: 'Baja',
-  moderate: 'Moderada',
-  high: 'Alta',
-  extreme: 'Extrema',
+  get low() { return tr('Baja', 'Low'); },
+  get moderate() { return tr('Moderada', 'Moderate'); },
+  get high() { return tr('Alta', 'High'); },
+  get extreme() { return tr('Extrema', 'Extreme'); },
+};
+
+/** Nombre visible de cada rango (el valor interno `Rank` sigue en español). */
+export const RANK_LABEL: Record<Rank, string> = {
+  get 'Cadete Espacial'() { return tr('Cadete Espacial', 'Space Cadet'); },
+  get 'Ingeniero de Sistemas Artemisa'() { return tr('Ingeniero de Sistemas Artemisa', 'Artemis Systems Engineer'); },
+  get 'Comandante Marciano'() { return tr('Comandante Marciano', 'Martian Commander'); },
 };
 
 export const SEED_HARVEST = 20;
@@ -143,13 +162,22 @@ export const EMERGENCY_THRESHOLD = 30;
 
 export const VITAL_ORDER: VitalKey[] = ['oxygen', 'power', 'food', 'shield', 'crewHealth'];
 
-export const VITAL_META: Record<VitalKey, { label: string; short: string }> = {
-  oxygen: { label: 'Oxígeno', short: 'O2' },
-  power: { label: 'Energía', short: 'Energía' },
-  food: { label: 'Comida', short: 'Comida' },
-  shield: { label: 'Blindaje', short: 'Escudo' },
-  crewHealth: { label: 'Salud', short: 'Salud' },
-};
+export const VITAL_META: Record<VitalKey, { label: string; short: string }> = localizeRecord(
+  {
+    oxygen: { label: 'Oxígeno', short: 'O2' },
+    power: { label: 'Energía', short: 'Energía' },
+    food: { label: 'Comida', short: 'Comida' },
+    shield: { label: 'Blindaje', short: 'Escudo' },
+    crewHealth: { label: 'Salud', short: 'Salud' },
+  },
+  {
+    oxygen: { label: 'Oxygen', short: 'O2' },
+    power: { label: 'Power', short: 'Power' },
+    food: { label: 'Food', short: 'Food' },
+    shield: { label: 'Shielding', short: 'Shield' },
+    crewHealth: { label: 'Health', short: 'Health' },
+  },
+);
 
 const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
@@ -217,7 +245,7 @@ export function computeSolTick(input: SolTickInput): SolTickResult {
   d.oxygen += profile.baseDecay.oxygen;
   d.food += profile.baseDecay.food;
   d.power += profile.baseDecay.power;
-  breakdown.push({ source: 'Consumo de la tripulación', effects: { ...profile.baseDecay } });
+  breakdown.push({ source: tr('Consumo de la tripulación', 'Crew consumption'), effects: { ...profile.baseDecay } });
 
   // 2. Radiación (protecciones pasivas restan; la Manta de Plomo divide entre 2)
   let dmg = Math.max(1, Math.round(RADIATION_DAMAGE[input.radiationLevel] * profile.radiationMultiplier));
@@ -231,11 +259,11 @@ export function computeSolTick(input: SolTickInput): SolTickResult {
   }
   if (has('lead_blanket')) {
     dmg = Math.ceil(dmg / 2);
-    protections.push('Manta ½');
+    protections.push(tr('Manta ½', 'Blanket ½'));
   }
   d.shield -= dmg;
   breakdown.push({
-    source: protections.length ? `Radiación (${protections.join(', ')})` : 'Radiación solar',
+    source: protections.length ? tr(`Radiación (${protections.join(', ')})`, `Radiation (${protections.join(', ')})`) : tr('Radiación solar', 'Solar radiation'),
     effects: { shield: -dmg },
   });
 
@@ -265,7 +293,7 @@ export function computeSolTick(input: SolTickInput): SolTickResult {
       harvest = true;
       nextSeedGrowth = 0;
       d.food += SEED_HARVEST;
-      breakdown.push({ source: '¡Cosecha de lechuga roja!', effects: { food: SEED_HARVEST } });
+      breakdown.push({ source: tr('¡Cosecha de lechuga roja!', 'Red lettuce harvest!'), effects: { food: SEED_HARVEST } });
     }
   }
 
@@ -284,7 +312,7 @@ export function computeSolTick(input: SolTickInput): SolTickResult {
   if (after('food') < 25) health -= 6;
   if (health === 0) health = 3;
   d.crewHealth += health;
-  breakdown.push({ source: health > 0 ? 'Tripulación descansando' : 'Zona roja afecta a la salud', effects: { crewHealth: health } });
+  breakdown.push({ source: health > 0 ? tr('Tripulación descansando', 'Crew resting') : tr('Zona roja afecta a la salud', 'Red zone affects health'), effects: { crewHealth: health } });
 
   return { deltas: d, harvest, nextSeedGrowth, breakdown };
 }
@@ -385,6 +413,8 @@ interface GameState {
 
   // A.R.I.A.
   voiceMode: VoiceMode;
+  /** Idioma de la interfaz, los datos, Gemini y la voz de A.R.I.A. */
+  language: Lang;
   voiceMuted: boolean;
   ariaMessage: string;
 
@@ -465,6 +495,8 @@ interface GameActions {
   ariaSay: (text: string, opts?: { story?: boolean }) => void;
   toggleVoice: () => void;
   setVoiceMode: (mode: VoiceMode) => void;
+  /** Cambia el idioma de todo el juego (ES / EN) en tiempo real. */
+  setLanguage: (language: Lang) => void;
 
   // Fase 1
   enterMissionSelector: () => void;
@@ -577,8 +609,9 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   aiStatus: 'idle',
   aiDiagnostics: null,
   voiceMode: ariaVoice.getMode(),
+  language: getLang(),
   voiceMuted: ariaVoice.getMode() === 'silent',
-  ariaMessage: 'Hola, soy A.R.I.A., la inteligencia de a bordo. ¡Estoy lista para ayudarte!',
+  ariaMessage: tr(ARIA_GREETING.es, ARIA_GREETING.en),
   requestId: 0,
   storyScene: null,
   badges: [],
@@ -637,6 +670,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     ariaVoice.setMode(mode);
     set({ voiceMode: mode, voiceMuted: mode === 'silent' });
   },
+  setLanguage: (language) => {
+    if (language === get().language) return;
+    setLangCore(language);
+    ariaVoice.setLanguage(language);
+    // El saludo de A.R.I.A. (y lo que esté diciendo) cambia de idioma al instante
+    set({ language, ariaMessage: tr(ARIA_GREETING.es, ARIA_GREETING.en) });
+    get().ariaSay(tr('Idioma cambiado a español.', 'Language switched to English.'));
+  },
 
   // ---------------- FASE 1: TRIVIA CONTRARRELOJ ----------------
   setMissionDifficulty: (missionDifficulty) => {
@@ -664,7 +705,10 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     playAlarmBeep();
     const w = get().nasaWeather;
     get().ariaSay(
-      `¡Alerta! NASA DONKI detecta una tormenta solar${w ? ` de clase ${w.flareClass}` : ''}. Tienes 60 segundos para responder preguntas: ¡cada acierto manda equipo a la base espacial!`,
+      tr(
+        `¡Alerta! NASA DONKI detecta una tormenta solar${w ? ` de clase ${w.flareClass}` : ''}. Tienes 60 segundos para responder preguntas: ¡cada acierto manda equipo a la base espacial!`,
+        `Alert! NASA DONKI detects a solar storm${w ? ` of class ${w.flareClass}` : ''}. You have 60 seconds to answer questions: every right answer sends equipment to the space base!`,
+      ),
     );
   },
 
@@ -729,11 +773,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     set({ phase1Stage: 'summary', complications, freeSpins: veryBad ? 1 : 0, timeLeft: 0 });
     playAlarmBeep();
     get().ariaSay(
-      `¡Tiempo! Has acertado ${totalCorrect} preguntas y ganado ${s.bunkerInventory.length} objetos.` +
+      tr(`¡Tiempo! Has acertado ${totalCorrect} preguntas y ganado ${s.bunkerInventory.length} objetos.`, `Time's up! You got ${totalCorrect} questions right and won ${s.bunkerInventory.length} items.`) +
         (complications.length
-          ? ` Cuidado: hay ${complications.length} ${complications.length === 1 ? 'complicación' : 'complicaciones'}.`
-          : ' ¡Sin complicaciones!') +
-        (veryBad ? ' Tienes una cápsula de rescate gratis en la Cápsula Orbital.' : ''),
+          ? tr(
+              ` Cuidado: hay ${complications.length} ${complications.length === 1 ? 'complicación' : 'complicaciones'}.`,
+              ` Careful: there ${complications.length === 1 ? 'is 1 complication' : `are ${complications.length} complications`}.`,
+            )
+          : tr(' ¡Sin complicaciones!', ' No complications!')) +
+        (veryBad ? tr(' Tienes una cápsula de rescate gratis en la Cápsula Orbital.', ' You get a free rescue capsule in the Orbital Capsule.') : ''),
     );
   },
 
@@ -752,9 +799,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }));
     void get().loadMarsPhotos();
     get().ariaSay(
-      `Compuertas selladas con ${inventory.length} objetos. Comienza el Sol 1.` +
-        (complications.length ? ` Hay averías en: ${complications.map((c) => VITAL_META[c].label).join(', ')}.` : '') +
-        ' ¡Mantened las cinco barras por encima de cero!',
+      tr(`Compuertas selladas con ${inventory.length} objetos. Comienza el Sol 1.`, `Hatches sealed with ${inventory.length} items. Sol 1 begins.`) +
+        (complications.length
+          ? tr(` Hay averías en: ${complications.map((c) => VITAL_META[c].label).join(', ')}.`, ` Breakdowns in: ${complications.map((c) => VITAL_META[c].label).join(', ')}.`)
+          : '') +
+        tr(' ¡Mantened las cinco barras por encima de cero!', ' Keep all five bars above zero!'),
     );
   },
 
@@ -806,16 +855,16 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       .replace(/[^a-z]+/g, ' ')
       .trim()
       .split(' ');
-    if (words.includes('supervivencia')) {
+    if (words.includes('supervivencia') || words.includes('survival')) {
       get().debugSkipToPhase2();
-      get().ariaSay('Comando aceptado. Saltamos directamente a la fase de supervivencia en la base espacial.');
+      get().ariaSay(tr('Comando aceptado. Saltamos directamente a la fase de supervivencia en la base espacial.', 'Command accepted. Jumping straight to the survival phase in the space base.'));
       return true;
     }
-    if (words.includes('final')) {
+    if (words.includes('final') || words.includes('end')) {
       get().forceGameOver('victory');
       return true;
     }
-    if (words.includes('derrota')) {
+    if (words.includes('derrota') || words.includes('defeat')) {
       get().forceGameOver('evacuation');
       return true;
     }
@@ -830,35 +879,35 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const busy = !inPhase1 && !inPhase2;
     const anyLow = VITAL_ORDER.some((k) => s.vitals[k] < EMERGENCY_THRESHOLD);
     const ownedScrap = availableItems(s.bunkerInventory, s.consumedItems).length > 0;
-    const notNow = { ok: false, reason: 'Solo disponible mientras eliges la decisión del Sol.' };
-    const phase2Only = { ok: false, reason: 'Disponible dentro de la base espacial (Fase 2).' };
+    const notNow = { ok: false, reason: tr('Solo disponible mientras eliges la decisión del Sol.', "Only available while you choose the Sol's decision.") };
+    const phase2Only = { ok: false, reason: tr('Disponible dentro de la base espacial (Fase 2).', 'Available inside the space base (Phase 2).') };
     const houston =
       s.gamePhase === 'PHASE_2_BUNKER' && s.houstonCrates > 0
         ? { ok: true }
-        : { ok: false, reason: 'Llega con cada paquete de Houston (Deep Space Network).' };
+        : { ok: false, reason: tr('Llega con cada paquete de Houston (Deep Space Network).', 'Arrives with every Houston package (Deep Space Network).') };
     if (busy) return { emergency: notNow, energy: notNow, science: notNow, food: notNow, scrap: notNow, houston };
     return {
       houston,
       emergency:
         s.freeSpins > 0 || (inPhase2 && anyLow && !s.emergencySpinUsed)
           ? { ok: true }
-          : { ok: false, reason: s.emergencySpinUsed ? 'Ya usaste el giro de emergencia.' : `Se activa si alguna barra baja de ${EMERGENCY_THRESHOLD}.` },
+          : { ok: false, reason: s.emergencySpinUsed ? tr('Ya usaste el giro de emergencia.', 'You already used the emergency spin.') : tr(`Se activa si alguna barra baja de ${EMERGENCY_THRESHOLD}.`, `Unlocks if any bar drops below ${EMERGENCY_THRESHOLD}.`) },
       energy: inPhase1
         ? phase2Only
         : s.vitals.power >= SPIN_COSTS.energy.minPower
           ? { ok: true }
-          : { ok: false, reason: `Necesitas al menos ${SPIN_COSTS.energy.minPower} de Energía.` },
+          : { ok: false, reason: tr(`Necesitas al menos ${SPIN_COSTS.energy.minPower} de Energía.`, `You need at least ${SPIN_COSTS.energy.minPower} Power.`) },
       science: inPhase1
         ? phase2Only
         : s.scienceScore >= SPIN_COSTS.science.science
           ? { ok: true }
-          : { ok: false, reason: `Necesitas ${SPIN_COSTS.science.science} puntos de Ciencia.` },
+          : { ok: false, reason: tr(`Necesitas ${SPIN_COSTS.science.science} puntos de Ciencia.`, `You need ${SPIN_COSTS.science.science} Science points.`) },
       food: inPhase1
         ? phase2Only
         : s.vitals.food >= SPIN_COSTS.food.minFood
           ? { ok: true }
-          : { ok: false, reason: `Necesitas al menos ${SPIN_COSTS.food.minFood} de Comida.` },
-      scrap: ownedScrap ? { ok: true } : { ok: false, reason: 'No tienes objetos para desmontar.' },
+          : { ok: false, reason: tr(`Necesitas al menos ${SPIN_COSTS.food.minFood} de Comida.`, `You need at least ${SPIN_COSTS.food.minFood} Food.`) },
+      scrap: ownedScrap ? { ok: true } : { ok: false, reason: tr('No tienes objetos para desmontar.', 'You have no items to take apart.') },
     };
   },
 
@@ -892,7 +941,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     } else if (kind === 'food') {
       vitals = applyEffects(vitals, { food: -SPIN_COSTS.food.food });
     } else if (kind === 'scrap') {
-      if (!scrapItemId || !availableItems(inventory, consumed).includes(scrapItemId)) return { error: 'Elige un objeto para desmontar.' };
+      if (!scrapItemId || !availableItems(inventory, consumed).includes(scrapItemId)) return { error: tr('Elige un objeto para desmontar.', 'Choose an item to take apart.') };
       scrappedRarity = ITEMS_BY_ID[scrapItemId].rarity;
       scrappedCategory = ITEMS_BY_ID[scrapItemId].category;
       inventory = inventory.filter((i) => i !== scrapItemId);
@@ -900,10 +949,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       delete machineStates[scrapItemId];
     }
 
-    // --- Elegir gajo ---
-    const wheel = WHEELS[kind];
-    const segmentIndex = Math.floor(Math.random() * wheel.length);
-    const prizeId: SalvagePrizeId = wheel[segmentIndex];
+    // --- Elegir premio: ponderado por rareza (común frecuente, legendario muy raro) ---
+    const prizeId: SalvagePrizeId = pickWeightedPrize(kind);
     const prize = SALVAGE_PRIZES[prizeId];
 
     // --- Aplicar premio ---
@@ -936,20 +983,24 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     switch (prizeId) {
       case 'jackpot_legendary': {
         const id = grant(['legendary', 'epic'], [...complications, ...preferCats]);
-        message = id ? `¡PREMIO GORDO! ${ITEMS_BY_ID[id].name} llega a la base espacial.` : '¡Ya tienes todo lo legendario! Te doy +30 a la barra más baja.';
+        message = id
+          ? tr(`¡PREMIO GORDO! ${ITEMS_BY_ID[id].name} llega a la base espacial.`, `JACKPOT! ${ITEMS_BY_ID[id].name} arrives at the space base.`)
+          : tr('¡Ya tienes todo lo legendario! Te doy +30 a la barra más baja.', 'You already have every legendary item! Here is +30 to your lowest bar.');
         if (!id) addVitals({ [lowest]: 30 });
         break;
       }
       case 'double_pack': {
         grant(['epic', 'rare', 'legendary', 'common'], preferCats);
         grant(['rare', 'epic', 'common'], [...preferCats].reverse());
-        message = items.length ? `¡Pack doble! ${items.map((i) => ITEMS_BY_ID[i].shortName).join(' y ')}.` : 'Pack vacío... ¡ya lo tienes todo! +15 Energía.';
+        message = items.length
+          ? tr(`¡Pack doble! ${items.map((i) => ITEMS_BY_ID[i].shortName).join(' y ')}.`, `Double pack! ${items.map((i) => ITEMS_BY_ID[i].shortName).join(' and ')}.`)
+          : tr('Pack vacío... ¡ya lo tienes todo! +15 Energía.', 'Empty pack... you already have everything! +15 Power.');
         if (!items.length) addVitals({ power: 15 });
         break;
       }
       case 'rare_item': {
         const id = grant(['rare', 'epic', 'common'], preferCats);
-        message = id ? `Objeto raro: ${ITEMS_BY_ID[id].name}.` : 'No quedan objetos nuevos: +15 Comida.';
+        message = id ? tr(`Objeto raro: ${ITEMS_BY_ID[id].name}.`, `Rare item: ${ITEMS_BY_ID[id].name}.`) : tr('No quedan objetos nuevos: +15 Comida.', 'No new items left: +15 Food.');
         if (!id) addVitals({ food: 15 });
         break;
       }
@@ -958,30 +1009,32 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         const better = RARITY_ORDER.slice(Math.min(fromIdx + 1, RARITY_ORDER.length - 1));
         const cats = scrappedCategory ? [scrappedCategory, ...VITAL_ORDER.filter((k) => k !== scrappedCategory)] : preferCats;
         const id = grant([...better, ...RARITY_ORDER], cats);
-        message = id ? `¡Mejora! Has convertido la chatarra en ${ITEMS_BY_ID[id].name}.` : 'Nada mejor que conseguir: +20 a la barra más baja.';
+        message = id
+          ? tr(`¡Mejora! Has convertido la chatarra en ${ITEMS_BY_ID[id].name}.`, `Upgrade! You turned the scrap into ${ITEMS_BY_ID[id].name}.`)
+          : tr('Nada mejor que conseguir: +20 a la barra más baja.', 'Nothing better to get: +20 to your lowest bar.');
         if (!id) addVitals({ [lowest]: 20 });
         break;
       }
       case 'oxygen_full':
         if (inPhase1) addVitals({ oxygen: 40 });
         else vitals = { ...vitals, oxygen: 100 };
-        message = inPhase1 ? '¡Recarga de oxígeno! Empezarás con +40 O2.' : '¡Recarga total! Oxígeno al 100 %.';
+        message = inPhase1 ? tr('¡Recarga de oxígeno! Empezarás con +40 O2.', 'Oxygen refill! You will start with +40 O2.') : tr('¡Recarga total! Oxígeno al 100 %.', 'Full refill! Oxygen at 100%.');
         break;
       case 'oxygen_boost':
         addVitals({ oxygen: 25 });
-        message = '+25 de Oxígeno.';
+        message = tr('+25 de Oxígeno.', '+25 Oxygen.');
         break;
       case 'food_boost':
         addVitals({ food: 25 });
-        message = '+25 de Comida.';
+        message = tr('+25 de Comida.', '+25 Food.');
         break;
       case 'shield_overcharge':
         addVitals({ shield: 35 });
-        message = '¡Escudo sobrecargado! +35 de Blindaje.';
+        message = tr('¡Escudo sobrecargado! +35 de Blindaje.', 'Shield overcharged! +35 Shielding.');
         break;
       case 'lowest_plus40':
         addVitals({ [lowest]: 40 });
-        message = `¡Rescate! +40 de ${VITAL_META[lowest].label}, que era tu barra en peligro.`;
+        message = tr(`¡Rescate! +40 de ${VITAL_META[lowest].label}, que era tu barra en peligro.`, `Rescue! +40 ${VITAL_META[lowest].label}, your bar in danger.`);
         break;
       case 'repair_kit':
         if (complications.length) {
@@ -991,15 +1044,15 @@ export const useGameStore = create<GameStore>()((set, get) => ({
           if (!inPhase1) {
             for (const id of inventory) if (ITEMS_BY_ID[id].kind === 'machine' && ITEMS_BY_ID[id].category === fixed) machineStates[id] = true;
           }
-          message = `¡Reparado! Se acabó la avería "${COMPLICATIONS[fixed].title}".`;
+          message = tr(`¡Reparado! Se acabó la avería "${COMPLICATIONS[fixed].title}".`, `Fixed! The "${COMPLICATIONS[fixed].title}" breakdown is over.`);
         } else {
           addVitals({ [lowest]: 15 });
-          message = `No había averías: el kit da +15 de ${VITAL_META[lowest].label}.`;
+          message = tr(`No había averías: el kit da +15 de ${VITAL_META[lowest].label}.`, `There were no breakdowns: the kit gives +15 ${VITAL_META[lowest].label}.`);
         }
         break;
       case 'dust_storm':
         addVitals({ power: 5 });
-        message = 'Tormenta de polvo... solo recuperas +5 de Energía.';
+        message = tr('Tormenta de polvo... solo recuperas +5 de Energía.', 'Dust storm... you only recover +5 Power.');
         break;
     }
 
@@ -1015,14 +1068,19 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       complications,
       supplyBonus,
     });
-    return { segmentIndex, prize, message, items };
+    return { segmentIndex: WHEELS[kind].indexOf(prizeId), prize, message, items };
   },
 
   // ---------------- FASE 2 ----------------
   toggleMachine: (id) => {
     if (isMachineBroken(id, get().complications, get().brokenMachines)) {
       playErrorBuzz();
-      get().ariaSay(`${ITEMS_BY_ID[id].shortName} está averiada (${CATEGORY_META[ITEMS_BY_ID[id].category].label}). Pulsa Reparar para arreglarla con un minijuego.`);
+      get().ariaSay(
+        tr(
+          `${ITEMS_BY_ID[id].shortName} está averiada (${CATEGORY_META[ITEMS_BY_ID[id].category].label}). Pulsa Reparar para arreglarla con un minijuego.`,
+          `${ITEMS_BY_ID[id].shortName} is broken (${CATEGORY_META[ITEMS_BY_ID[id].category].label}). Press Repair to fix it with a mini-game.`,
+        ),
+      );
       return;
     }
     const on = !get().machineStates[id];
@@ -1040,7 +1098,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       vitals: applyEffects(s.vitals, item.useEffect ?? {}),
       consumedItems: [...s.consumedItems, id],
     });
-    get().ariaSay(`${item.shortName} usado. ${item.description.split(':')[0]}.`);
+    get().ariaSay(tr(`${item.shortName} usado. ${item.description.split(":")[0]}.`, `${item.shortName} used. ${item.description.split(":")[0]}.`));
   },
 
   loadSolEvent: async () => {
@@ -1126,7 +1184,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       optionLabel: option.label,
       ariaReaction: option.ariaReactionVoice,
       deltas,
-      breakdown: [{ source: 'Efecto de tu decisión', effects: option.effects }, ...tick.breakdown],
+      breakdown: [{ source: tr('Efecto de tu decisión', 'Effect of your decision'), effects: option.effects }, ...tick.breakdown],
       harvested: tick.harvest,
       radiationLevel: event.radiationLevel,
     };
@@ -1153,13 +1211,16 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (pendingOutcome === 'evacuation') {
       playEvacuation();
       get().ariaSay(
-        `${option.ariaReactionVoice} Pero el nivel de ${VITAL_META[failed!].label} ha llegado a cero. Activando evacuación de emergencia a la órbita.`,
+        tr(
+          `${option.ariaReactionVoice} Pero el nivel de ${VITAL_META[failed!].label} ha llegado a cero. Activando evacuación de emergencia a la órbita.`,
+          `${option.ariaReactionVoice} But the ${VITAL_META[failed!].label} level has reached zero. Starting emergency evacuation to orbit.`,
+        ),
       );
     } else if (pendingOutcome === 'victory') {
       playSuccess();
-      get().ariaSay(`${option.ariaReactionVoice} ¡Sol ${TOTAL_SOLS} completado! ¡La tormenta ha pasado!`);
+      get().ariaSay(`${option.ariaReactionVoice} ${tr(`¡Sol ${TOTAL_SOLS} completado! ¡La tormenta ha pasado!`, `Sol ${TOTAL_SOLS} complete! The storm has passed!`)}`);
     } else {
-      get().ariaSay(option.ariaReactionVoice + (tick.harvest ? ' ¡Y hoy hemos cosechado lechugas!' : ''));
+      get().ariaSay(option.ariaReactionVoice + (tick.harvest ? tr(' ¡Y hoy hemos cosechado lechugas!', ' And today we harvested lettuce!') : ''));
     }
     get().continueAfterReport();
   },
@@ -1211,7 +1272,12 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         set({
           brokenMachines: [id],
           machineStates: { ...st.machineStates, [id]: false },
-          notice: { key: Date.now(), kind: 'alert', title: 'Avería puntual', text: `${ITEMS_BY_ID[id].shortName} necesita mantenimiento: pulsa Reparar` },
+          notice: {
+            key: Date.now(),
+            kind: 'alert',
+            title: tr('Avería puntual', 'Sudden breakdown'),
+            text: tr(`${ITEMS_BY_ID[id].shortName} necesita mantenimiento: pulsa Reparar`, `${ITEMS_BY_ID[id].shortName} needs maintenance: press Repair`),
+          },
         });
         playAlarmBeep();
       }
@@ -1286,12 +1352,12 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   orderHoustonPackage: (id) => {
     const s = get();
-    if (s.gamePhase !== 'PHASE_2_BUNKER' || s.solStage !== 'event') return { error: 'Solo puedes pedir ayuda mientras decides el Sol.' };
-    if (s.houstonOrdersPlaced >= HOUSTON_MAX_ORDERS) return { error: `Ya usaste los ${HOUSTON_MAX_ORDERS} pedidos de la misión.` };
+    if (s.gamePhase !== 'PHASE_2_BUNKER' || s.solStage !== 'event') return { error: tr('Solo puedes pedir ayuda mientras decides el Sol.', 'You can only ask for help while deciding the Sol.') };
+    if (s.houstonOrdersPlaced >= HOUSTON_MAX_ORDERS) return { error: tr(`Ya usaste los ${HOUSTON_MAX_ORDERS} pedidos de la misión.`, `You already used the mission's ${HOUSTON_MAX_ORDERS} orders.`) };
     if (s.houstonOrders.length >= HOUSTON_MAX_IN_TRANSIT)
-      return { error: `Ya hay ${HOUSTON_MAX_IN_TRANSIT} envíos en camino. Espera a que llegue uno para pedir otro.` };
-    if (s.houstonOrderedSol === s.sol) return { error: 'La antena ya transmitió hoy. Vuelve a intentarlo mañana.' };
-    if (s.vitals.power < HOUSTON_MIN_POWER) return { error: `La antena necesita al menos ${HOUSTON_MIN_POWER} de Energía.` };
+      return { error: tr('Ya hay un envío en camino. Espera a que llegue a la base para pedir otro.', 'A shipment is already on its way. Wait for it to reach the base before ordering another.') };
+    if (s.houstonOrderedSol === s.sol) return { error: tr('La antena ya transmitió hoy. Vuelve a intentarlo mañana.', 'The antenna already transmitted today. Try again tomorrow.') };
+    if (s.vitals.power < HOUSTON_MIN_POWER) return { error: tr(`La antena necesita al menos ${HOUSTON_MIN_POWER} de Energía.`, `The antenna needs at least ${HOUSTON_MIN_POWER} Power.`) };
     const pkg = HOUSTON_PACKAGES[id];
     const arrivalSol = s.sol + HOUSTON_DELAY_SOLS;
     set({
@@ -1302,7 +1368,10 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
     playIncoming();
     get().ariaSay(
-      `Mensaje enviado a Houston por la Deep Space Network. ${pkg.label} en camino: llegará en ${HOUSTON_DELAY_SOLS} Soles, al empezar el Sol ${arrivalSol}. ¡Anticiparse es de buenos ingenieros!`,
+      tr(
+        `Mensaje enviado a Houston por la Deep Space Network. ${pkg.label} en camino: llegará en ${HOUSTON_DELAY_SOLS} Soles, al empezar el Sol ${arrivalSol}. ¡Anticiparse es de buenos ingenieros!`,
+        `Message sent to Houston over the Deep Space Network. ${pkg.label} on its way: it arrives in ${HOUSTON_DELAY_SOLS} Sols, at the start of Sol ${arrivalSol}. Good engineers plan ahead!`,
+      ),
     );
     return { ok: true };
   },
@@ -1311,7 +1380,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (get().badges.includes(id)) return;
     set((s) => ({
       badges: [...s.badges, id],
-      notice: { key: Date.now() + 1, kind: 'badge', title: 'Nueva insignia de misión', text: BADGES[id].name },
+      notice: { key: Date.now() + 1, kind: 'badge', title: tr('Nueva insignia de misión', 'New mission badge'), text: BADGES[id].name },
     }));
     playUnlock();
   },
@@ -1332,7 +1401,12 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (!success) {
       set({ repairTried: [...s.repairTried, key], vitals: applyEffects(s.vitals, { power: -REPAIR_FAIL_POWER }) });
       playErrorBuzz();
-      get().ariaSay(`La reparación de ${name} no ha salido a tiempo: sigue averiada este Sol y gastamos ${REPAIR_FAIL_POWER} de Energía. Mañana podrás intentarlo otra vez.`);
+      get().ariaSay(
+        tr(
+          `La reparación de ${name} no ha salido a tiempo: sigue averiada este Sol y gastamos ${REPAIR_FAIL_POWER} de Energía. Mañana podrás intentarlo otra vez.`,
+          `The ${name} repair didn't finish in time: it stays broken this Sol and we spent ${REPAIR_FAIL_POWER} Power. You can try again tomorrow.`,
+        ),
+      );
       return;
     }
 
@@ -1352,7 +1426,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }
     set({ complications, brokenMachines, machineStates });
     playSuccess();
-    get().ariaSay(`¡Reparado! ${name} vuelve a funcionar. ¡Qué buen trabajo de ingeniería!`);
+    get().ariaSay(tr(`¡Reparado! ${name} vuelve a funcionar. ¡Qué buen trabajo de ingeniería!`, `Fixed! ${name} works again. Great engineering work!`));
     get().awardBadge('barter_master');
   },
 

@@ -1,4 +1,5 @@
 import type { BadgeId, HoustonPackageId, MinigameKind, RepairTarget, VitalKey } from '../types/game';
+import { localizeRecord, tr, withEnglish } from '../i18n/core';
 
 /** Coste y retraso del Enlace Deep Space Network (Paquete de Ayuda de Houston). */
 export const HOUSTON_COST_POWER = 10;
@@ -6,37 +7,69 @@ export const HOUSTON_MIN_POWER = 15;
 export const HOUSTON_DELAY_SOLS = 2;
 /** Pedidos máximos a Houston en toda la partida. */
 export const HOUSTON_MAX_ORDERS = 3;
-/** Envíos que pueden estar en camino a la vez (hasta que no llegue uno, no se puede pedir otro). */
-export const HOUSTON_MAX_IN_TRANSIT = 2;
+/** Solo 1 envío en camino: hasta que no llega a la base no se puede pedir otro. */
+export const HOUSTON_MAX_IN_TRANSIT = 1;
 
-export const HOUSTON_PACKAGES: Record<HoustonPackageId, { label: string; vital: VitalKey; amount: number }> = {
-  oxygen_reserve: { label: 'Inyección de Oxígeno de Reserva', vital: 'oxygen', amount: 25 },
-  battery_patch: { label: 'Parche de Software de Baterías', vital: 'power', amount: 25 },
-  emergency_rations: { label: 'Raciones de Emergencia', vital: 'food', amount: 25 },
-};
+export const HOUSTON_PACKAGES: Record<HoustonPackageId, { label: string; vital: VitalKey; amount: number }> = localizeRecord<
+  HoustonPackageId,
+  { label: string; vital: VitalKey; amount: number }
+>(
+  {
+    oxygen_reserve: { label: 'Inyección de Oxígeno de Reserva', vital: 'oxygen', amount: 25 },
+    battery_patch: { label: 'Parche de Software de Baterías', vital: 'power', amount: 25 },
+    emergency_rations: { label: 'Raciones de Emergencia', vital: 'food', amount: 25 },
+  },
+  {
+    oxygen_reserve: { label: 'Reserve Oxygen Injection' },
+    battery_patch: { label: 'Battery Software Patch' },
+    emergency_rations: { label: 'Emergency Rations' },
+  },
+);
 export const HOUSTON_ORDER: HoustonPackageId[] = ['oxygen_reserve', 'battery_patch', 'emergency_rations'];
 
 /** 5 insignias de misión coleccionables (texto corto para el aro del parche + condición para niños). */
-export const BADGES: Record<BadgeId, { name: string; patchText: string; how: string }> = {
-  solar_engineer: { name: 'Ingeniero Solar', patchText: 'INGENIERO SOLAR', how: 'Termina un Sol con la Energía en 70 o más.' },
-  genelab_botanist: { name: 'Botánico GeneLab', patchText: 'BOTÁNICO GENELAB', how: 'Cosecha lechuga roja con las Semillas OSDR.' },
-  barter_master: { name: 'Mecánico de Ares-IV', patchText: 'MECÁNICO ARES', how: 'Repara una avería superando un minijuego.' },
-  deep_space_communicator: { name: 'Comunicador Deep Space', patchText: 'DEEP SPACE', how: 'Recibe un paquete de Houston por la Deep Space Network.' },
-  ares_hero: { name: 'Héroe de Ares-IV', patchText: 'HÉROE ARES-IV', how: 'Sobrevive los 10 Soles de la tormenta solar.' },
-};
+export const BADGES: Record<BadgeId, { name: string; patchText: string; how: string }> = localizeRecord<BadgeId, { name: string; patchText: string; how: string }>(
+  {
+    solar_engineer: { name: 'Ingeniero Solar', patchText: 'INGENIERO SOLAR', how: 'Termina un Sol con la Energía en 70 o más.' },
+    genelab_botanist: { name: 'Botánico GeneLab', patchText: 'BOTÁNICO GENELAB', how: 'Cosecha lechuga roja con las Semillas OSDR.' },
+    barter_master: { name: 'Mecánico de Ares-IV', patchText: 'MECÁNICO ARES', how: 'Repara una avería superando un minijuego.' },
+    deep_space_communicator: { name: 'Comunicador Deep Space', patchText: 'DEEP SPACE', how: 'Recibe un paquete de Houston por la Deep Space Network.' },
+    ares_hero: { name: 'Héroe de Ares-IV', patchText: 'HÉROE ARES-IV', how: 'Sobrevive los 10 Soles de la tormenta solar.' },
+  },
+  {
+    solar_engineer: { name: 'Solar Engineer', patchText: 'SOLAR ENGINEER', how: 'Finish a Sol with Power at 70 or more.' },
+    genelab_botanist: { name: 'GeneLab Botanist', patchText: 'GENELAB BOTANIST', how: 'Harvest red lettuce with the OSDR Seeds.' },
+    barter_master: { name: 'Ares-IV Mechanic', patchText: 'ARES MECHANIC', how: 'Fix a breakdown by beating a mini-game.' },
+    deep_space_communicator: { name: 'Deep Space Communicator', patchText: 'DEEP SPACE', how: 'Receive a Houston package over the Deep Space Network.' },
+    ares_hero: { name: 'Ares-IV Hero', patchText: 'ARES-IV HERO', how: 'Survive all 10 Sols of the solar storm.' },
+  },
+);
 export const BADGE_ORDER: BadgeId[] = ['solar_engineer', 'genelab_botanist', 'barter_master', 'deep_space_communicator', 'ares_hero'];
 
 /** Telemetría real del Cráter Jezero (Perseverance / MEDA) para el Periscopio. */
-export const JEZERO_TELEMETRY = [
-  { label: 'Temperatura exterior', value: '−65 °C', note: 'Media diaria medida por la estación MEDA de Perseverance.' },
-  { label: 'Presión atmosférica', value: '6,1 mbar', note: 'Menos del 1 % de la presión de la Tierra (1013 mbar).' },
-  { label: 'Composición del aire', value: '95 % CO₂', note: 'Casi todo dióxido de carbono: MOXIE lo convierte en oxígeno.' },
-  { label: 'Gravedad', value: '0,38 g', note: 'Si pesas 40 kg en la Tierra, en Marte pesarías unos 15 kg.' },
-] as const;
+export const JEZERO_TELEMETRY: { label: string; value: string; note: string }[] = [
+  withEnglish(
+    { label: 'Temperatura exterior', value: '−65 °C', note: 'Media diaria medida por la estación MEDA de Perseverance.' },
+    { label: 'Outside temperature', note: "Daily average measured by Perseverance's MEDA weather station." },
+  ),
+  withEnglish(
+    { label: 'Presión atmosférica', value: '6,1 mbar', note: 'Menos del 1 % de la presión de la Tierra (1013 mbar).' },
+    { label: 'Air pressure', value: '6.1 mbar', note: "Less than 1% of Earth's pressure (1013 mbar)." },
+  ),
+  withEnglish(
+    { label: 'Composición del aire', value: '95 % CO₂', note: 'Casi todo dióxido de carbono: MOXIE lo convierte en oxígeno.' },
+    { label: 'Air composition', value: '95% CO₂', note: 'Almost all carbon dioxide: MOXIE turns it into oxygen.' },
+  ),
+  withEnglish(
+    { label: 'Gravedad', value: '0,38 g', note: 'Si pesas 40 kg en la Tierra, en Marte pesarías unos 15 kg.' },
+    { label: 'Gravity', value: '0.38 g', note: 'If you weigh 40 kg on Earth, on Mars you would weigh about 15 kg.' },
+  ),
+];
 
 // ---------------- Minijuegos de emergencia ----------------
 
-export const MINIGAME_META: Record<MinigameKind, { title: string; code: string; vital: VitalKey; seconds: number; instructions: string }> = {
+type MinigameMeta = { title: string; code: string; vital: VitalKey; seconds: number; instructions: string };
+export const MINIGAME_META: Record<MinigameKind, MinigameMeta> = localizeRecord<MinigameKind, MinigameMeta>({
   cables: {
     title: 'Reconectar Cables del Escudo',
     code: 'SYS-RAD',
@@ -72,18 +105,48 @@ export const MINIGAME_META: Record<MinigameKind, { title: string; code: string; 
     seconds: 9,
     instructions: 'Haz clic encima de cada roca que se acerca al centro para dispararle con el láser defensivo.',
   },
-};
+}, {
+  cables: {
+    title: 'Reconnect the Shield Cables',
+    instructions: 'Join each terminal on the left to its connector on the right (click or drag).',
+  },
+  dust: {
+    title: 'Clean Dust off the Solar Panels',
+    instructions: 'Move the mouse (or your finger) over the panel like a brush until all the dust is gone.',
+  },
+  radio: {
+    title: 'Tune In to the NASA Satellite',
+    instructions: "Move Frequency and Amplitude until your wave gets close to the satellite's (it turns green) and hold it for a moment.",
+  },
+  leak: {
+    title: 'Patch the Oxygen Pipe Leaks',
+    instructions: 'Quickly click on each crack letting out vapor to put a patch of Kapton Tape on it.',
+  },
+  debris: {
+    title: 'Destroy Space Debris on the Radar',
+    instructions: 'Click on each rock coming toward the center to zap it with the defense laser.',
+  },
+});
 
 /** Dato real (NASA) para el minijuego de las fugas. */
-export const LEAK_FACT =
-  'Dato real NASA: fuera del hábitat la presión de Marte es de solo 6,1 mbar (menos del 1 % de la Tierra). Por eso una fuga de aire es tan peligrosa y hay que taparla rápido.';
+export const leakFact = () =>
+  tr(
+    'Dato real NASA: fuera del hábitat la presión de Marte es de solo 6,1 mbar (menos del 1 % de la Tierra). Por eso una fuga de aire es tan peligrosa y hay que taparla rápido.',
+    "Real NASA fact: outside the habitat the pressure on Mars is only 6.1 mbar (less than 1% of Earth's). That is why an air leak is so dangerous and must be patched fast.",
+  );
 /** Dato real (NASA) para el minijuego de la basura espacial. */
-export const DEBRIS_FACT =
-  'Dato real NASA: la Estación Espacial Internacional ha tenido que maniobrar decenas de veces para esquivar basura espacial, y su blindaje aguanta impactos de micrometeoritos.';
+export const debrisFact = () =>
+  tr(
+    'Dato real NASA: la Estación Espacial Internacional ha tenido que maniobrar decenas de veces para esquivar basura espacial, y su blindaje aguanta impactos de micrometeoritos.',
+    'Real NASA fact: the International Space Station has had to move dozens of times to dodge space debris, and its shielding can take micrometeorite hits.',
+  );
 
 /** Dato real de NASA sobre el polvo marciano (InSight / Perseverance). */
-export const DUST_FACT =
-  'Dato real NASA: el polvo marciano cubrió los paneles del módulo InSight y su energía cayó de unos 5.000 a menos de 500 vatios-hora por Sol. Por eso Perseverance usa un generador nuclear (MMRTG).';
+export const dustFact = () =>
+  tr(
+    'Dato real NASA: el polvo marciano cubrió los paneles del módulo InSight y su energía cayó de unos 5.000 a menos de 500 vatios-hora por Sol. Por eso Perseverance usa un generador nuclear (MMRTG).',
+    "Real NASA fact: Martian dust covered the InSight lander's panels and its power dropped from about 5,000 to less than 500 watt-hours per Sol. That is why Perseverance uses a nuclear generator (MMRTG).",
+  );
 
 /** Minijuego que repara cada sistema: Blindaje → cables · Energía/Comida → paneles solares · Oxígeno/Salud → radio. */
 /** Los 5 minijuegos de reparación. */

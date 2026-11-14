@@ -311,6 +311,11 @@ export interface MarsPhoto {
   cameraEs: string;
   /** Qué muestra, p. ej. "un remolino de polvo marciano" (null si no se sabe). */
   topicEs: string | null;
+  /** Versión en inglés de los textos anteriores (selector de idioma). */
+  summaryEn?: string;
+  whoEn?: string;
+  cameraEn?: string;
+  topicEn?: string | null;
   /** Descripción oficial original (inglés). */
   originalDescription: string;
   /** Página oficial de la foto. */
