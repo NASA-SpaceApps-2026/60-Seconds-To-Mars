@@ -999,6 +999,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       optionLabel: option.label,
       ariaReaction: option.ariaReactionVoice,
       deltas,
+      breakdown: [{ source: 'Efecto de tu decisión', effects: option.effects }, ...tick.breakdown],
       harvested: tick.harvest,
       radiationLevel: event.radiationLevel,
     };
@@ -1033,6 +1034,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     } else {
       get().ariaSay(option.ariaReactionVoice + (tick.harvest ? ' ¡Y hoy hemos cosechado lechugas!' : ''));
     }
+    get().continueAfterReport();
   },
 
   continueAfterReport: () => {

@@ -222,6 +222,8 @@ export interface SolReport {
   ariaReaction: string;
   /** Diferencia real entre el inicio y el final del Sol. */
   deltas: Required<Effects>;
+  /** Desglose visible de la decisión y de los efectos automáticos del Sol. */
+  breakdown: { source: string; effects: Effects }[];
   harvested: boolean;
   radiationLevel: RadiationLevel;
 }
