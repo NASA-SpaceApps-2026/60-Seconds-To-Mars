@@ -437,15 +437,15 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
       aria-modal="true"
       aria-label={meta.title}
     >
-      <motion.div initial={{ y: 24, scale: 0.96 }} animate={{ y: 0, scale: 1 }} className="my-auto w-full max-w-3xl rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-2xl">
-        {/* Cabecera */}
-        <div className="flex items-start gap-3">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-lg border border-slate-200 bg-slate-100 text-nasa-blue">
+      <motion.div initial={{ y: 24, scale: 0.96 }} animate={{ y: 0, scale: 1 }} className="my-auto w-full max-w-3xl rounded-2xl border-2 border-slate-200 bg-white p-3 shadow-2xl sm:p-5">
+        {/* Cabecera (móvil: título a todo el ancho y "Cambiar prueba" en su propia fila) */}
+        <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
+          <span className="hidden h-12 w-12 shrink-0 place-items-center rounded-lg border border-slate-200 bg-slate-100 text-nasa-blue sm:grid">
             <Icon className="h-7 w-7" strokeWidth={1.75} />
           </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-mono text-xs tracking-[0.25em] text-slate-500">{tr('INTERVENCIÓN MANUAL', 'MANUAL OVERRIDE')} // {meta.code}</p>
-            <h2 className="font-display text-2xl font-black text-nasa-blue">{meta.title}</h2>
+          <div className="min-w-0 flex-1 basis-[12rem]">
+            <p className="font-mono text-xs tracking-[0.18em] text-slate-500 sm:tracking-[0.25em]">{tr('INTERVENCIÓN MANUAL', 'MANUAL OVERRIDE')} // {meta.code}</p>
+            <h2 className="font-display text-lg font-black leading-tight text-nasa-blue sm:text-2xl">{meta.title}</h2>
             <p className="text-sm font-semibold text-slate-600">{stakes}</p>
           </div>
           {onSwitch && !done && (
@@ -455,15 +455,15 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
                 playButtonClick();
                 onSwitch();
               }}
-              className="flex shrink-0 items-center gap-1.5 self-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
+              className="flex shrink-0 items-center justify-center gap-1.5 self-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue max-sm:order-last max-sm:w-full"
               title={tr('Prueba otro de los 5 minijuegos', 'Try another of the 5 mini-games')}
             >
               <Dices className="h-4 w-4" strokeWidth={1.75} /> {tr('Cambiar prueba', 'Switch test')}
             </button>
           )}
-          <div className={`font-display shrink-0 rounded-xl border-2 px-4 py-1 text-center ${pct < 35 && phase === 'play' ? 'border-nasa-red text-nasa-red' : 'border-nasa-blue text-nasa-blue'}`}>
+          <div className={`font-display shrink-0 rounded-xl border-2 px-3 py-1 text-center sm:px-4 ${pct < 35 && phase === 'play' ? 'border-nasa-red text-nasa-red' : 'border-nasa-blue text-nasa-blue'}`}>
             <Timer className="mx-auto h-4 w-4" />
-            <span className="text-3xl font-black tabular-nums">{(left / 1000).toFixed(1)}</span>
+            <span className="text-2xl font-black tabular-nums sm:text-3xl">{(left / 1000).toFixed(1)}</span>
           </div>
         </div>
 

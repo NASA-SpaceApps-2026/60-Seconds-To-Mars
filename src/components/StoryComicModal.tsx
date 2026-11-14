@@ -514,12 +514,28 @@ function StoryContent({ scene }: { scene: StoryScene }) {
 /** Viñetas de cómic entre pantallas (lee la escena del store; se cierra con closeStory). */
 export default function StoryComicModal() {
   const scene = useGameStore((s) => s.storyScene);
+
+  // Con la historia abierta, el documento no puede hacer scroll: así la pantalla que se está montando
+  // debajo (p. ej. la trivia tras el prólogo) nunca saca barras ni desplaza el modal (como en la escena de las compuertas).
+  const open = scene !== null;
+  useEffect(() => {
+    if (!open) return;
+    const html = document.documentElement;
+    const prev = { html: html.style.overflow, body: document.body.style.overflow };
+    html.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prev.html;
+      document.body.style.overflow = prev.body;
+    };
+  }, [open]);
+
   return (
     <AnimatePresence>
       {scene && (
         <motion.div
           key={scene}
-          className="fixed inset-0 z-[60] flex h-dvh flex-col overflow-hidden bg-slate-950/92 backdrop-blur-md"
+          className="fixed inset-0 z-[60] flex h-dvh w-full max-w-[100vw] flex-col overflow-hidden overscroll-contain bg-slate-950/92 backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

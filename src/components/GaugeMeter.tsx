@@ -4,6 +4,8 @@ import { tr } from '../i18n/core';
 
 interface Props {
   label: string;
+  /** Nombre corto para móvil (O2, Energía...). */
+  shortLabel?: string;
   /** Recurso: decide el icono vectorial junto a la etiqueta. */
   resource: ResourceKey;
   value: number;
@@ -19,7 +21,7 @@ const CY = 62;
 const R = 46;
 
 /** Velocímetro semicircular estilo cabina del transbordador espacial. */
-export default function GaugeMeter({ label, resource, value, forecast, nativeTitle = true, className = '' }: Props) {
+export default function GaugeMeter({ label, shortLabel, resource, value, forecast, nativeTitle = true, className = '' }: Props) {
   const v = Math.max(0, Math.min(100, Math.round(value)));
   const color = v > 50 ? '#16a34a' : v >= 25 ? '#f59e0b' : '#dc2626';
   const critical = v < 25;
@@ -98,9 +100,11 @@ export default function GaugeMeter({ label, resource, value, forecast, nativeTit
           {v}
         </text>
       </svg>
-      <div className="-mt-0.5 flex items-center gap-1 text-sm font-extrabold text-slate-700">
-        <ResourceIcon k={resource} className="h-4 w-4 shrink-0 text-nasa-blue" />
-        <span className="truncate">{label}</span>
+      <div className="-mt-0.5 flex max-w-full items-center gap-1 text-xs font-extrabold text-slate-700 sm:text-sm">
+        <ResourceIcon k={resource} className="hidden h-4 w-4 shrink-0 text-nasa-blue sm:block" />
+        {/* Móvil: nombre corto (O2, Energía...) para que quepan los 5 velocímetros */}
+        <span className="truncate sm:hidden">{shortLabel ?? label}</span>
+        <span className="hidden truncate sm:inline">{label}</span>
       </div>
       {forecast !== undefined && (
         <span
@@ -108,7 +112,8 @@ export default function GaugeMeter({ label, resource, value, forecast, nativeTit
             forecast >= 0 ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-rose-300 bg-rose-50 text-rose-700'
           }`}
         >
-          {tr('mañana', 'tomorrow')} {forecast >= 0 ? '+' : ''}
+          <span className="hidden sm:inline">{tr('mañana', 'tomorrow')} </span>
+          {forecast >= 0 ? '+' : ''}
           {forecast}
         </span>
       )}

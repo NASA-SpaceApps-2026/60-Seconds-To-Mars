@@ -92,7 +92,7 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
-        className="relative h-24 w-[5.5rem] shrink-0 rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-nasa-blue/50"
+        className="relative h-16 w-[3.75rem] shrink-0 sm:h-24 sm:w-[5.5rem] rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-nasa-blue/50"
         aria-expanded={open}
         aria-label={open ? t('Plegar el panel de A.R.I.A.', 'Collapse the A.R.I.A. panel') : t('Abrir A.R.I.A.: preguntas y voz', 'Open A.R.I.A.: questions and voice')}
         title={t('A.R.I.A.: pregúntale lo que quieras', 'A.R.I.A.: ask her anything')}
@@ -109,13 +109,13 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
             initial={{ opacity: 0, y: -6, scale: 0.94 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4 }}
-            className="relative mt-3 w-[min(19rem,24vw)] min-w-[13rem] rounded-2xl border-2 border-slate-900 bg-white px-4 py-3 shadow-[4px_4px_0_0_rgba(2,6,23,0.55)]"
+            className="relative mt-2 w-[min(16rem,calc(100vw-1.5rem))] rounded-2xl border-2 border-slate-900 bg-white px-3 py-2 sm:mt-3 sm:w-[min(19rem,24vw)] sm:min-w-[13rem] sm:px-4 sm:py-3 shadow-[4px_4px_0_0_rgba(2,6,23,0.55)]"
             role="status"
             aria-live="polite"
           >
             <span className="absolute -top-2 right-9 h-4 w-4 rotate-45 border-l-2 border-t-2 border-slate-900 bg-white" />
             <div className="flex items-start gap-2">
-              <p className="thin-scroll max-h-40 flex-1 overflow-y-auto text-base leading-snug text-slate-900" title={message}>
+              <p className="thin-scroll max-h-28 flex-1 overflow-y-auto text-sm sm:max-h-40 sm:text-base leading-snug text-slate-900" title={message}>
                 <span className="mr-1 font-mono text-xs font-bold tracking-widest text-nasa-blue">A.R.I.A.</span>
                 {typed}
               </p>
@@ -141,7 +141,7 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
             style={{ transformOrigin: 'top right' }}
-            className="thin-scroll mt-3 max-h-[min(82vh,calc(100dvh-14rem))] w-[min(28rem,92vw)] overflow-y-auto rounded-2xl border-2 border-slate-300 bg-white/95 p-3 shadow-2xl backdrop-blur-md"
+            className="thin-scroll mt-2 max-h-[calc(100dvh-13rem)] w-[min(28rem,calc(100vw-1.5rem))] sm:mt-3 sm:max-h-[min(82vh,calc(100dvh-14rem))] overflow-y-auto rounded-2xl border-2 border-slate-300 bg-white/95 p-3 shadow-2xl backdrop-blur-md"
             role="dialog"
             aria-label={t('A.R.I.A.: preguntas y voz', 'A.R.I.A.: questions and voice')}
           >

@@ -209,16 +209,16 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
           <motion.div
             initial={{ y: 30, scale: 0.96 }}
             animate={{ y: 0, scale: 1 }}
-            className="thin-scroll my-auto max-h-[82vh] w-full max-w-5xl overflow-y-auto rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-2xl"
+            className="thin-scroll my-auto max-h-[88dvh] w-full max-w-5xl overflow-y-auto rounded-2xl border-2 border-slate-200 bg-white p-3 shadow-2xl sm:max-h-[82vh] sm:p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-lg border border-slate-200 bg-slate-100 text-nasa-blue">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-slate-200 bg-slate-100 text-nasa-blue">
                 <Telescope className="h-6 w-6" strokeWidth={1.75} />
               </span>
-              <div>
+              <div className="min-w-0 flex-1 basis-[12rem]">
                 <p className="font-mono text-xs tracking-[0.25em] text-slate-500">{tr('PERISCOPIO // CRÁTER JEZERO', 'PERISCOPE // JEZERO CRATER')}</p>
-                <h2 className="font-display text-2xl font-black text-nasa-blue">{tr('Fotos y datos reales de la NASA', 'Real NASA photos and data')}</h2>
+                <h2 className="font-display text-xl font-black text-nasa-blue sm:text-2xl">{tr('Fotos y datos reales de la NASA', 'Real NASA photos and data')}</h2>
               </div>
               <button
                 type="button"
@@ -226,7 +226,7 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
                   playButtonClick();
                   setSourcesOpen(true);
                 }}
-                className="ml-auto flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-nasa-blue transition hover:border-nasa-blue"
+                className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-nasa-blue transition hover:border-nasa-blue max-sm:flex-1 max-sm:justify-center sm:ml-auto"
                 title={tr('Qué datos reales de la NASA usa el juego y cómo verificarlos', 'Which real NASA data the game uses and how to check it')}
               >
                 <Database className="h-4 w-4" strokeWidth={1.75} /> {tr('Datos Abiertos NASA Utilizados', 'NASA Open Data Used')}

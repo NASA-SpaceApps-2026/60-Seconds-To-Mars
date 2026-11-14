@@ -18,7 +18,8 @@ export default function Phase1Scavenge() {
   // (pestaña en segundo plano, equipo lento), el resumen no llegaba a montarse y la pantalla quedaba en blanco.
   // Ahora el resumen se monta al instante y solo anima su entrada (empieza visible al 60 %).
   return (
-    <motion.div key={isSummary ? 'summary' : 'quiz'} initial={{ opacity: 0.6, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}>
+    // Solo fundido (sin desplazamiento lateral): un x: 24 sacaba barras de scroll mientras se abría el prólogo
+    <motion.div key={isSummary ? 'summary' : 'quiz'} initial={{ opacity: 0.6 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
       {isSummary ? <Phase1Summary /> : <Phase1Quiz />}
     </motion.div>
   );

@@ -134,7 +134,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
               <p className="font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">
                 {speaker.name.toUpperCase()} · {speaker.role.toUpperCase()}
               </p>
-              <p className="mt-0.5 text-[clamp(1rem,2.6dvh,1.25rem)] font-bold leading-snug text-slate-900">{note.speech}</p>
+              <p className="mt-0.5 text-base font-bold leading-snug text-slate-900 sm:text-[clamp(1rem,2.6dvh,1.25rem)]">{note.speech}</p>
             </motion.div>
 
             {/* La carta / transmisión con la foto real */}
