@@ -117,6 +117,21 @@ const ROCK_COUNT = 6;
 /** Fracción del radio que recorre una roca por segundo (~4,5 s del borde a la base). */
 const ROCK_SPEED = 0.2;
 const ROCK_SPAWNS = [0, 600, 1200, 1900, 2700, 3500];
+/** Una vuelta completa del barrido (sentido horario). */
+const SWEEP_SECONDS = 2.5;
+/** Estela del barrido: [apertura en radianes por detrás de la línea guía, opacidad]. */
+const SWEEP_TRAIL: [number, number][] = [
+  [0.6, 0.08],
+  [0.35, 0.1],
+  [0.15, 0.14],
+];
+
+/** Sector desde la línea guía (ángulo 0, a la derecha) hacia atrás `span` radianes; vértice en el centro del radar. */
+function sweepSector(span: number) {
+  const ex = RADAR + RADAR_R * Math.cos(-span);
+  const ey = RADAR + RADAR_R * Math.sin(-span);
+  return `M${RADAR} ${RADAR} L${RADAR + RADAR_R} ${RADAR} A${RADAR_R} ${RADAR_R} 0 0 0 ${ex} ${ey} Z`;
+}
 
 interface Rock {
   id: number;
@@ -189,10 +204,24 @@ export function DebrisGame({ running, onWin }: { running: boolean; onWin: () => 
           <circle key={f} cx={RADAR} cy={RADAR} r={RADAR_R * f} fill="none" stroke="#14532d" strokeWidth={1.5} />
         ))}
         <path d={`M${RADAR - RADAR_R} ${RADAR} H${RADAR + RADAR_R} M${RADAR} ${RADAR - RADAR_R} V${RADAR + RADAR_R}`} stroke="#14532d" strokeWidth={1} />
-        {/* Barrido */}
-        <motion.g animate={{ rotate: 360 }} transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }} style={{ transformOrigin: `${RADAR}px ${RADAR}px` }}>
-          <path d={`M${RADAR} ${RADAR} L${RADAR + RADAR_R} ${RADAR} A${RADAR_R} ${RADAR_R} 0 0 0 ${RADAR + RADAR_R * Math.cos(-0.5)} ${RADAR + RADAR_R * Math.sin(-0.5)} Z`} fill="#22c55e" opacity={0.18} />
-        </motion.g>
+        {/* Barrido: rotación SVG nativa alrededor del centro exacto (RADAR, RADAR).
+            No se usa motion.g: Framer aplica transform-box: fill-box en SVG y el origen se mediría
+            desde la caja del sector, no desde el centro del radar. Sector y línea guía giran juntos. */}
+        <g>
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from={`0 ${RADAR} ${RADAR}`}
+            to={`360 ${RADAR} ${RADAR}`}
+            dur={`${SWEEP_SECONDS}s`}
+            repeatCount="indefinite"
+          />
+          {/* Estela: sectores concéntricos que se desvanecen detrás de la línea guía */}
+          {SWEEP_TRAIL.map(([span, opacity]) => (
+            <path key={span} d={sweepSector(span)} fill="#22c55e" opacity={opacity} />
+          ))}
+          <line x1={RADAR} y1={RADAR} x2={RADAR + RADAR_R} y2={RADAR} stroke="#4ade80" strokeWidth={2} strokeLinecap="round" opacity={0.85} />
+        </g>
         {/* Base Ares-IV con su escudo */}
         <circle cx={RADAR} cy={RADAR} r={BASE_R + 6} fill="none" stroke="#38bdf8" strokeWidth={2} opacity={0.6} />
         <circle cx={RADAR} cy={RADAR} r={BASE_R} fill="#e2e8f0" stroke="#0b3d91" strokeWidth={3} />
