@@ -25,21 +25,21 @@
 
 ---
 
-## Persona 2 · Demo jugable: Fase 1 y búnker (0:55 – 2:15)
+## Persona 2 · Demo jugable: Fase 1 y base espacial (0:55 – 2:15)
 
 [Pantalla de trivia.]
 
 > "Fase 1: tenemos **60 segundos** para desbloquear los suministros respondiendo preguntas espaciales.
-> Cada acierto mete un objeto real de la NASA en el búnker: tanques de oxígeno, el generador MOXIE, semillas del experimento Veggie…
+> Cada acierto mete un objeto real de la NASA en la base espacial: tanques de oxígeno, el generador MOXIE, semillas del experimento Veggie…
 > Pero si fallas todas las preguntas de un sistema, ese sistema empieza **averiado**."
 
 [Responded 3-4 preguntas en directo y enseñad el **Manifiesto de Carga**.]
 
-> "Aquí vemos el manifiesto: cuántos aciertos, cómo de preparado está el búnker y qué averías tenemos."
+> "Aquí vemos el manifiesto: cuántos aciertos, cómo de preparado está la base espacial y qué averías tenemos."
 
-[Entrad al búnker. Señalad la escena.]
+[Entrad a la base espacial. Señalad la escena.]
 
-> "Fase 2: el búnker. Todo se controla tocando la escena.
+> "Fase 2: la base espacial. Todo se controla tocando la escena.
 > La **casa** abre los sistemas: encender o apagar máquinas gasta energía.
 > La **antena** pide suministros a Houston… pero tardan **2 Soles** en llegar, porque Marte está a millones de kilómetros. Hay que **anticiparse**."
 
@@ -59,7 +59,7 @@
 
 > "Todo lo que habéis visto está conectado a **datos reales y verificables** de la NASA. Usamos tres fuentes en vivo:"
 
-> "**Uno: NASA DONKI.** La llamarada solar real decide cuánta radiación recibe el búnker cada día. Más fuerte la llamarada, más se desgasta el escudo."
+> "**Uno: NASA DONKI.** La llamarada solar real decide cuánta radiación recibe la base espacial cada día. Más fuerte la llamarada, más se desgasta el escudo."
 
 > "**Dos: NASA OSDR y GeneLab.** Consultamos en directo estudios reales de biología espacial, como plantas *Arabidopsis* cultivadas en la Estación Espacial. Por eso el invernadero del juego funciona como funciona."
 

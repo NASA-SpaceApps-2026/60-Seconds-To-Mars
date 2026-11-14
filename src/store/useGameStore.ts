@@ -41,6 +41,8 @@ import {
   BADGES,
   HOUSTON_COST_POWER,
   HOUSTON_DELAY_SOLS,
+  HOUSTON_MAX_IN_TRANSIT,
+  HOUSTON_MAX_ORDERS,
   HOUSTON_MIN_POWER,
   HOUSTON_PACKAGES,
   REPAIR_FAIL_POWER,
@@ -76,7 +78,7 @@ export const TOTAL_SOLS = 10;
 export const MIN_LOADING_MS = 700;
 
 /**
- * Balance: con el búnker VACÍO la comida se agota en el Sol 4 (50 → 36 → 22 → 8 → 0)
+ * Balance: con la base espacial VACÍA la comida se agota en el Sol 4 (50 → 36 → 22 → 8 → 0)
  * y el oxígeno en el Sol 5; los costes de los eventos y las complicaciones lo adelantan.
  */
 export const INITIAL_VITALS: Vitals = { oxygen: 60, power: 75, food: 50, shield: 60, crewHealth: 100 };
@@ -100,6 +102,8 @@ const MISSION_PROFILES: Record<
     radiationMultiplier: number;
     breakdownChance: number;
     quizSeconds: number;
+    /** Respuestas por pregunta en la trivia (fácil: 2, normal: 4). */
+    answerOptions: number;
   }
 > = {
   explorer: {
@@ -107,7 +111,8 @@ const MISSION_PROFILES: Record<
     baseDecay: { oxygen: -10, food: -10, power: -2 },
     radiationMultiplier: 0.75,
     breakdownChance: 0.1,
-    quizSeconds: 75,
+    quizSeconds: 60,
+    answerOptions: 2,
   },
   commander: {
     initialVitals: INITIAL_VITALS,
@@ -115,6 +120,7 @@ const MISSION_PROFILES: Record<
     radiationMultiplier: 1.25,
     breakdownChance: 0.3,
     quizSeconds: 60,
+    answerOptions: 4,
   },
 };
 
@@ -270,7 +276,7 @@ export function computeSolTick(input: SolTickInput): SolTickResult {
     breakdown.push({ source: `${comp.title}`, effects: { [c]: comp.dailyPenalty } });
   }
 
-  // 6. Salud de la tripulación según el estado del búnker
+  // 6. Salud de la tripulación según el estado de la base espacial
   const after = (k: VitalKey) => input.vitals[k] + d[k];
   let health = 0;
   if (after('shield') < 30) health -= 8;
@@ -398,7 +404,7 @@ interface GameState {
   activeRoom: RoomId;
   shakeCounter: number;
   ariaWarningsGiven: number[];
-  /** Inventario del búnker (los objetos ganados entran automáticamente). */
+  /** Inventario de la base espacial (los objetos ganados entran automáticamente). */
   bunkerInventory: ItemId[];
 
   // Fase 2
@@ -422,6 +428,8 @@ interface GameState {
   houstonOrders: HoustonOrder[];
   /** Sol en el que se hizo el último pedido (1 pedido por Sol). */
   houstonOrderedSol: number | null;
+  /** Pedidos a Houston hechos en toda la partida (máx. HOUSTON_MAX_ORDERS). */
+  houstonOrdersPlaced: number;
   badges: BadgeId[];
   notice: MissionNotice | null;
   /** Contenedores Extra de Houston pendientes de abrir (tirada gratis en la Cápsula Orbital). */
@@ -453,7 +461,8 @@ interface GameActions {
   /** Metadatos de un estudio real de NASA OSDR (una vez por sesión); nunca lanza. */
   loadOsdrStudy: () => Promise<void>;
   testGemini: () => Promise<void>;
-  ariaSay: (text: string) => void;
+  /** Mensaje de A.R.I.A. `story`: viñeta de la historia (habla aunque la pantalla esté retenida y no cambia ariaMessage). */
+  ariaSay: (text: string, opts?: { story?: boolean }) => void;
   toggleVoice: () => void;
   setVoiceMode: (mode: VoiceMode) => void;
 
@@ -469,6 +478,10 @@ interface GameActions {
   finishQuiz: () => void;
   sealBunker: () => void;
   debugSkipToPhase2: () => void;
+  /** Comandos rápidos de presentación: 'supervivencia', 'final', 'derrota'. Devuelve true si lo reconoce. */
+  runAriaCommand: (text: string) => boolean;
+  /** Termina la partida al instante y lleva a la pantalla final. */
+  forceGameOver: (outcome: MissionOutcome) => void;
 
   // Cápsula de Salvación
   getSpinAvailability: () => SpinAvailability;
@@ -527,6 +540,7 @@ const phase2Initial = (difficulty: MissionDifficulty = 'explorer') => ({
   emergencySpinUsed: false,
   houstonOrders: [] as HoustonOrder[],
   houstonOrderedSol: null as number | null,
+  houstonOrdersPlaced: 0,
   notice: null as MissionNotice | null,
   houstonCrates: 0,
   houstonLanding: false,
@@ -606,7 +620,13 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   // ---------------- A.R.I.A. ----------------
-  ariaSay: (text) => {
+  ariaSay: (text, opts) => {
+    if (opts?.story) {
+      // Viñeta de la historia: corta la viñeta anterior y habla ya (la pantalla de detrás espera)
+      ariaVoice.interrupt({ keepPending: true });
+      ariaVoice.speak(text, { force: true });
+      return;
+    }
     set({ ariaMessage: text });
     ariaVoice.speak(text);
   },
@@ -644,7 +664,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     playAlarmBeep();
     const w = get().nasaWeather;
     get().ariaSay(
-      `¡Alerta! NASA DONKI detecta una tormenta solar${w ? ` de clase ${w.flareClass}` : ''}. Tienes 60 segundos para responder preguntas: ¡cada acierto manda equipo al búnker!`,
+      `¡Alerta! NASA DONKI detecta una tormenta solar${w ? ` de clase ${w.flareClass}` : ''}. Tienes 60 segundos para responder preguntas: ¡cada acierto manda equipo a la base espacial!`,
     );
   },
 
@@ -752,6 +772,56 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     set({ storyScene: null });
   },
 
+  forceGameOver: (outcome) => {
+    // Desde el menú, el selector o la trivia: montar antes una base espacial de demostración
+    if (get().gamePhase !== 'PHASE_2_BUNKER') get().debugSkipToPhase2();
+    const s = get();
+    let vitals = s.vitals;
+    let failedVital: VitalKey | null = null;
+    if (outcome === 'evacuation') {
+      failedVital = findFailedVital(vitals) ?? lowestVital(vitals);
+      vitals = { ...vitals, [failedVital]: 0 };
+    }
+    set((st) => ({
+      gamePhase: 'GAME_OVER',
+      requestId: st.requestId + 1,
+      storyScene: null,
+      fieldNote: null,
+      houstonLanding: false,
+      outcome,
+      failedVital,
+      vitals,
+      pendingOutcome: null,
+      rank: computeRank(outcome, st.scienceScore, vitals),
+      debrief: null,
+      debriefLoading: false,
+    }));
+  },
+
+  runAriaCommand: (text) => {
+    const words = text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z]+/g, ' ')
+      .trim()
+      .split(' ');
+    if (words.includes('supervivencia')) {
+      get().debugSkipToPhase2();
+      get().ariaSay('Comando aceptado. Saltamos directamente a la fase de supervivencia en la base espacial.');
+      return true;
+    }
+    if (words.includes('final')) {
+      get().forceGameOver('victory');
+      return true;
+    }
+    if (words.includes('derrota')) {
+      get().forceGameOver('evacuation');
+      return true;
+    }
+    return false;
+  },
+
   // ---------------- CÁPSULA DE SALVACIÓN ----------------
   getSpinAvailability: () => {
     const s = get();
@@ -761,7 +831,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const anyLow = VITAL_ORDER.some((k) => s.vitals[k] < EMERGENCY_THRESHOLD);
     const ownedScrap = availableItems(s.bunkerInventory, s.consumedItems).length > 0;
     const notNow = { ok: false, reason: 'Solo disponible mientras eliges la decisión del Sol.' };
-    const phase2Only = { ok: false, reason: 'Disponible dentro del búnker (Fase 2).' };
+    const phase2Only = { ok: false, reason: 'Disponible dentro de la base espacial (Fase 2).' };
     const houston =
       s.gamePhase === 'PHASE_2_BUNKER' && s.houstonCrates > 0
         ? { ok: true }
@@ -866,7 +936,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     switch (prizeId) {
       case 'jackpot_legendary': {
         const id = grant(['legendary', 'epic'], [...complications, ...preferCats]);
-        message = id ? `¡PREMIO GORDO! ${ITEMS_BY_ID[id].name} llega al búnker.` : '¡Ya tienes todo lo legendario! Te doy +30 a la barra más baja.';
+        message = id ? `¡PREMIO GORDO! ${ITEMS_BY_ID[id].name} llega a la base espacial.` : '¡Ya tienes todo lo legendario! Te doy +30 a la barra más baja.';
         if (!id) addVitals({ [lowest]: 30 });
         break;
       }
@@ -1217,6 +1287,9 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   orderHoustonPackage: (id) => {
     const s = get();
     if (s.gamePhase !== 'PHASE_2_BUNKER' || s.solStage !== 'event') return { error: 'Solo puedes pedir ayuda mientras decides el Sol.' };
+    if (s.houstonOrdersPlaced >= HOUSTON_MAX_ORDERS) return { error: `Ya usaste los ${HOUSTON_MAX_ORDERS} pedidos de la misión.` };
+    if (s.houstonOrders.length >= HOUSTON_MAX_IN_TRANSIT)
+      return { error: `Ya hay ${HOUSTON_MAX_IN_TRANSIT} envíos en camino. Espera a que llegue uno para pedir otro.` };
     if (s.houstonOrderedSol === s.sol) return { error: 'La antena ya transmitió hoy. Vuelve a intentarlo mañana.' };
     if (s.vitals.power < HOUSTON_MIN_POWER) return { error: `La antena necesita al menos ${HOUSTON_MIN_POWER} de Energía.` };
     const pkg = HOUSTON_PACKAGES[id];
@@ -1225,6 +1298,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       vitals: applyEffects(s.vitals, { power: -HOUSTON_COST_POWER }),
       houstonOrders: [...s.houstonOrders, { id, arrivalSol }],
       houstonOrderedSol: s.sol,
+      houstonOrdersPlaced: s.houstonOrdersPlaced + 1,
     });
     playIncoming();
     get().ariaSay(
@@ -1295,3 +1369,23 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }));
   },
 }));
+
+// ============================================================
+// Voz sincronizada con las pantallas
+// ============================================================
+// - Cambio de fase: corta YA cualquier audio y retiene la voz hasta que la pantalla nueva
+//   esté montada y visible (la libera useAriaScreenReady() en cada pantalla).
+// - Historia abierta: solo hablan sus viñetas; los mensajes del juego esperan a que se cierre.
+useGameStore.subscribe((s, prev) => {
+  if (s.gamePhase !== prev.gamePhase) {
+    ariaVoice.interrupt();
+    ariaVoice.hold('screen');
+  }
+  if (s.storyScene && !prev.storyScene) {
+    ariaVoice.interrupt({ keepPending: true });
+    ariaVoice.hold('story');
+  } else if (!s.storyScene && prev.storyScene) {
+    ariaVoice.interrupt({ keepPending: true });
+    ariaVoice.release('story');
+  }
+});

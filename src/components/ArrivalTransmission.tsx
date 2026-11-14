@@ -104,7 +104,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
         >
           {/* Personaje en grande entrando por la derecha */}
           <motion.div
-            className="pointer-events-none fixed bottom-0 right-0 hidden h-[min(80vh,44rem)] w-[min(34vw,30rem)] md:block"
+            className="pointer-events-none fixed bottom-0 right-0 hidden h-[min(80dvh,44rem)] w-[min(30vw,26rem)] md:block"
             initial={{ x: '110%' }}
             animate={{ x: 0 }}
             exit={{ x: '110%' }}
@@ -121,10 +121,10 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
             )}
           </motion.div>
 
-          <div className="relative flex min-h-full flex-col items-start justify-center gap-4 p-4 md:pr-[min(34vw,30rem)] lg:pl-10">
+          <div className="relative flex min-h-full flex-col items-start justify-center gap-[clamp(0.5rem,2dvh,1rem)] p-[clamp(0.5rem,2dvh,1rem)] md:h-full md:pr-[min(30vw,26rem)] lg:pl-8">
             {/* Bocadillo del personaje */}
             <motion.div
-              className="relative w-full max-w-[44rem] rounded-2xl border-2 border-slate-900 bg-white px-5 py-4 shadow-[5px_5px_0_0_rgba(2,6,23,0.6)]"
+              className="relative w-full max-w-[60rem] shrink-0 rounded-2xl border-2 border-slate-900 bg-white px-4 py-[clamp(0.4rem,1.6dvh,1rem)] shadow-[5px_5px_0_0_rgba(2,6,23,0.6)]"
               initial={{ opacity: 0, x: 40, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               transition={{ delay: 0.45 }}
@@ -133,12 +133,12 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
               <p className="font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">
                 {speaker.name.toUpperCase()} · {speaker.role.toUpperCase()}
               </p>
-              <p className="mt-1 text-xl font-bold leading-snug text-slate-900">{note.speech}</p>
+              <p className="mt-0.5 text-[clamp(1rem,2.6dvh,1.25rem)] font-bold leading-snug text-slate-900">{note.speech}</p>
             </motion.div>
 
             {/* La carta / transmisión con la foto real */}
             <motion.article
-              className="w-full max-w-[44rem] overflow-hidden rounded-xl border-[8px] border-white bg-white shadow-[0_30px_60px_-15px_rgba(2,6,23,0.8)]"
+              className="flex w-full max-w-[60rem] flex-col overflow-hidden rounded-xl border-[6px] border-white bg-white shadow-[0_30px_60px_-15px_rgba(2,6,23,0.8)] md:min-h-0 md:shrink"
               initial={{ opacity: 0, y: 40, rotate: -2 }}
               animate={{ opacity: 1, y: 0, rotate: -0.5 }}
               transition={{ type: 'spring', stiffness: 150, damping: 16, delay: 0.25 }}
@@ -148,20 +148,22 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                 style={{ background: 'repeating-linear-gradient(135deg, #0b3d91 0 14px, #ffffff 14px 22px, #fc3d21 22px 36px, #ffffff 36px 44px)' }}
                 aria-hidden
               />
-              <div className="flex flex-col gap-3 p-4">
+              {/* Móvil: todo apilado · md+: foto a la izquierda y texto a la derecha (cabe en el alto de la pantalla) */}
+              <div className="grid min-h-0 gap-[clamp(0.5rem,1.6dvh,0.75rem)] p-[clamp(0.5rem,1.6dvh,1rem)] md:flex-1 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:grid-rows-[auto_minmax(0,1fr)_auto]">
+                <div className="flex flex-col gap-[clamp(0.35rem,1.2dvh,0.75rem)] md:col-start-2 md:row-start-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">
                     <Radio className="h-4 w-4" strokeWidth={1.75} /> TRANSMISIÓN ENTRANTE · SOL {note.sol}
                   </p>
                   <span className="text-sm font-semibold text-slate-500">{FIELD_NOTE_SENDER[note.source]}</span>
                 </div>
-                <h2 className={`font-display text-2xl font-black leading-tight ${note.urgent ? 'text-nasa-red' : 'text-nasa-blue'}`}>{note.headline}</h2>
+                <h2 className={`font-display text-[clamp(1.15rem,3.4dvh,1.5rem)] font-black leading-tight ${note.urgent ? 'text-nasa-red' : 'text-nasa-blue'}`}>{note.headline}</h2>
 
                 {/* Suministro base ya sumado */}
                 {note.delivered && note.delivered.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {note.delivered.map((d, i) => (
-                      <span key={i} className="flex items-center gap-2 rounded-lg border-2 border-emerald-500 bg-emerald-50 px-3 py-1.5 text-base font-bold text-emerald-800">
+                      <span key={i} className="flex items-center gap-2 rounded-lg border-2 border-emerald-500 bg-emerald-50 px-3 py-1 text-[clamp(0.9rem,2.3dvh,1rem)] font-bold text-emerald-800">
                         <PackageCheck className="h-5 w-5" strokeWidth={1.75} />
                         <span className="flex items-center gap-1 font-mono">
                           +{d.amount} <ResourceIcon k={d.vital} className="h-4 w-4" />
@@ -172,9 +174,10 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                     ))}
                   </div>
                 )}
+                </div>
 
-                {/* Foto real de la NASA */}
-                <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-slate-900">
+                {/* Foto real de la NASA (md+: columna izquierda, alto limitado por la pantalla) */}
+                <div className="relative aspect-[16/9] max-h-[32dvh] overflow-hidden rounded-lg bg-slate-900 md:col-start-1 md:row-span-3 md:row-start-1 md:aspect-auto md:h-full md:max-h-none md:min-h-[12rem]">
                   {photo && broken !== photo.id ? (
                     <img
                       key={useLocal[photo.id] ? 'local' : 'remota'}
@@ -205,16 +208,19 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                   )}
                 </div>
 
+                <div className="thin-scroll flex min-h-0 flex-col gap-[clamp(0.35rem,1.2dvh,0.75rem)] md:col-start-2 md:row-start-2 md:overflow-y-auto [&>*]:shrink-0">
                 {/* Cuento que conecta la foto con la aventura */}
-                <p className="text-lg leading-relaxed text-slate-800">{note.message}</p>
+                <p className="text-[clamp(0.95rem,2.5dvh,1.125rem)] leading-snug text-slate-800">{note.message}</p>
                 {photo && <p className="border-t border-dashed border-slate-300 pt-2 font-mono text-xs leading-relaxed text-slate-500">{photoFactLine(photo)}</p>}
                 {photo && (
                   <p className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
                     <Telescope className="h-4 w-4" strokeWidth={1.75} /> Foto desbloqueada en el Periscopio ({unlocked} en tu álbum)
                   </p>
                 )}
+                </div>
 
-                {/* PASO 2 */}
+                {/* PASO 2: siempre visible (fuera de la zona con scroll) */}
+                <div className="md:col-start-2 md:row-start-3">
                 {isHouston ? (
                   <motion.button
                     type="button"
@@ -223,12 +229,12 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                     whileTap={{ scale: 0.97 }}
                     animate={{ boxShadow: ['0 0 0 0 rgba(252,61,33,0.65)', '0 0 0 14px rgba(252,61,33,0)', '0 0 0 0 rgba(252,61,33,0)'] }}
                     transition={{ duration: 1.6, repeat: Infinity }}
-                    className="font-display mt-1 flex items-center justify-center gap-3 rounded-xl bg-nasa-red px-5 py-4 text-left text-lg font-black tracking-wide text-white"
+                    className="font-display flex w-full items-center justify-center gap-3 rounded-xl bg-nasa-red px-4 py-[clamp(0.5rem,1.8dvh,1rem)] text-left text-[clamp(0.95rem,2.5dvh,1.125rem)] font-black tracking-wide text-white"
                   >
-                    <PackageOpen className="h-7 w-7 shrink-0" strokeWidth={1.75} />
+                    <PackageOpen className="h-[clamp(1.25rem,4dvh,1.75rem)] w-[clamp(1.25rem,4dvh,1.75rem)] shrink-0" strokeWidth={1.75} />
                     <span>
                       ¡HAY UN CONTENEDOR EXTRA DENTRO!
-                      <span className="flex items-center gap-1 text-base">
+                      <span className="flex items-center gap-1 text-[clamp(0.85rem,2.2dvh,1rem)]">
                         <ArrowRight className="h-4 w-4" /> ABRIR CAJA DE SUMINISTROS
                       </span>
                     </span>
@@ -237,11 +243,12 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
                   <button
                     type="button"
                     onClick={finish}
-                    className="font-display mt-1 rounded-xl bg-nasa-blue px-5 py-3 text-base font-black tracking-wider text-white transition hover:brightness-110"
+                    className="font-display w-full rounded-xl bg-nasa-blue px-5 py-[clamp(0.5rem,1.6dvh,0.75rem)] text-base font-black tracking-wider text-white transition hover:brightness-110"
                   >
                     GUARDAR EN EL ÁLBUM Y SEGUIR
                   </button>
                 )}
+                </div>
               </div>
             </motion.article>
           </div>

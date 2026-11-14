@@ -21,7 +21,7 @@ const SPIN_SECONDS = 4.5;
 const SPIN_EASE: [number, number, number, number] = [0.12, 0.8, 0.18, 1];
 
 /**
- * Cápsulas visibles: en el búnker SOLO el Contenedor de Houston (al aterrizar el envío);
+ * Cápsulas visibles: en la base espacial SOLO el Contenedor de Houston (al aterrizar el envío);
  * en el resumen de la Fase 1, el giro de rescate.
  */
 const KINDS_PHASE1: SpinKind[] = ['emergency'];
@@ -49,7 +49,7 @@ function SupplyCard({ id }: { id: SalvagePrizeId }) {
         SUPPLY // {String(prize.code).padStart(2, '0')}
       </p>
       <div className="grid flex-1 place-items-center text-slate-100">
-        <PrizeIcon id={id} className="h-16 w-16 sm:h-20 sm:w-20" strokeWidth={1.5} />
+        <PrizeIcon id={id} className="h-[clamp(2.5rem,9dvh,5rem)] w-[clamp(2.5rem,9dvh,5rem)]" strokeWidth={1.5} />
       </div>
       <p className="flex min-h-[2.6rem] items-center justify-center px-2.5 pb-2 text-center text-sm font-semibold leading-tight text-slate-100 [overflow-wrap:anywhere]">{prize.label}</p>
       <div className="h-2 w-full" style={{ background: tier.color, boxShadow: legendary ? `0 0 14px 2px ${tier.color}` : undefined }} />
@@ -197,7 +197,7 @@ export default function SalvageRouletteModal({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="thin-scroll fixed inset-0 z-50 flex overflow-y-auto bg-slate-950/90 p-3 backdrop-blur-md sm:p-6"
+          className="thin-scroll fixed inset-0 z-50 flex overflow-y-auto bg-slate-950/90 p-[clamp(0.4rem,1.5dvh,1.5rem)] backdrop-blur-md"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -205,17 +205,17 @@ export default function SalvageRouletteModal({
           aria-modal="true"
           aria-label="Cápsula Orbital"
         >
-          <div className="m-auto flex min-h-[80vh] w-[95vw] max-w-6xl flex-col justify-between gap-6 rounded-3xl border border-slate-800 bg-slate-950/95 p-6 shadow-2xl sm:p-8">
+          <div className="m-auto flex min-h-[min(80dvh,42rem)] w-[95vw] max-w-6xl flex-col justify-between gap-[clamp(0.6rem,2.4dvh,1.5rem)] rounded-3xl border border-slate-800 bg-slate-950/95 p-[clamp(0.8rem,2.6dvh,2rem)] shadow-2xl">
             {/* Cabecera: título, recursos y cápsula a la izquierda · solo "Volver" arriba a la derecha */}
             <header className="flex w-full items-center justify-between gap-4">
               <div className="flex min-w-0 flex-col items-start gap-2">
                 <div className="flex items-center gap-3">
-                  <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-slate-600 bg-slate-800 text-white">
+                  <span className="grid h-[clamp(2.5rem,7dvh,3rem)] w-[clamp(2.5rem,7dvh,3rem)] shrink-0 place-items-center rounded-xl border border-slate-600 bg-slate-800 text-white">
                     <PackageOpen className="h-7 w-7" strokeWidth={1.75} />
                   </span>
                   <div>
                     <p className="font-mono text-xs tracking-[0.25em] text-slate-400">SUPPLY DROP // ÓRBITA MARCIANA</p>
-                    <h2 className="font-display text-2xl font-black text-white sm:text-3xl">CÁPSULA ORBITAL</h2>
+                    <h2 className="font-display text-[clamp(1.3rem,4dvh,1.875rem)] font-black text-white">CÁPSULA ORBITAL</h2>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs font-bold">
@@ -282,7 +282,7 @@ export default function SalvageRouletteModal({
             </header>
 
             {/* Carrusel protagonista a todo el ancho */}
-            <div ref={windowRef} className="relative h-56 w-full overflow-hidden rounded-2xl border-2 border-slate-700 bg-slate-900 shadow-2xl sm:h-64">
+            <div ref={windowRef} className="relative h-[clamp(9rem,32dvh,16rem)] w-full shrink-0 overflow-hidden rounded-2xl border-2 border-slate-700 bg-slate-900 shadow-2xl">
               <motion.div className="absolute inset-y-4 left-0 flex" style={{ x, gap: GAP }}>
                 {strip.map((pid, i) => (
                   <SupplyCard key={i} id={pid} />
@@ -297,7 +297,7 @@ export default function SalvageRouletteModal({
             </div>
 
             {/* Zona inferior centrada: botón + premio / contenido */}
-            <div className="flex w-full flex-col items-center gap-5">
+            <div className="flex w-full flex-col items-center gap-[clamp(0.6rem,2dvh,1.25rem)]">
               {kind === 'scrap' && !result && (
                 <div className="w-full max-w-2xl rounded-lg border-2 border-white/15 bg-white/5 p-3 text-white">
                   <p className="flex items-center gap-1.5 text-sm font-extrabold">
@@ -335,7 +335,7 @@ export default function SalvageRouletteModal({
                   whileTap={!spinning && availability[kind].ok ? { scale: 0.96 } : {}}
                   disabled={spinning || !availability[kind].ok}
                   onClick={() => openCapsule()}
-                  className="font-display glow-red flex items-center gap-3 rounded-xl bg-nasa-red px-12 py-4 text-xl font-black tracking-wider text-white disabled:bg-slate-600 disabled:shadow-none sm:text-2xl"
+                  className="font-display glow-red flex items-center gap-3 rounded-xl bg-nasa-red px-[clamp(1.5rem,5vw,3rem)] py-[clamp(0.55rem,2dvh,1rem)] text-[clamp(1.05rem,3.4dvh,1.5rem)] font-black tracking-wider text-white disabled:bg-slate-600 disabled:shadow-none"
                 >
                   <PackageOpen className="h-7 w-7" strokeWidth={1.75} />
                   {spinning ? 'ABRIENDO...' : `ABRIR CÁPSULA · ${SPIN_META[kind].cost}`}
@@ -379,7 +379,7 @@ export default function SalvageRouletteModal({
                     </div>
                   </motion.div>
                 ) : (
-                  <motion.div key="contents" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full max-w-2xl rounded-lg border border-white/15 bg-white/5 p-3 text-white">
+                  <motion.div key="contents" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto w-full max-w-2xl rounded-lg border border-white/15 bg-white/5 p-3 text-white [@media(max-height:680px)]:hidden">
                     <p className="font-mono text-xs font-semibold tracking-[0.2em] text-slate-400">CONTENIDO DE LA CÁPSULA</p>
                     <ul className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
                       {contents.map((pid) => (
@@ -391,7 +391,7 @@ export default function SalvageRouletteModal({
                         </li>
                       ))}
                     </ul>
-                    {inPhase1 && <p className="mt-2 text-xs text-amber-200">Los premios de barras se sumarán al empezar el búnker.</p>}
+                    {inPhase1 && <p className="mt-2 text-xs text-amber-200">Los premios de barras se sumarán al empezar la base espacial.</p>}
                   </motion.div>
                 )}
               </AnimatePresence>

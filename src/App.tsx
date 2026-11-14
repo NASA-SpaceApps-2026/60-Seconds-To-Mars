@@ -38,6 +38,27 @@ export default function App() {
     runDevQaScenario();
   }, []);
 
+  // Órdenes rápidas de presentación: teclear "final", "supervivencia" o "derrota" en cualquier pantalla
+  // (fuera de un campo de texto) equivale a decírselo a A.R.I.A.
+  useEffect(() => {
+    let buffer = '';
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.length !== 1) return;
+      buffer = (buffer + e.key.toLowerCase()).slice(-20);
+      for (const cmd of ['supervivencia', 'final', 'derrota']) {
+        if (buffer.endsWith(cmd)) {
+          buffer = '';
+          useGameStore.getState().runAriaCommand(cmd);
+          return;
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // Los navegadores exigen un gesto del usuario para activar el audio
   useEffect(() => {
     const unlock = () => unlockAudio();

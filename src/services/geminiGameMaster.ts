@@ -327,7 +327,7 @@ export interface EventContext {
   totalSols: number;
   vitals: Vitals;
   science: number;
-  /** Objetos disponibles ahora mismo en el búnker (sin los consumidos). */
+  /** Objetos disponibles ahora mismo en la base espacial (sin los consumidos). */
   inventory: ItemId[];
   machineStates: Partial<Record<ItemId, boolean>>;
   weather: NASAWeather | null;
@@ -416,11 +416,11 @@ function buildEventPrompt(ctx: EventContext): string {
     ? `Llamarada ${ctx.weather.flareClass} (${ctx.weather.isLive ? 'dato en vivo' : 'archivo'} NASA DONKI, ${ctx.weather.peakTime}), intensidad base ${ctx.weather.intensity}.`
     : 'Sin datos de llamarada.';
 
-  return `SITUACIÓN: Una tripulación está refugiada en un búnker en Marte durante una tormenta solar.
+  return `SITUACIÓN: Una tripulación está refugiada en una base espacial en Marte durante una tormenta solar.
 - Sol actual: ${ctx.sol} de ${ctx.totalSols}
 - Clima espacial: ${flare}
 - Barras (0-100): Oxígeno ${v.oxygen}, Energía ${v.power}, Comida ${v.food}, Escudo ${v.shield}, Salud ${v.crewHealth}. Ciencia: ${ctx.science}.
-- Objetos DENTRO del búnker:
+- Objetos DENTRO de la base espacial:
 ${have.join('\n') || '- (ninguno)'}
 - Objetos que DEJÓ FUERA en la Fase 1:
 ${missing.join('\n') || '- (ninguno)'}
@@ -457,9 +457,9 @@ function parseGeminiEvent(raw: string, ctx: EventContext): DailyEvent {
   return ensurePlayable(
     {
       sol: ctx.sol,
-      title: safeText(data.title, 'Nuevo reto en el búnker', 70),
+      title: safeText(data.title, 'Nuevo reto en la base espacial', 70),
       ariaVoiceAlert: safeText(data.ariaVoiceAlert, 'Atención, tripulación. Tenemos un nuevo reto.', 220),
-      description: safeText(data.description, 'Los sensores detectan un problema en el búnker. ¿Qué haces?', 420),
+      description: safeText(data.description, 'Los sensores detectan un problema en la base espacial. ¿Qué haces?', 420),
       nasaFact: safeText(data.nasaFact, 'NASA DONKI vigila el clima espacial para proteger a los astronautas.', 320),
       nasaSource: safeText(data.nasaSource, 'NASA', 90),
       radiationLevel,
@@ -511,8 +511,8 @@ const ITEM_LESSONS: Partial<Record<ItemId, string>> = {
   o2_tanks: 'Los Tanques de O2 son un seguro de emergencia, aunque ocupan mucho sitio.',
   med_kit: 'El Botiquín recupera la salud de golpe: muy útil cuando la radiación aprieta.',
   high_gain_antenna: 'La Antena Deep Space convierte cada Sol en ciencia para la Tierra.',
-  tool_printer_3d: 'La Impresora 3D fabricaba repuestos en el búnker: en la ISS se imprimió la primera pieza espacial en 2014.',
-  eva_suit: 'El Traje EVA es una nave en miniatura: protege incluso cuando el búnker sufre.',
+  tool_printer_3d: 'La Impresora 3D fabricaba repuestos en la base espacial: en la ISS se imprimió la primera pieza espacial en 2014.',
+  eva_suit: 'El Traje EVA es una nave en miniatura: protege incluso cuando la base espacial sufre.',
   magnetic_board_game: 'El Juego Magnético cuidaba la moral: la salud mental es tan importante como el oxígeno.',
   led_hydro_lamp: 'La Lámpara LED daba comida cada día con muy poca energía, como el invernadero Veggie de la ISS.',
   mini_rtg: 'El RTG Mini daba muchísima energía: así funcionan las sondas Voyager desde 1977.',
@@ -552,7 +552,7 @@ export function getFallbackDebrief(ctx: DebriefContext): Debrief {
       ? '¡La tripulación superó la tormenta solar!'
       : `Evacuación médica a la órbita en el Sol ${ctx.solsSurvived + 1}`,
     report: victory
-      ? `Has mantenido el búnker funcionando durante ${ctx.totalSols} Soles completos. Elegiste cargar ${loaded.join(', ') || 'muy pocas cosas'}, y gracias a esa estrategia la tripulación está sana y salva. Además conseguiste ${ctx.science} puntos de ciencia para la NASA.`
+      ? `Has mantenido la base espacial funcionando durante ${ctx.totalSols} Soles completos. Elegiste cargar ${loaded.join(', ') || 'muy pocas cosas'}, y gracias a esa estrategia la tripulación está sana y salva. Además conseguiste ${ctx.science} puntos de ciencia para la NASA.`
       : `La tripulación resistió ${ctx.solsSurvived} Soles antes de que la nave de rescate la llevara a la órbita sana y salva. Cargaste ${loaded.join(', ') || 'muy pocas cosas'} y dejaste fuera ${leftOut.join(', ') || 'nada'}. Cada misión es un experimento: ¡ahora sabes qué cambiar!`,
     lessons: lessons.slice(0, 4),
     bestDecision: best
@@ -683,7 +683,7 @@ Opciones: ${currentEvent.options
         .join(' | ')}`
     : 'Ahora mismo no hay dilema activo.';
 
-  const prompt = `Eres A.R.I.A., el ordenador de a bordo del búnker en Marte. Un niño o niña de 7-12 años te hace una pregunta.
+  const prompt = `Eres A.R.I.A., el ordenador de a bordo de la base espacial en Marte. Un niño o niña de 7-12 años te hace una pregunta.
 ESTADO: Sol ${gameState.sol}/${gameState.totalSols}. Oxígeno ${v.oxygen}, Energía ${v.power}, Comida ${v.food}, Escudo ${v.shield}, Salud ${v.crewHealth} (0-100). Ciencia ${gameState.science}.
 Inventario: ${inv || 'vacío'}.
 ${eventText}

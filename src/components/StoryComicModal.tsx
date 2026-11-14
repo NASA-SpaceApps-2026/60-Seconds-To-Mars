@@ -286,7 +286,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
           {
             art: <ArtLockedConsole />,
             speaker: 'Cmdte. Leo',
-            text: '¡La consola de suministros está bloqueada! Tenemos 60 segundos para responder el protocolo de seguridad y desbloquear el equipo del búnker.',
+            text: '¡La consola de suministros está bloqueada! Tenemos 60 segundos para responder el protocolo de seguridad y desbloquear el equipo de la base espacial.',
           },
         ],
       };
@@ -298,7 +298,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
           {
             art: <ArtLockdown damaged={damaged} />,
             speaker: 'A.R.I.A.',
-            text: `Compuertas blindadas selladas. ${inventory.length} objetos han entrado en el búnker a tiempo.`,
+            text: `Compuertas blindadas selladas. ${inventory.length} objetos han entrado en la base espacial a tiempo.`,
             sound: playDoorSeal,
             extra: (
               <div className="flex flex-wrap gap-1.5">
@@ -316,7 +316,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtLockdown damaged={damaged} />,
             speaker: 'Max',
             text: damaged
-              ? '¡La onda de choque ha dañado los sistemas donde fallamos preguntas! Podremos repararlos con los minijuegos de reparación del búnker.'
+              ? '¡La onda de choque ha dañado los sistemas donde fallamos preguntas! Podremos repararlos con los minijuegos de reparación de la base espacial.'
               : '¡Los sistemas han aguantado la onda de choque! Respondimos bien todas las ramas.',
             extra: damaged ? (
               <div className="flex flex-wrap gap-1.5">
@@ -370,7 +370,7 @@ function StoryContent({ scene }: { scene: StoryScene }) {
   useEffect(() => {
     const p = panels[shown - 1];
     p.sound?.();
-    ariaSay(`${p.speaker}: ${p.text}`);
+    ariaSay(`${p.speaker}: ${p.text}`, { story: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shown]);
 

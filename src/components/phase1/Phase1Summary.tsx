@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Award, CircleCheck, ClipboardList, DoorClosed, Gift, PackageOpen, Target, TriangleExclamationPoint, Wrench } from 'lucide-react';
 import type { Effects, ItemId, StationItem, VitalKey } from '../../types/game';
 import { CATEGORY_META, ITEMS_BY_ID, RARITY_META } from '../../data/stationItems';
-import { COMPLICATIONS, SUMMARY_SECONDS } from '../../data/triviaQuestions';
+import { COMPLICATIONS } from '../../data/triviaQuestions';
 import { VITAL_ORDER, categoryStats, projectedStartVitals, useGameStore } from '../../store/useGameStore';
 import { playButtonClick, playDoorSeal } from '../../utils/soundEffects';
 import SalvageRouletteModal from '../SalvageRouletteModal';
@@ -19,7 +19,7 @@ function cadetRank(correct: number, accuracy: number): string {
   return 'Cadetes en Prácticas';
 }
 
-/** Efecto principal de un objeto en el búnker, en forma de cifras con icono. */
+/** Efecto principal de un objeto en la base espacial, en forma de cifras con icono. */
 function itemEffect(item: StationItem): { deltas: [ResourceKey, number][]; note?: string } {
   if (item.kind === 'consumable' && item.useEffect) {
     return { deltas: (Object.entries(item.useEffect) as [keyof Effects, number][]).slice(0, 2), note: 'al usar' };
@@ -71,7 +71,7 @@ function SupplyCard({ id, index }: { id: ItemId; index: number }) {
   );
 }
 
-/** Resumen de la trivia: Manifiesto de Carga y Diagnóstico de Esclusa (antes de sellar el búnker). */
+/** Resumen de la trivia: Manifiesto de Carga y Diagnóstico de Esclusa (antes de sellar la base espacial). */
 export default function Phase1Summary() {
   // Valores por defecto seguros: esta pantalla nunca debe quedarse en blanco
   const answers = useGameStore((s) => s.quizAnswers) ?? [];
@@ -86,9 +86,7 @@ export default function Phase1Summary() {
 
   const [rouletteOpen, setRouletteOpen] = useState(devOpenCapsule);
   const [sealing, setSealing] = useState(false);
-  // Si hay giro de rescate, no avanzamos solos: el jugador decide
-  const [autoAdvance] = useState(() => useGameStore.getState().freeSpins === 0);
-  const [countdown, setCountdown] = useState(SUMMARY_SECONDS);
+  // Sin avance automático: los niños leen con calma y entran a la base cuando pulsan el botón
   const sealedRef = useRef(false);
 
   const stats = categoryStats(answers);
@@ -109,21 +107,10 @@ export default function Phase1Summary() {
     setTimeout(() => sealBunker(), 1300);
   };
 
-  useEffect(() => {
-    if (!autoAdvance || rouletteOpen) return;
-    if (countdown <= 0) {
-      seal();
-      return;
-    }
-    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [countdown, autoAdvance, rouletteOpen]);
-
   return (
     <div className="relative flex min-h-dvh flex-col bg-slate-100 lg:h-dvh lg:overflow-hidden">
       <div className="bg-grid pointer-events-none absolute inset-0" />
-      <Phase1Header step={3} title="Manifiesto de Carga" subtitle={`${correct} aciertos de ${answers.length} preguntas · ${inventory.length} suministros al búnker`} />
+      <Phase1Header step={3} title="Manifiesto de Carga" subtitle={`${correct} aciertos de ${answers.length} preguntas · ${inventory.length} suministros a la base espacial`} />
 
       <main className="thin-scroll relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-y-auto py-3 sm:py-4 big:py-8">
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-3 px-4 sm:px-6 lg:gap-4 xl:max-w-6xl 2xl:max-w-7xl big:gap-6 big:px-8 min-[1800px]:max-w-[min(94vw,104rem)]! [&>*]:w-full">
@@ -144,7 +131,7 @@ export default function Phase1Summary() {
           </div>
           <div className="hw-panel flex flex-col justify-center gap-1.5 p-3 big:gap-3 big:p-6">
             <div className="flex items-center justify-between">
-              <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">PREPARACIÓN DEL BÚNKER</p>
+              <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">PREPARACIÓN DE LA BASE ESPACIAL</p>
               <span className="font-display text-xl font-black text-slate-900 big:text-4xl">{readiness} %</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 big:h-3.5">
@@ -233,11 +220,11 @@ export default function Phase1Summary() {
                 </span>
               ))}
             </div>
-            <p className="text-xs text-slate-600 lg:max-w-[15rem] big:text-sm">Se reparan dentro del búnker superando un minijuego.</p>
+            <p className="text-xs text-slate-600 lg:max-w-[15rem] big:text-sm">Se reparan dentro de la base espacial superando un minijuego.</p>
           </section>
         ) : (
           <section className="flex items-center gap-2 rounded-xl border-2 border-emerald-400 bg-emerald-50 p-3 text-sm font-bold text-emerald-800 big:p-6 big:text-base">
-            <CircleCheck className="h-5 w-5 shrink-0" strokeWidth={1.75} /> Diagnóstico de esclusa: todos los sistemas operativos. El búnker empieza sin averías.
+            <CircleCheck className="h-5 w-5 shrink-0" strokeWidth={1.75} /> Diagnóstico de esclusa: todos los sistemas operativos. La base espacial empieza sin averías.
           </section>
         )}
 
@@ -268,7 +255,7 @@ export default function Phase1Summary() {
             }}
             className="font-display glow-blue flex items-center justify-center gap-2 rounded-2xl bg-nasa-blue px-8 py-3.5 text-base font-black tracking-wider text-white disabled:opacity-60 sm:text-lg big:px-12 big:py-5 big:text-xl"
           >
-            <DoorClosed /> {sealing ? 'SELLANDO...' : autoAdvance && !rouletteOpen ? `ENTRAR AL BÚNKER (${countdown})` : 'ENTRAR AL BÚNKER'}
+            <DoorClosed /> {sealing ? 'SELLANDO...' : 'ENTRAR A LA BASE ESPACIAL'}
           </motion.button>
         </section>
         </div>

@@ -128,7 +128,7 @@ export function playErrorBuzz(): void {
 }
 export const playError = playErrorBuzz;
 
-/** Compuertas del búnker sellándose. */
+/** Compuertas de la base espacial sellándose. */
 export function playDoorSeal(): void {
   noise(0.9, 0.18, 0, 1200);
   tone({ freq: 90, endFreq: 40, duration: 0.9, type: 'sawtooth', volume: 0.12 });

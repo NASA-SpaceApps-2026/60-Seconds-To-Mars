@@ -93,7 +93,7 @@ function VoiceSettings() {
         <span className="flex justify-between font-bold text-slate-600">
           Velocidad <span className="tabular-nums text-slate-500">{voice.rate.toFixed(2)}</span>
         </span>
-        <input type="range" min={0.7} max={1.4} step={0.05} value={voice.rate} onChange={(e) => ariaVoice.setRate(Number(e.target.value))} />
+        <input type="range" min={0.7} max={1.2} step={0.05} value={voice.rate} onChange={(e) => ariaVoice.setRate(Number(e.target.value))} />
       </label>
       <button
         type="button"

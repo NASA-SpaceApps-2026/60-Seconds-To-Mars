@@ -21,7 +21,13 @@ export default function AriaConsole() {
 
   const ask = async (text: string) => {
     const q = text.trim().slice(0, MAX_QUESTION_CHARS);
-    if (!q || loading || Date.now() - lastAsk.current < COOLDOWN_MS) return;
+    if (!q || loading) return;
+    // Órdenes rápidas de presentación ("final", "supervivencia", "derrota")
+    if (q.split(/\s+/).length <= 2 && useGameStore.getState().runAriaCommand(q)) {
+      setQuestion('');
+      return;
+    }
+    if (Date.now() - lastAsk.current < COOLDOWN_MS) return;
     lastAsk.current = Date.now();
     playButtonClick();
     setLoading(true);

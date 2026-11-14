@@ -517,7 +517,7 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
                 <p className={`font-display text-xl font-black ${phase === 'won' ? 'text-emerald-700' : 'text-nasa-red'}`}>
                   {phase === 'won' ? '¡REPARACIÓN COMPLETADA!' : 'TIEMPO AGOTADO'}
                 </p>
-                <p className="text-sm text-slate-700">{phase === 'won' ? 'Has evitado la avería a tiempo.' : 'La avería se ha activado en el búnker.'}</p>
+                <p className="text-sm text-slate-700">{phase === 'won' ? 'Has evitado la avería a tiempo.' : 'La avería se ha activado en la base espacial.'}</p>
               </div>
               <button
                 type="button"

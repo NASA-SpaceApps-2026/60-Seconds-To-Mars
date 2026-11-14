@@ -28,11 +28,11 @@ Tienen que **sobrevivir 10 Soles** (días marcianos) hasta que vuelva el rover d
 1. **Menú** → estado en vivo de NASA DONKI y Gemini, las 4 fases del juego y el botón **Datos Abiertos NASA Utilizados**.
 2. **Prólogo en viñetas** (saltable): el rover se va, el satélite SOHO detecta la llamarada (clase real de DONKI), la consola se bloquea.
 3. **FASE 01 · Protocolo de Desbloqueo (60 s)**
-   - Trivia contrarreloj con dificultad progresiva. Cada acierto manda un objeto **de esa rama** al búnker (fácil → común, difícil → épico/legendario).
+   - Trivia contrarreloj con dificultad progresiva. Cada acierto manda un objeto **de esa rama** a la base espacial (fácil → común, difícil → épico/legendario).
    - Una rama sin aciertos provoca una **avería inicial** (−20 al empezar, −4 por Sol y sus máquinas apagadas).
-   - **Manifiesto de Carga**: aciertos, preparación del búnker, rango, suministros asegurados y diagnóstico de averías. Si fue muy mal, **Cápsula de rescate gratis**.
-4. **Viñeta de cierre de compuertas** → empieza el búnker.
-5. **FASE 02 · Gestión del Búnker (10 Soles)** — escena exterior *point-and-click* del hábitat Ares-IV en Jezero:
+   - **Manifiesto de Carga**: aciertos, preparación de la base espacial, rango, suministros asegurados y diagnóstico de averías. Si fue muy mal, **Cápsula de rescate gratis**.
+4. **Viñeta de cierre de compuertas** → empieza la base espacial.
+5. **FASE 02 · Gestión del Base espacial (10 Soles)** — escena exterior *point-and-click* del hábitat Ares-IV en Jezero:
    - **Casa** → Sistemas e Inventario (encender/apagar máquinas, usar consumibles, reparar).
    - **Antena** → Enlace Houston: pedir suministros (−10 Energía, llegan en 2 Soles).
    - **Robot A.R.I.A.** → preguntas a la IA ("¿Cuál es el mayor peligro hoy?").
@@ -45,7 +45,7 @@ Tienen que **sobrevivir 10 Soles** (días marcianos) hasta que vuelva el rover d
 
 ### 1.4 Mecánicas clave
 - **5 barras vitales** (0-100): Oxígeno, Energía, Comida, Blindaje y Salud. Si cualquiera llega a 0 → evacuación.
-- **Desgaste base por Sol**: O2 −14, Comida −14, Energía −3. Con el búnker vacío se aguanta unos 3-4 Soles: hace falta estrategia.
+- **Desgaste base por Sol**: O2 −14, Comida −14, Energía −3. Con la base espacial vacía se aguanta unos 3-4 Soles: hace falta estrategia.
 - **Radiación** según la llamarada real: baja 4 / moderada 7 / alta 11 / extrema 16 de Blindaje por Sol (la Manta de Plomo la divide entre 2).
 - **Ciencia**: puntos que se envían a la Tierra; cuentan para el rango final.
 - **Insignias**: Ingeniero Solar, Botánico GeneLab, Mecánico de Ares-IV, Comunicador Deep Space y Héroe de Ares-IV.
@@ -85,7 +85,7 @@ src/
 ├── components/
 │   ├── MenuScreen.tsx         Portada y 4 fases
 │   ├── phase1/                Trivia (Phase1Quiz) y Manifiesto de Carga (Phase1Summary)
-│   ├── Phase2Bunker.tsx       Búnker: barra superior, escena, paneles y ordenador de misión
+│   ├── Phase2Bunker.tsx       Base espacial: barra superior, escena, paneles y ordenador de misión
 │   ├── BunkerDiorama.tsx      Escena SVG del Cráter Jezero y el hábitat (solo visual, por props)
 │   ├── minigames/             5 minijuegos de reparación
 │   ├── SalvageRouletteModal   Cápsula Orbital (carrusel tipo case opening)

@@ -56,7 +56,7 @@ export const FALLBACK_EVENTS: FallbackEvent[] = [
     ariaVoiceAlert:
       '¡Atención, tripulación! La nube de partículas del Sol acaba de llegar a Marte. Los detectores de radiación están pitando.',
     description:
-      'La Eyección de Masa Coronal que detectó NASA DONKI ha alcanzado la base. Una lluvia de protones rápidos golpea el búnker. Tenéis que decidir cómo proteger a la tripulación hoy.',
+      'La Eyección de Masa Coronal que detectó NASA DONKI ha alcanzado la base. Una lluvia de protones rápidos golpea la base espacial. Tenéis que decidir cómo proteger a la tripulación hoy.',
     nasaFact:
       'Una Eyección de Masa Coronal (CME) es una nube gigante de gas del Sol que puede viajar a más de 1.000 km por segundo. NASA DONKI registra cada una para avisar a las misiones.',
     nasaSource: 'NASA DONKI – Space Weather Database',
@@ -72,7 +72,7 @@ export const FALLBACK_EVENTS: FallbackEvent[] = [
       },
       {
         id: 'b',
-        label: 'Desviar energía al escudo del búnker',
+        label: 'Desviar energía al escudo de la base espacial',
         description: 'El escudo sube mucho, pero la batería sufre.',
         effects: { shield: 20, power: -22 },
         requiredItemId: null,
@@ -204,7 +204,7 @@ export const FALLBACK_EVENTS: FallbackEvent[] = [
     title: 'Noche marciana helada',
     ariaVoiceAlert: 'La temperatura exterior baja a ochenta grados bajo cero. La calefacción trabaja a tope.',
     description:
-      'Sin la luz del Sol, la noche marciana es muy fría. La calefacción del búnker se come la energía a toda velocidad.',
+      'Sin la luz del Sol, la noche marciana es muy fría. La calefacción de la base espacial se come la energía a toda velocidad.',
     nasaFact:
       'El rover Curiosity ha medido noches de hasta −80 °C en el cráter Gale. ¡Más frío que el lugar más frío de la Antártida en un día normal!',
     nasaSource: 'NASA Curiosity – Estación meteorológica REMS',
@@ -278,7 +278,7 @@ export const FALLBACK_EVENTS: FallbackEvent[] = [
     title: '¡Segunda llamarada solar!',
     ariaVoiceAlert: 'Alerta. NASA DONKI informa de otra llamarada potente. Llegan más partículas.',
     description:
-      'La misma región activa del Sol ha vuelto a explotar. El escudo del búnker necesita refuerzos otra vez.',
+      'La misma región activa del Sol ha vuelto a explotar. El escudo de la base espacial necesita refuerzos otra vez.',
     nasaFact:
       'Las llamaradas se clasifican como A, B, C, M y X. Cada letra es 10 veces más potente que la anterior: una X es 10 veces más fuerte que una M.',
     nasaSource: 'NASA DONKI / NOAA – Clasificación de llamaradas',
@@ -315,7 +315,7 @@ export const FALLBACK_EVENTS: FallbackEvent[] = [
     title: 'El aire se está cargando de CO2',
     ariaVoiceAlert: 'El nivel de dióxido de carbono sube. Si sentís dolor de cabeza, es por eso.',
     description:
-      'Con todos encerrados tantos días, el aire del búnker tiene cada vez más CO2. Hay que limpiarlo.',
+      'Con todos encerrados tantos días, el aire de la base espacial tiene cada vez más CO2. Hay que limpiarlo.',
     nasaFact:
       'En el Apolo 13 los astronautas tuvieron que unir filtros de CO2 cuadrados con agujeros redondos usando cinta, cartón y bolsas. ¡La ingeniería salvó la misión!',
     nasaSource: 'NASA – Misión Apolo 13',
@@ -427,6 +427,6 @@ export const FALLBACK_EVENTS: FallbackEvent[] = [
 export const LOADING_MESSAGES = [
   'Recibiendo telemetría de NASA DONKI y satélites orbitales...',
   'Sincronizando con el Mars Reconnaissance Orbiter...',
-  'Leyendo sensores de radiación del búnker...',
+  'Leyendo sensores de radiación de la base espacial...',
   'Consultando la Deep Space Network...',
 ];

@@ -16,7 +16,7 @@ export const GLOSSARY = {
   },
   radiation: {
     term: 'Radiación solar y CME',
-    text: 'El Sol lanza energía invisible llamada radiación. En una llamarada solar, o en una CME (eyección de masa coronal, una nube gigante de partículas), llega muchísima de golpe. Marte casi no tiene campo magnético que le proteja, así que el blindaje del búnker es vuestro escudo.',
+    text: 'El Sol lanza energía invisible llamada radiación. En una llamarada solar, o en una CME (eyección de masa coronal, una nube gigante de partículas), llega muchísima de golpe. Marte casi no tiene campo magnético que le proteja, así que el blindaje de la base espacial es vuestro escudo.',
   },
   flare: {
     term: 'Llamarada solar (clase X)',
@@ -44,7 +44,7 @@ export const VITAL_GLOSSARY: Record<VitalKey | 'science', GlossaryEntry> = {
   },
   shield: {
     term: 'Blindaje',
-    text: 'La protección del búnker contra la radiación del Sol. Si baja de 30, la salud de la tripulación empieza a sufrir.',
+    text: 'La protección de la base espacial contra la radiación del Sol. Si baja de 30, la salud de la tripulación empieza a sufrir.',
   },
   crewHealth: {
     term: 'Salud',
