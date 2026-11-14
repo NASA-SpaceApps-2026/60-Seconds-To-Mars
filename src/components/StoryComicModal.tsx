@@ -12,7 +12,7 @@ import { tr } from '../i18n/core';
 /* =====================================================================
  * Lore: año 2038, base Ares-IV (Cráter Jezero). Los adultos salieron en el rover
  * de exploración a 40 km y una tormenta solar real (NASA DONKI) les corta el paso.
- * Leo, Vega, Max y A.R.I.A. deben aguantar 10 Soles hasta el rescate.
+ * Leo, Vega, Max y A.R.I.A. deben aguantar toda la tormenta hasta el rescate.
  * ===================================================================== */
 
 const CREW_COLORS = { leo: '#f97316', vega: '#22c55e', max: '#3b82f6' } as const;

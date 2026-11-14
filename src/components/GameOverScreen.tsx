@@ -24,7 +24,7 @@ import {
 import { ItemIcon, ResourceIcon } from './icons';
 import type { Rank, SolReport, VitalKey } from '../types/game';
 import { ITEMS_BY_ID, RARITY_META } from '../data/stationItems';
-import { RANK_LABEL, TOTAL_SOLS, VITAL_META, VITAL_ORDER, useGameStore } from '../store/useGameStore';
+import { RANK_LABEL, VITAL_META, VITAL_ORDER, useGameStore } from '../store/useGameStore';
 import { tr } from '../i18n/core';
 import { playButtonClick } from '../utils/soundEffects';
 import GaugeMeter from './GaugeMeter';
@@ -41,7 +41,7 @@ const RANK_STYLE: Record<Rank, { Icon: LucideIcon; text: string }> = {
   'Ingeniero de Sistemas Artemisa': {
     Icon: Wrench,
     get text() {
-      return tr('Mantuviste la base espacial en marcha 10 Soles. ¡La NASA te quiere en Artemisa!', 'You kept the space base running for 10 Sols. NASA wants you on Artemis!');
+      return tr('Mantuviste la base espacial en marcha durante toda la tormenta. ¡La NASA te quiere en Artemisa!', 'You kept the space base running throughout the storm. NASA wants you on Artemis!');
     },
   },
   'Comandante Marciano': {
@@ -131,6 +131,7 @@ export default function GameOverScreen() {
   const science = useGameStore((s) => s.scienceScore);
   const inventory = useGameStore((s) => s.bunkerInventory);
   const history = useGameStore((s) => s.history);
+  const totalSols = useGameStore((s) => s.totalSols);
   const debrief = useGameStore((s) => s.debrief);
   const debriefLoading = useGameStore((s) => s.debriefLoading);
   const { loadDebrief, playAgain, resetToMenu, ariaSay } = useGameStore.getState();
@@ -139,7 +140,7 @@ export default function GameOverScreen() {
   const houstonOrdersPlaced = useGameStore((s) => s.houstonOrdersPlaced);
   const quizAnswers = useGameStore((s) => s.quizAnswers);
   const victory = outcome === 'victory';
-  const solsSurvived = victory ? TOTAL_SOLS : Math.max(0, history.length - 1);
+  const solsSurvived = victory ? totalSols : Math.max(0, history.length - 1);
   const failSol = Math.max(1, history.length);
   const analysis = victory
     ? null
@@ -206,8 +207,8 @@ export default function GameOverScreen() {
               <p className="mt-1 text-sm text-slate-300 sm:text-base">
                 {victory
                   ? tr(
-                      `La tripulación resistió los ${TOTAL_SOLS} Soles de la tormenta solar hasta el regreso del rover.`,
-                      `The crew held out through all ${TOTAL_SOLS} Sols of the solar storm until the rover came back.`,
+                      `La tripulación resistió los ${totalSols} Soles de la tormenta solar hasta el regreso del rover.`,
+                      `The crew held out through all ${totalSols} Sols of the solar storm until the rover came back.`,
                     )
                   : tr(
                       `En el Sol ${failSol}, el nivel de ${failedVital ? VITAL_META[failedVital].label : 'una barra'} llegó a cero. La nave de rescate llevó a la tripulación a la órbita, sana y salva.`,
@@ -267,7 +268,7 @@ export default function GameOverScreen() {
                   <p className="text-xs font-bold text-slate-500">{tr('Soles', 'Sols')}</p>
                   <p className="font-display text-2xl font-black text-nasa-blue">
                     {solsSurvived}
-                    <span className="text-sm text-slate-400">/{TOTAL_SOLS}</span>
+                    <span className="text-sm text-slate-400">/{totalSols}</span>
                   </p>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">

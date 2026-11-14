@@ -81,6 +81,7 @@ import {
 /** Compatibilidad: duración de la Fase 1 (trivia contrarreloj). */
 export const PHASE1_SECONDS = QUIZ_SECONDS;
 export const TOTAL_SOLS = 10;
+export const EXPLORER_TOTAL_SOLS = 5;
 export const MIN_LOADING_MS = 700;
 
 /**
@@ -114,6 +115,7 @@ const MISSION_PROFILES: Record<
     radiationMultiplier: number;
     breakdownChance: number;
     quizSeconds: number;
+    totalSols: number;
     /** Respuestas por pregunta en la trivia (fácil: 2, normal: 4). */
     answerOptions: number;
   }
@@ -125,6 +127,7 @@ const MISSION_PROFILES: Record<
     breakdownChance: 0.1,
     quizSeconds: 60,
     answerOptions: 2,
+    totalSols: EXPLORER_TOTAL_SOLS,
   },
   commander: {
     initialVitals: INITIAL_VITALS,
@@ -133,6 +136,7 @@ const MISSION_PROFILES: Record<
     breakdownChance: 0.3,
     quizSeconds: 60,
     answerOptions: 4,
+    totalSols: TOTAL_SOLS,
   },
 };
 
@@ -396,6 +400,7 @@ export type SpinAvailability = Record<SpinKind, { ok: boolean; reason?: string }
 interface GameState {
   gamePhase: GamePhase;
   missionDifficulty: MissionDifficulty;
+  totalSols: number;
 
   // NASA DONKI
   nasaWeather: NASAWeather | null;
@@ -558,6 +563,7 @@ const phase1Initial = (difficulty: MissionDifficulty = 'explorer') => ({
 
 const phase2Initial = (difficulty: MissionDifficulty = 'explorer') => ({
   sol: 1,
+  totalSols: getMissionProfile(difficulty).totalSols,
   vitals: { ...getMissionProfile(difficulty).initialVitals },
   scienceScore: 0,
   machineStates: {} as Partial<Record<ItemId, boolean>>,
@@ -600,6 +606,7 @@ function defaultMachineStates(inventory: ItemId[], complications: VitalKey[]): P
 export const useGameStore = create<GameStore>()((set, get) => ({
   gamePhase: 'MENU',
   missionDifficulty: 'explorer',
+  totalSols: EXPLORER_TOTAL_SOLS,
   nasaWeather: null,
   nasaStatus: 'idle',
   marsPhotos: [],
@@ -1110,7 +1117,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const [event] = await Promise.all([
       generateDailyMissionEvent({
         sol: s.sol,
-        totalSols: TOTAL_SOLS,
+        totalSols: s.totalSols,
         vitals: s.vitals,
         science: s.scienceScore,
         inventory: availableItems(s.bunkerInventory, s.consumedItems),
@@ -1190,7 +1197,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     };
 
     const failed = findFailedVital(vitals);
-    const pendingOutcome: MissionOutcome | null = failed ? 'evacuation' : s.sol >= TOTAL_SOLS ? 'victory' : null;
+    const pendingOutcome: MissionOutcome | null = failed ? 'evacuation' : s.sol >= s.totalSols ? 'victory' : null;
 
     set({
       vitals,
@@ -1218,7 +1225,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       );
     } else if (pendingOutcome === 'victory') {
       playSuccess();
-      get().ariaSay(`${option.ariaReactionVoice} ${tr(`¡Sol ${TOTAL_SOLS} completado! ¡La tormenta ha pasado!`, `Sol ${TOTAL_SOLS} complete! The storm has passed!`)}`);
+      get().ariaSay(`${option.ariaReactionVoice} ${tr(`¡Sol ${s.totalSols} completado! ¡La tormenta ha pasado!`, `Sol ${s.totalSols} complete! The storm has passed!`)}`);
     } else {
       get().ariaSay(option.ariaReactionVoice + (tick.harvest ? tr(' ¡Y hoy hemos cosechado lechugas!', ' And today we harvested lettuce!') : ''));
     }
@@ -1334,8 +1341,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       outcome: s.outcome,
       rank: s.rank ?? computeRank(s.outcome, s.scienceScore, s.vitals),
       failedVital: s.failedVital,
-      solsSurvived: s.outcome === 'victory' ? TOTAL_SOLS : s.history.length - 1,
-      totalSols: TOTAL_SOLS,
+      solsSurvived: s.outcome === 'victory' ? s.totalSols : s.history.length - 1,
+      totalSols: s.totalSols,
       vitals: s.vitals,
       science: s.scienceScore,
       loadedItems: s.bunkerInventory,
