@@ -242,13 +242,14 @@ function LegendButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-left text-white transition hover:bg-white/10"
+      className="flex min-w-0 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-white transition hover:bg-white/10 max-sm:flex-1 max-sm:flex-col max-sm:gap-1 max-sm:px-1 max-sm:py-1 max-sm:text-center"
+      title={label}
     >
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/10 text-sky-300">
         <Icon className="h-5 w-5" strokeWidth={1.75} />
       </span>
-      <span className="min-w-0 flex-1 truncate whitespace-nowrap text-xs font-bold">{label}</span>
-      <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold ${statusCls}`}>{status}</span>
+      <span className="min-w-0 flex-1 truncate whitespace-nowrap text-xs font-bold max-sm:hidden">{label}</span>
+      <span className={`max-w-full shrink-0 truncate rounded-md px-2 py-0.5 text-xs font-bold ${statusCls}`}>{status}</span>
     </button>
   );
 }
@@ -445,18 +446,20 @@ export default function Phase2Bunker() {
   return (
     <div className="relative flex h-dvh flex-col overflow-hidden bg-slate-100 text-slate-900">
       {/* ============ BARRA SUPERIOR ============ */}
-      <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 md:grid-cols-[auto_1fr]">
-        <div className="flex items-center gap-4">
-          <NasaLogo size={52} />
+      <header className="relative z-10 grid shrink-0 grid-cols-1 items-center gap-x-3 gap-y-1.5 border-b border-slate-200 bg-white px-3 py-1.5 sm:px-4 sm:py-2 md:grid-cols-[auto_1fr]">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <span className="hidden shrink-0 sm:block">
+            <NasaLogo size={52} />
+          </span>
           <KidTooltip term={GLOSSARY.sol.term} text={GLOSSARY.sol.text} extra={tr(`Hoy: Sol ${sol} de ${totalSols}`, `Today: Sol ${sol} of ${totalSols}`)} align="left">
           <div className="cursor-help">
-            <p className="font-display text-2xl font-black leading-none text-nasa-blue">
+            <p className="font-display text-xl font-black leading-none text-nasa-blue sm:text-2xl">
               SOL {sol}
-              <span className="text-lg text-slate-400"> / {totalSols}</span>
+              <span className="text-base text-slate-400 sm:text-lg"> / {totalSols}</span>
             </p>
             <div className="mt-1.5 flex gap-1" aria-hidden>
               {Array.from({ length: totalSols }).map((_, i) => (
-                <span key={i} className={`h-1.5 w-3 rounded-full ${i < sol - 1 ? 'bg-nasa-blue' : i === sol - 1 ? 'bg-nasa-red' : 'bg-slate-200'}`} />
+                <span key={i} className={`h-1.5 w-2 rounded-full sm:w-3 ${i < sol - 1 ? 'bg-nasa-blue' : i === sol - 1 ? 'bg-nasa-red' : 'bg-slate-200'}`} />
               ))}
             </div>
           </div>
@@ -464,19 +467,20 @@ export default function Phase2Bunker() {
           <button
             type="button"
             onClick={() => openOverlay('periscope')}
-            className="font-display relative flex items-center gap-2 rounded-lg border-2 border-nasa-blue bg-white px-4 py-2.5 text-sm font-black tracking-[0.12em] text-nasa-blue shadow-sm transition hover:bg-blue-50"
+            className="font-display relative ml-auto flex shrink-0 items-center gap-2 rounded-lg border-2 border-nasa-blue bg-white px-2.5 py-2 text-sm font-black tracking-[0.12em] text-nasa-blue shadow-sm transition hover:bg-blue-50 sm:ml-0 sm:px-4 sm:py-2.5"
             title={tr('Periscopio: telemetría real del Cráter Jezero e insignias de misión', 'Periscope: real Jezero Crater telemetry and mission badges')}
           >
-            <Telescope className="h-5 w-5" strokeWidth={1.75} /> {tr('PERISCOPIO', 'PERISCOPE')}
+            <Telescope className="h-5 w-5" strokeWidth={1.75} /> <span className="hidden sm:inline">{tr('PERISCOPIO', 'PERISCOPE')}</span>
             <span className="rounded bg-nasa-blue px-1.5 font-mono text-xs text-white">{badgeCount}/5</span>
           </button>
         </div>
 
-        <div className="flex items-start justify-around gap-1">
+        {/* Móvil: los 5 velocímetros + Ciencia en una cuadrícula de 6 (los grupos se "disuelven" con display: contents) */}
+        <div className="grid grid-cols-6 items-start gap-x-1 sm:flex sm:justify-around">
           {VITAL_GROUPS.map((group) => (
-            <div key={group.label} className="flex min-w-0 flex-col items-center gap-1">
-              <span className="font-mono text-[10px] font-black tracking-[0.16em] text-slate-400">{group.label}</span>
-              <div className="flex items-start justify-center gap-1">
+            <div key={group.label} className="flex min-w-0 flex-col items-center gap-1 max-sm:contents">
+              <span className="hidden font-mono text-[10px] font-black tracking-[0.16em] text-slate-400 sm:block">{group.label}</span>
+              <div className="flex items-start justify-center gap-1 max-sm:contents">
                 {group.keys.map((k, i) => (
                   <KidTooltip
                     key={k}
@@ -484,27 +488,28 @@ export default function Phase2Bunker() {
                     text={VITAL_GLOSSARY[k].text}
                     extra={`${tr('Ahora', 'Now')}: ${Math.round(vitals[k])}/100 · ${tr('al acabar el Sol', 'at the end of the Sol')}: ${forecast.deltas[k] >= 0 ? '+' : ''}${forecast.deltas[k]}`}
                     align={i === 0 ? 'left' : 'center'}
-                    className="cursor-help"
+                    className="min-w-0 cursor-help"
                   >
                     <GaugeMeter
                       label={VITAL_META[k].label}
+                      shortLabel={VITAL_META[k].short}
                       resource={k}
                       value={vitals[k]}
                       forecast={forecast.deltas[k]}
                       nativeTitle={false}
-                      className="w-[clamp(64px,min(11vw,15dvh),140px)]"
+                      className="w-full sm:w-[clamp(64px,min(11vw,15dvh),140px)]"
                     />
                   </KidTooltip>
                 ))}
               </div>
             </div>
           ))}
-          <KidTooltip term={VITAL_GLOSSARY.science.term} text={VITAL_GLOSSARY.science.text} align="right" className="cursor-help self-center">
-          <div className="flex w-[clamp(64px,8vw,100px)] flex-col items-center justify-center text-center">
-            <span className="flex items-center gap-1 text-sm font-bold text-slate-600">
-              <ResourceIcon k="science" className="h-4 w-4 text-nasa-blue" /> {tr('Ciencia', 'Science')}
+          <KidTooltip term={VITAL_GLOSSARY.science.term} text={VITAL_GLOSSARY.science.text} align="right" className="min-w-0 cursor-help self-center">
+          <div className="flex w-full flex-col items-center justify-center text-center sm:w-[clamp(64px,8vw,100px)]">
+            <span className="flex items-center gap-1 text-xs font-bold text-slate-600 sm:text-sm">
+              <ResourceIcon k="science" className="h-4 w-4 text-nasa-blue" /> <span className="hidden sm:inline">{tr('Ciencia', 'Science')}</span>
             </span>
-            <span className="font-display text-2xl font-black tabular-nums text-nasa-blue">{science}</span>
+            <span className="font-display text-xl font-black tabular-nums text-nasa-blue sm:text-2xl">{science}</span>
           </div>
           </KidTooltip>
         </div>
@@ -552,7 +557,7 @@ export default function Phase2Bunker() {
         />
 
         {/* ============ AVISOS AGRUPADOS (arriba a la izquierda del cielo) ============ */}
-        <div className="pointer-events-none absolute left-4 top-4 z-20 flex w-[min(21rem,38vw)] flex-col gap-2">
+        <div className="pointer-events-none absolute left-3 top-3 z-20 flex w-[calc(100%-7rem)] max-w-[21rem] flex-col gap-1.5 sm:left-4 sm:top-4 sm:w-[min(21rem,38vw)] sm:gap-2">
           {alarm && (
             <KidTooltip
               term={GLOSSARY.radiation.term}
@@ -609,10 +614,10 @@ export default function Phase2Bunker() {
 
         {/* ============ LEYENDA INTERACTIVA (abajo a la izquierda) ============ */}
         <nav
-          className="absolute bottom-[clamp(1rem,5%,2.5rem)] left-[clamp(0.75rem,2%,2rem)] z-20 flex w-[min(20rem,27vw)] min-w-[14rem] flex-col gap-1 rounded-2xl border border-white/20 bg-slate-950/75 px-2 py-2 shadow-2xl backdrop-blur-sm"
+          className="absolute z-20 flex gap-1 rounded-2xl border border-white/20 bg-slate-950/75 p-1.5 shadow-2xl backdrop-blur-sm max-sm:inset-x-3 max-sm:bottom-[6.25rem] max-sm:flex-row sm:bottom-[clamp(1rem,5%,2.5rem)] sm:left-[clamp(0.75rem,2%,2rem)] sm:w-[min(20rem,27vw)] sm:min-w-[14rem] sm:flex-col sm:px-2 sm:py-2"
           aria-label={tr('Qué puedes hacer en la base', 'What you can do at the base')}
         >
-          <p className="px-1.5 pb-0.5 font-mono text-xs font-bold tracking-[0.2em] text-sky-300">{tr('TOCA LA ESCENA', 'TAP THE SCENE')}</p>
+          <p className="hidden px-1.5 pb-0.5 font-mono text-xs font-bold tracking-[0.2em] text-sky-300 sm:block">{tr('TOCA LA ESCENA', 'TAP THE SCENE')}</p>
           <LegendButton
             icon={Wrench}
             label={tr('Base: Sistemas/Averías', 'Base: Systems/Breakdowns')}
@@ -718,13 +723,13 @@ export default function Phase2Bunker() {
                       {complications.map((c) => {
                         const target: RepairTarget = { type: 'complication', vital: c };
                         return (
-                          <article key={c} className="flex min-w-0 flex-1 basis-[18rem] items-center gap-3 rounded-lg border border-red-200 bg-white p-2.5">
+                          <article key={c} className="flex min-w-0 flex-1 basis-[18rem] flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-red-200 bg-white p-2.5">
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-red-100 text-nasa-red">
                               <Wrench className="h-5 w-5" strokeWidth={1.75} />
                             </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-bold text-slate-900">{COMPLICATIONS[c].title}</p>
-                              <p className="flex items-center gap-1 text-xs text-slate-600">
+                            <div className="min-w-0 flex-1 basis-[9rem]">
+                              <p className="text-sm font-bold leading-tight text-slate-900">{COMPLICATIONS[c].title}</p>
+                              <p className="flex flex-wrap items-center gap-1 text-xs text-slate-600">
                                 {tr('Fase 1', 'Phase 1')} · <Delta k={c} v={COMPLICATIONS[c].dailyPenalty} /> {tr('por Sol', 'per Sol')}
                               </p>
                             </div>
@@ -735,7 +740,7 @@ export default function Phase2Bunker() {
                       {brokenMachines.map((id) => {
                         const target: RepairTarget = { type: 'machine', id };
                         return (
-                          <article key={id} className="flex min-w-0 flex-1 basis-[18rem] items-center gap-3 rounded-lg border border-red-200 bg-white p-2.5">
+                          <article key={id} className="flex min-w-0 flex-1 basis-[18rem] flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-red-200 bg-white p-2.5">
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-red-100 text-nasa-red">
                               <ItemIcon id={id} className="h-5 w-5" />
                             </span>
@@ -857,7 +862,7 @@ export default function Phase2Bunker() {
               exit={{ y: 30, opacity: 0 }}
               whileHover={stage === 'loading' ? {} : { scale: 1.03 }}
               whileTap={stage === 'loading' ? {} : { scale: 0.97 }}
-              className="absolute bottom-[4%] right-[3%] z-30 max-w-[min(30rem,calc(100%-2rem))] text-left disabled:cursor-wait"
+              className="absolute z-30 text-left disabled:cursor-wait max-sm:inset-x-3 max-sm:bottom-3 sm:bottom-[4%] sm:right-[3%] sm:max-w-[min(30rem,calc(100%-2rem))]"
             >
               <motion.span
                 className={`flex items-center gap-3 rounded-2xl border-2 px-4 py-3 shadow-2xl ${stage === 'loading' ? 'border-slate-500 bg-slate-800 text-slate-300' : 'border-white bg-nasa-red text-white'}`}
@@ -923,7 +928,7 @@ export default function Phase2Bunker() {
                         className="thin-scroll grid min-h-0 flex-1 grid-cols-1 gap-[clamp(0.75rem,2dvh,1.25rem)] overflow-y-auto md:grid-cols-2 md:overflow-hidden"
                       >
                         {/* El problema */}
-                        <div className="thin-scroll flex min-h-0 flex-col gap-[clamp(0.4rem,1.4dvh,0.75rem)] md:overflow-y-auto [&>*]:shrink-0">
+                        <div className="thin-scroll flex flex-col gap-[clamp(0.4rem,1.4dvh,0.75rem)] md:min-h-0 md:overflow-y-auto [&>*]:shrink-0">
                           <div>
                             <p className="flex items-center gap-2 text-base font-semibold text-slate-500">
                               <span className={`h-2.5 w-2.5 rounded-full ${RADIATION_DOT[radiation]}`} /> {tr(`Radiación ${RADIATION_LABEL[radiation].toLowerCase()}`, `${RADIATION_LABEL[radiation]} radiation`)}
@@ -947,7 +952,7 @@ export default function Phase2Bunker() {
                         </div>
 
                         {/* Las decisiones */}
-                        <div className="thin-scroll flex min-h-0 flex-col gap-[clamp(0.4rem,1.2dvh,0.625rem)] overflow-x-hidden p-0.5 md:overflow-y-auto [&>*]:shrink-0">
+                        <div className="thin-scroll flex flex-col gap-[clamp(0.4rem,1.2dvh,0.625rem)] overflow-x-hidden p-0.5 md:min-h-0 md:overflow-y-auto [&>*]:shrink-0">
                           {event.options.map((opt) => (
                             <OptionButton
                               key={opt.id}

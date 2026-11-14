@@ -282,3 +282,12 @@ Si cambias una mecánica o un texto visible que aparece en estos documentos, act
 ## 16. Cápsula Orbital: tirada ponderada por rareza
 `pickWeightedPrize(kind)` (`data/salvagePrizes.ts`) con `TIER_WEIGHTS`: Estándar 50 · Avanzado 26 · Prototipo 12 · Legendario 3 (antes era uniforme).
 El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" muestra el % real de cada premio (`prizeOdds`).
+
+## 17. Móvil (< 640 px) en la base y estabilidad de la historia
+- **Base espacial en móvil:** cabecera en 2 filas (SOL + Periscopio solo icono · 5 velocímetros + Ciencia en `grid-cols-6`, grupos con `max-sm:contents`,
+  etiqueta corta `VITAL_META.short` vía `GaugeMeter shortLabel`, sin la palabra "mañana"). Leyenda = fila de 3 botones encima de "Resolver Misión" (a todo el ancho).
+  Robot y bocadillo más pequeños. Terminal de decisión, Sistemas, Periscopio y minijuegos se apilan (`flex-wrap`, columnas sin `min-h-0` en móvil).
+  Comprobado sin desbordamientos a 390×844 en todos los paneles.
+- **Historia sin saltos:** con una historia abierta, `StoryComicModal` bloquea el scroll del documento (`html`/`body` `overflow: hidden`);
+  la Fase 1 entra solo con fundido (nada de `x` en la animación) y `html, body { overflow-x: clip }` en `index.css`.
+  No uses animaciones con desplazamiento lateral en la raíz de una pantalla.
