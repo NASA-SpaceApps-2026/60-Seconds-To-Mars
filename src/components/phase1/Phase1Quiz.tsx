@@ -15,9 +15,9 @@ const FEEDBACK_MS = 1100;
 
 /** Dificultad solo con los colores oficiales: gris sobrio → Azul NASA → Rojo Misión. */
 const DIFFICULTY_CLS: Record<Difficulty, string> = {
-  easy: 'border-slate-300 bg-white text-slate-700',
-  medium: 'border-nasa-blue bg-white text-nasa-blue',
-  hard: 'border-nasa-red bg-nasa-red text-white',
+  easy: 'border-slate-300 bg-slate-50 text-slate-700 shadow-sm',
+  medium: 'border-nasa-blue bg-white text-nasa-blue shadow-sm',
+  hard: 'border-nasa-red bg-nasa-red text-white shadow-sm',
 };
 
 const getReadyRules = () => [
@@ -174,7 +174,7 @@ export default function Phase1Quiz() {
               </p>
               <div className="grid max-w-2xl gap-2 text-left text-base text-slate-700 sm:grid-cols-2">
                 {getReadyRules().map(({ Icon, title, text }) => (
-                  <p key={title} className="flex items-start gap-2 rounded-lg border border-slate-300 bg-white p-3">
+                  <p key={title} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm">
                     <Icon className="mt-0.5 h-5 w-5 shrink-0 text-nasa-blue" strokeWidth={1.75} />
                     <span>
                       <b className="text-slate-900">{title}</b> → {text}
@@ -210,13 +210,13 @@ export default function Phase1Quiz() {
                 {/* Mitad superior (~40 %): etiquetas + pregunta grande centrada */}
                 <div className="flex basis-2/5 flex-col items-center justify-center gap-4 text-center">
                   <div className="flex flex-wrap items-center justify-center gap-2">
-                    <span className={`rounded-md border px-3 py-1 text-sm font-bold ${DIFFICULTY_CLS[q.difficulty]}`}>
+                    <span className={`rounded-xl border-2 px-3 py-1 text-sm font-bold ${DIFFICULTY_CLS[q.difficulty]}`}>
                       {DIFFICULTY_META[q.difficulty].label}
                     </span>
-                    <span className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1 text-sm">
+                    <span className="rounded-xl border-2 border-slate-200 bg-slate-50 px-3 py-1 text-sm shadow-sm">
                       <SystemLabel cat={q.category} />
                     </span>
-                    <span className="flex items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1 text-sm font-bold text-slate-800">
+                    <span className="flex items-center gap-1 rounded-xl border-2 border-slate-200 bg-white px-3 py-1 text-sm font-bold text-slate-800 shadow-sm">
                       <Check className="h-4 w-4 text-nasa-blue" /> {correctCount}
                     </span>
                   </div>
@@ -264,7 +264,7 @@ export default function Phase1Quiz() {
                         animate={result && picked && !isCorrect ? { x: [0, -8, 8, -5, 5, 0] } : {}}
                         disabled={Boolean(result)}
                         onClick={(e) => choose(ans, e)}
-                        className={`relative flex min-h-[110px] items-center justify-center rounded-2xl border-2 p-6 text-center text-2xl font-bold shadow-sm transition-all disabled:cursor-default ${cls}`}
+                        className={`relative flex min-h-[110px] items-center justify-center rounded-[1.25rem] border-2 p-6 text-center text-2xl font-bold shadow-md transition-all disabled:cursor-default ${cls}`}
                       >
                         <span className="absolute left-4 top-3 font-mono text-sm font-bold opacity-60">{'ABCD'[i]}</span>
                         {result && isCorrect && <Check className="absolute right-4 top-3" size={22} />}
@@ -280,7 +280,7 @@ export default function Phase1Quiz() {
         </section>
 
         {/* ===== Inventario por ramas ===== */}
-        <aside ref={inventoryRef} className="hw-panel flex w-full shrink-0 flex-col gap-2 p-4 lg:w-80">
+        <aside ref={inventoryRef} className="hw-panel flex w-full shrink-0 flex-col gap-2 rounded-[1.25rem] border-2 p-4 shadow-lg lg:w-80">
           <p className="flex items-center gap-2 text-sm font-extrabold text-nasa-blue">
             <Backpack className="h-5 w-5" strokeWidth={1.75} /> {inventory.length} {inventory.length === 1 ? tr('objeto conseguido', 'item obtained') : tr('objetos conseguidos', 'items obtained')}
           </p>
@@ -289,7 +289,7 @@ export default function Phase1Quiz() {
               const items = inventory.filter((id) => ITEMS_BY_ID[id].category === cat);
               const st = stats[cat];
               return (
-                <div key={cat} className="rounded-lg border border-slate-300 bg-white p-2">
+                <div key={cat} className="rounded-xl border border-slate-200 bg-slate-50 p-2 shadow-sm">
                   <div className="flex items-center justify-between text-xs">
                     <SystemLabel cat={cat} />
                     <span className={`font-extrabold ${st.answered > 0 && st.correct === 0 ? 'text-nasa-red' : 'text-slate-500'}`}>

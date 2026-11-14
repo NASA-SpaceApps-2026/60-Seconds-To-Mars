@@ -85,7 +85,7 @@ const STARS = [
   [6, 18], [14, 62], [22, 30], [31, 78], [38, 12], [47, 52], [55, 22], [63, 70], [71, 36], [79, 14], [86, 58], [93, 28], [11, 44], [67, 88], [42, 90],
 ];
 
-function SpaceBackdrop() {
+export function SpaceBackdrop() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       {/* Estrellas que parpadean */}
