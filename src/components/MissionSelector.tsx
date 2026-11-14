@@ -156,7 +156,7 @@ function ModeCredential({ difficulty, selected, onSelect }: { difficulty: Missio
       whileTap={{ scale: 0.97 }}
       animate={selected ? { scale: 1.02 } : { scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className={`group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] bg-white text-left shadow-lg transition-colors ${
+      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] bg-white text-left shadow-lg transition-colors ${
         selected ? 'shadow-[0_18px_40px_-18px_rgba(11,61,145,0.7)]' : 'border-slate-200 hover:border-slate-300'
       }`}
       style={selected ? { borderColor: card.accent } : undefined}
@@ -182,8 +182,8 @@ function ModeCredential({ difficulty, selected, onSelect }: { difficulty: Missio
             </span>
           </span>
           <span className="min-w-0">
-            <span className="font-display block text-[clamp(1.2rem,3.4dvh,1.6rem)] font-black leading-tight tracking-wide text-slate-900">{meta.label}</span>
-            <span className="mt-0.5 block text-[clamp(0.95rem,2.4dvh,1.1rem)] font-bold" style={{ color: card.accent }}>
+            <span className="font-display block whitespace-nowrap text-[clamp(1.2rem,3.4dvh,1.6rem)] font-black leading-tight tracking-wide text-slate-900">{meta.label}</span>
+            <span className="mt-0.5 block whitespace-nowrap text-[clamp(0.95rem,2.4dvh,1.1rem)] font-bold" style={{ color: card.accent }}>
               {card.tagline}
             </span>
             <span className="mt-1.5 block">
@@ -278,10 +278,11 @@ export default function MissionSelector() {
             </p>
           </section>
 
-          <section aria-label={t('Modo de juego', 'Game mode')} className="mx-auto mt-[clamp(0.75rem,3dvh,2rem)] grid w-full gap-[clamp(0.9rem,2.5dvh,1.5rem)] pb-4 sm:grid-cols-2">
+          <section aria-label={t('Modo de juego', 'Game mode')} className="mx-auto mt-[clamp(0.75rem,3dvh,2rem)] grid w-full max-w-4xl justify-center gap-[clamp(0.9rem,2.5dvh,1.5rem)] pb-4 sm:grid-cols-2">
             {(Object.keys(MISSION_DIFFICULTY_META) as MissionDifficulty[]).map((difficulty, i) => (
               <motion.div
                 key={difficulty}
+                className="w-full max-w-[26rem] justify-self-center"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.12, type: 'spring', stiffness: 160, damping: 18 }}
