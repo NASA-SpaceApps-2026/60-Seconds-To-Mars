@@ -290,6 +290,7 @@ function LoadingTelemetry({ sol }: { sol: number }) {
 
 export default function Phase2Bunker() {
   const sol = useGameStore((s) => s.sol);
+  const missionDifficulty = useGameStore((s) => s.missionDifficulty);
   const vitals = useGameStore((s) => s.vitals);
   const science = useGameStore((s) => s.scienceScore);
   const inventory = useGameStore((s) => s.bunkerInventory);
@@ -380,8 +381,19 @@ export default function Phase2Bunker() {
   const radiation = event?.radiationLevel ?? 'moderate';
 
   const forecast = useMemo(
-    () => computeSolTick({ vitals, inventory, consumed, machineStates, seedGrowth, radiationLevel: radiation, complications, brokenMachines }),
-    [vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines],
+    () =>
+      computeSolTick({
+        vitals,
+        inventory,
+        consumed,
+        machineStates,
+        seedGrowth,
+        radiationLevel: radiation,
+        complications,
+        brokenMachines,
+        missionDifficulty,
+      }),
+    [vitals, inventory, consumed, machineStates, seedGrowth, radiation, complications, brokenMachines, missionDifficulty],
   );
   const optionForecasts = useMemo(() => {
     const forecasts: Record<string, Effects> = {};

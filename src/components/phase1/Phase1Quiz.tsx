@@ -5,8 +5,8 @@ import { Backpack, Check, PackageOpen, Rocket, Star, Wrench, X } from 'lucide-re
 import type { Difficulty, ItemId, QuizAnswerRecord, VitalKey } from '../../types/game';
 import { ItemIcon } from '../icons';
 import { ITEMS_BY_ID, RARITY_META } from '../../data/stationItems';
-import { DIFFICULTY_META, QUIZ_SECONDS } from '../../data/triviaQuestions';
-import { VITAL_ORDER, categoryStats, useGameStore } from '../../store/useGameStore';
+import { DIFFICULTY_META } from '../../data/triviaQuestions';
+import { VITAL_ORDER, categoryStats, getMissionProfile, useGameStore } from '../../store/useGameStore';
 import { playButtonClick, playUnlock } from '../../utils/soundEffects';
 import { Phase1Header, SystemLabel } from './Phase1Shared';
 
@@ -42,9 +42,9 @@ interface Flyer {
   to: { x: number; y: number };
 }
 
-function GiantTimer({ timeLeft }: { timeLeft: number }) {
+function GiantTimer({ timeLeft, totalSeconds }: { timeLeft: number; totalSeconds: number }) {
   const urgent = timeLeft <= 10;
-  const pct = (timeLeft / QUIZ_SECONDS) * 100;
+  const pct = Math.min(100, (timeLeft / totalSeconds) * 100);
   return (
     <motion.div
       animate={urgent ? { scale: [1, 1.08, 1] } : {}}
@@ -63,13 +63,15 @@ function GiantTimer({ timeLeft }: { timeLeft: number }) {
   );
 }
 
-/** 1A/1B · Pantalla "Preparados" + 60 segundos de trivia contrarreloj. */
+/** 1A/1B · Pantalla "Preparados" + trivia contrarreloj. */
 export default function Phase1Quiz() {
   const stage = useGameStore((s) => s.phase1Stage);
   const queue = useGameStore((s) => s.quizQueue);
   const index = useGameStore((s) => s.quizIndex);
   const answers = useGameStore((s) => s.quizAnswers);
   const timeLeft = useGameStore((s) => s.timeLeft);
+  const missionDifficulty = useGameStore((s) => s.missionDifficulty);
+  const quizSeconds = getMissionProfile(missionDifficulty).quizSeconds;
   const inventory = useGameStore((s) => s.bunkerInventory);
   const { beginQuiz, answerQuiz, nextQuizQuestion, tickTimer } = useGameStore.getState();
 
@@ -143,7 +145,8 @@ export default function Phase1Quiz() {
         step={stage === 'ready' ? 1 : 2}
         title="Trivia Contrarreloj NASA"
         subtitle="Cada acierto manda un objeto de esa rama al búnker. ¡Las difíciles dan objetos legendarios!"
-        right={stage === 'quiz' ? <GiantTimer timeLeft={timeLeft} /> : undefined}
+        triviaSeconds={quizSeconds}
+        right={stage === 'quiz' ? <GiantTimer timeLeft={timeLeft} totalSeconds={quizSeconds} /> : undefined}
       />
 
       <main className="relative z-10 mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col gap-4 p-4 lg:flex-row">
@@ -160,7 +163,7 @@ export default function Phase1Quiz() {
               </motion.div>
               <h2 className="font-display text-4xl font-black text-nasa-blue">¿Listos, cadetes?</h2>
               <p className="max-w-xl text-lg text-slate-700">
-                Tienes <b>{QUIZ_SECONDS} segundos</b> para responder todas las preguntas que puedas. Empiezan fáciles y se ponen difíciles.
+                Tienes <b>{quizSeconds} segundos</b> para responder todas las preguntas que puedas. Empiezan fáciles y se ponen difíciles.
               </p>
               <div className="grid max-w-2xl gap-2 text-left text-base text-slate-700 sm:grid-cols-2">
                 {READY_RULES.map(({ Icon, title, text }) => (
@@ -182,7 +185,7 @@ export default function Phase1Quiz() {
                 }}
                 className="font-display glow-red mt-2 flex items-center gap-3 rounded-2xl bg-nasa-red px-10 py-5 text-2xl font-black tracking-wider text-white"
               >
-                <Rocket /> ¡EMPEZAR LOS 60 SEGUNDOS!
+                <Rocket /> ¡EMPEZAR LA MISIÓN!
               </motion.button>
             </div>
           )}
