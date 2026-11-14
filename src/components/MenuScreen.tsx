@@ -42,7 +42,7 @@ export default function MenuScreen() {
       <div className="pointer-events-none absolute left-0 top-2 h-1 w-full bg-nasa-red" />
       <LanguageToggle className="absolute right-[clamp(0.75rem,2vw,1.5rem)] top-[clamp(0.9rem,2.5dvh,1.5rem)] z-20" />
 
-      <section className="thin-scroll relative z-10 flex max-h-full w-full max-w-4xl flex-col items-center overflow-y-auto text-center">
+      <section className="menu-scroll relative z-10 flex min-h-0 max-h-full w-full max-w-4xl flex-col items-center overflow-y-auto text-center">
         <motion.div initial={{ scale: 0, rotate: -40 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 140 }}>
           <MissionPatch size={180} className="h-[clamp(4.5rem,16dvh,10rem)] w-auto" />
         </motion.div>

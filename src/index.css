@@ -173,6 +173,14 @@ html {
   scrollbar-color: rgba(11, 61, 145, 0.35) transparent;
 }
 
+.menu-scroll {
+  scrollbar-width: none;
+}
+
+.menu-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 input[type='range'] {
   accent-color: #0b3d91;
 }

@@ -39,7 +39,7 @@ function VoiceSettings() {
   }
 
   return (
-    <div className="grid gap-2 text-xs">
+    <div className="grid gap-1 text-xs">
       <label className="grid gap-1">
         <span className="font-bold text-slate-600">{t('Voz instalada en tu navegador', 'Voice installed in your browser')}</span>
         <select
@@ -221,7 +221,7 @@ export default function AriaAssistantWidget({ compact = false, className = '' }:
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="mt-2 border-t border-slate-200 pt-2">
+            <div className="mt-1 border-t border-slate-200 pt-2">
               <VoiceSettings />
             </div>
           </motion.div>
