@@ -291,3 +291,11 @@ El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" mues
 - **Historia sin saltos:** con una historia abierta, `StoryComicModal` bloquea el scroll del documento (`html`/`body` `overflow: hidden`);
   la Fase 1 entra solo con fundido (nada de `x` en la animación) y `html, body { overflow-x: clip }` en `index.css`.
   No uses animaciones con desplazamiento lateral en la raíz de una pantalla.
+
+## 18. Despliegue en Cloudflare Pages
+- Proyecto `60-seconds-to-mars` → **https://60-seconds-to-mars.pages.dev** (subdominio gratuito de Pages).
+  Desplegar: `npm run build` y `npx wrangler pages deploy dist --project-name 60-seconds-to-mars --branch main` (desde la raíz, así se suben también `functions/`).
+- **Proxy `/api/gemini`:** solo acepta POST del propio juego (sin `Origin`, con `Origin` ajeno o `Sec-Fetch-Site` distinto de `same-origin` ⇒ 403)
+  y como máximo 20 peticiones por minuto e IP (⇒ 429). El GET no revela si hay clave. La clave vive SOLO como secreto `GEMINI_API_KEY` en Cloudflare.
+- `public/_headers`: cabeceras de seguridad (nosniff, `X-Frame-Options: DENY`, `Permissions-Policy` solo micrófono propio, HSTS).
+- Antes de cada despliegue: `grep -rE "AIza[0-9A-Za-z_-]{20,}" dist` debe salir vacío.
