@@ -471,7 +471,6 @@ function MinigameCard({
                   onSwitch();
                 }}
                 className="flex shrink-0 items-center justify-center gap-1.5 self-start whitespace-nowrap rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue sm:px-3 sm:text-sm"
-                title={tr('Prueba otro de los 5 minijuegos', 'Try another of the 5 mini-games')}
               >
                 <Dices className="h-4 w-4" strokeWidth={1.75} /> {tr('Cambiar prueba', 'Switch test')}
               </button>

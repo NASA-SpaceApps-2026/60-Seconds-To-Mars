@@ -245,7 +245,7 @@ export default function GameOverScreen() {
                       {cadetRoleLabel(cadetRole)} · {crewStatus}
                     </p>
                   </div>
-                  <span className="flex items-center gap-1 font-mono text-xs font-semibold text-slate-300" title={tr('Salud de la tripulación', 'Crew health')}>
+                  <span className="flex items-center gap-1 font-mono text-xs font-semibold text-slate-300">
                     <HeartPulse className="h-4 w-4 text-rose-400" strokeWidth={1.75} /> {health}
                   </span>
                 </div>
@@ -260,7 +260,7 @@ export default function GameOverScreen() {
                     {c.role} · {crewStatus}
                   </p>
                 </div>
-                <span className="flex items-center gap-1 font-mono text-xs font-semibold text-slate-300" title={tr('Salud de la tripulación', 'Crew health')}>
+                <span className="flex items-center gap-1 font-mono text-xs font-semibold text-slate-300">
                   <HeartPulse className="h-4 w-4 text-rose-400" strokeWidth={1.75} /> {health}
                 </span>
               </div>
@@ -455,7 +455,6 @@ export default function GameOverScreen() {
                     <span
                       key={id}
                       className={`flex min-w-0 items-center gap-2 rounded-lg border-2 bg-white px-2.5 py-1.5 text-sm font-bold text-slate-800 ${RARITY_META[ITEMS_BY_ID[id].rarity].ring}`}
-                      title={`${ITEMS_BY_ID[id].name} · ${RARITY_META[ITEMS_BY_ID[id].rarity].label}`}
                     >
                       <ItemIcon id={id} className="h-4 w-4 shrink-0 text-nasa-blue" />
                       <span className="truncate">{ITEMS_BY_ID[id].shortName}</span>

@@ -28,7 +28,6 @@ export default function LanguageToggle({ className = '' }: { className?: string 
             type="button"
             role="radio"
             aria-checked={active}
-            title={o.title}
             onClick={() => {
               playButtonClick();
               setLanguage(o.id);

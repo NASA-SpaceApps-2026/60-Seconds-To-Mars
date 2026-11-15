@@ -31,7 +31,6 @@ export function BadgeShelf({ size = 92, compact = false }: { size?: number; comp
         return (
           <div
             key={id}
-            title={`${BADGES[id].name}: ${BADGES[id].how}`}
             className={`flex flex-col items-center gap-1.5 rounded-lg border text-center ${compact ? 'p-2' : 'p-3'} ${earned ? 'border-nasa-blue bg-white' : 'border-slate-200 bg-slate-50'}`}
           >
             <motion.div animate={earned ? { scale: [1, 1.06, 1] } : {}} transition={{ duration: 2.4, repeat: Infinity }}>
@@ -227,7 +226,6 @@ export default function PeriscopeModal({ open, onClose }: { open: boolean; onClo
                   setSourcesOpen(true);
                 }}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-nasa-blue transition hover:border-nasa-blue max-sm:flex-1 max-sm:justify-center sm:ml-auto"
-                title={tr('Qué datos reales de la NASA usa el juego y cómo verificarlos', 'Which real NASA data the game uses and how to check it')}
               >
                 <Database className="h-4 w-4" strokeWidth={1.75} /> {tr('Datos Abiertos NASA Utilizados', 'NASA Open Data Used')}
               </button>

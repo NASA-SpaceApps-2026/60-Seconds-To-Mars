@@ -1082,7 +1082,7 @@ export default function RoverRescue3D() {
               <Flag size={18} strokeWidth={1.75} />
               {tr('Distancia al cohete', 'Distance to rocket')}: {Math.ceil(hud.remaining)} m
             </p>
-            <p className={`font-display flex items-center gap-1 text-sm font-bold ${timeColor}`} title={tr('Tiempo para llegar al cohete de retorno', 'Time left to reach the return rocket')}>
+            <p className={`font-display flex items-center gap-1 text-sm font-bold ${timeColor}`}>
               <Timer size={16} strokeWidth={1.75} /> {String(mm).padStart(2, '0')}:{String(ss).padStart(2, '0')}
             </p>
           </div>
@@ -1093,7 +1093,7 @@ export default function RoverRescue3D() {
             />
           </div>
           <div className="mt-2 flex items-center gap-2 text-sm">
-            <span className="flex shrink-0 items-center gap-1 font-bold text-slate-700" title={tr('Cada choque baja la integridad, pero el rover siempre llega', 'Each bump lowers integrity, but the rover always gets there')}>
+            <span className="flex shrink-0 items-center gap-1 font-bold text-slate-700">
               <ShieldCheck size={16} strokeWidth={1.75} /> {tr('Integridad', 'Integrity')}
             </span>
             <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-200">
@@ -1105,7 +1105,7 @@ export default function RoverRescue3D() {
             <span className={`flex items-center gap-1 font-bold ${statusColor}`}>
               <Gauge size={16} strokeWidth={1.75} /> {tr('Rover', 'Rover')}: {statusText[hud.status]}
             </span>
-            <span className="flex items-center gap-1 font-bold text-emerald-700" title={tr('Cada baliza verde: impulso y +1 de ciencia', 'Each green beacon: boost and +1 science')}>
+            <span className="flex items-center gap-1 font-bold text-emerald-700">
               <Zap size={16} strokeWidth={1.75} /> {tr('Balizas', 'Beacons')}: {hud.beacons}
             </span>
           </div>
@@ -1231,7 +1231,6 @@ function TouchPad({
     <button
       type="button"
       aria-label={label}
-      title={label}
       className={`grid shrink-0 touch-none select-none place-items-center rounded-full border-[3px] text-white shadow-xl backdrop-blur transition-transform [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${pressed ? 'scale-95' : ''} ${palette} ${className}`}
       onPointerDown={(e) => {
         e.preventDefault();
