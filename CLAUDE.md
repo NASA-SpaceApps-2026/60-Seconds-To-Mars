@@ -104,7 +104,7 @@ type MissionOutcome = 'victory' | 'evacuation';
 | `tickTimer()` | −1 s y avisos de A.R.I.A. en 40/20/10 s |
 | `sealBunker()` | → `PHASE_2_BUNKER`, máquinas ON por defecto |
 | `debugSkipToPhase2()` | Fase 2 con `DEBUG_INVENTORY` (sin botón en pantalla; lo usan las órdenes y `devQa`) |
-| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación (ES / EN): **supervivencia / survival** → base espacial, **final / end** → pantalla final (victoria), **derrota / defeat** → evacuación. También en el panel del robot A.R.I.A. de la base. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
+| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación (ES / EN): **supervivencia / survival** → base espacial, **final / end** → rescate 3D en rover y luego pantalla final (victoria), **derrota / defeat** → evacuación. También en el panel del robot A.R.I.A. de la base. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
 | `toggleMachine`, `useConsumable` | Panel de ingeniería |
 | `loadSolEvent()` | Gemini/fallback, mínimo 700 ms de animación, ignora resultados obsoletos (`requestId`) |
 | `chooseOption(id)` | Aplica opción → `computeSolTick` → `solStage: 'report'` |
@@ -293,7 +293,7 @@ El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" mues
   No uses animaciones con desplazamiento lateral en la raíz de una pantalla.
 
 ## 17 bis. Rescate final en rover 3D (`RoverRescue3D`)
-- Fase `'ROVER_RESCUE'` (en `GamePhase`): `continueAfterReport` con `pendingOutcome === 'victory'` (último Sol: 5 en Explorador, 10 en Comandante) entra aquí en vez de `GAME_OVER`. La evacuación y la orden "final" siguen yendo directas a la pantalla final.
+- Fase `'ROVER_RESCUE'` (en `GamePhase`): `continueAfterReport` con `pendingOutcome === 'victory'` (último Sol: 5 en Explorador, 10 en Comandante) entra aquí en vez de `GAME_OVER`. La orden "final" también pasa por el rover (y, si ya estás en él, salta al informe); la evacuación va directa a la pantalla final.
 - `finishRoverRescue(bonus)` suma la ciencia (+5 por rescate rápido + 1 por baliza verde), recalcula el rango y pasa a `GAME_OVER`. Lo llaman la llegada (a los 2 s del cartel), "Ver Reporte Final" y "Saltar escena 3D".
 - Three.js 100 % procedural (sin `.glb`): terreno periódico en 2 tramos reciclados, rocas `DodecahedronGeometry`, balizas, base con haz cian (`fog: false`, visible desde lejos), rover con 3 astronautas. Sin Game Over: chocar frena 1,5 s. Controles: flechas / A-D y botones táctiles.
 - Limpieza obligatoria al desmontar: `cancelAnimationFrame`, listeners, `dispose()` de geometrías/materiales/luces, `renderer.dispose()` + `forceContextLoss()`. Si WebGL falla, se muestra un aviso con botón al informe final.

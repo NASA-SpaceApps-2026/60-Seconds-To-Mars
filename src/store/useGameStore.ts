@@ -844,6 +844,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   forceGameOver: (outcome) => {
+    // Ya en el rescate 3D: "final" salta directamente al informe final
+    if (get().gamePhase === 'ROVER_RESCUE' && outcome === 'victory') {
+      get().finishRoverRescue(5);
+      return;
+    }
     // Desde el menú, el selector o la trivia: montar antes una base espacial de demostración
     if (get().gamePhase !== 'PHASE_2_BUNKER') get().debugSkipToPhase2();
     const s = get();
@@ -854,7 +859,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       vitals = { ...vitals, [failedVital]: 0 };
     }
     set((st) => ({
-      gamePhase: 'GAME_OVER',
+      // Victoria: primero el rescate en rover 3D (RoverRescue3D), luego la pantalla final
+      gamePhase: outcome === 'victory' ? 'ROVER_RESCUE' : 'GAME_OVER',
       requestId: st.requestId + 1,
       storyScene: null,
       fieldNote: null,
