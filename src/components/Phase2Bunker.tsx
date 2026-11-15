@@ -799,7 +799,9 @@ export default function Phase2Bunker() {
                                 </button>
                               )}
                               {(item.kind === 'passive' || item.kind === 'tool') && (
-                                <span className="w-full rounded-md bg-slate-100 py-1 text-center text-xs font-bold text-slate-600">{item.kind === 'tool' ? 'Herramienta' : 'Siempre activo'}</span>
+                                <span className="w-full rounded-md bg-slate-100 py-1 text-center text-xs font-bold text-slate-600">
+                                  {item.kind === 'tool' ? tr('Herramienta', 'Tool') : tr('Siempre activo', 'Always active')}
+                                </span>
                               )}
                             </div>
                           </article>
