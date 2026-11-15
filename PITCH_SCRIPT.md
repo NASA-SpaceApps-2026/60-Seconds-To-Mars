@@ -79,6 +79,8 @@
 
 > "Por dentro: **React 19 con TypeScript estricto**, **Zustand** como único cerebro del juego, **Tailwind** para que funcione igual en un portátil del cole que en una tablet, y **Framer Motion** para las animaciones. Cero archivos de audio: los sonidos se sintetizan en el navegador."
 
+> "Además, integramos las APIs de NASA y Gemini mediante funciones de **Cloudflare**, con datos de respaldo para que el juego siga funcionando sin conexión y con las claves protegidas fuera del navegador."
+
 > "La seguridad era clave porque el público son niños.
 > Las claves de la IA **nunca llegan al navegador**: pasan por funciones de servidor en Cloudflare.
 > Y si internet falla, el juego **no se rompe nunca**: cada fuente tiene un respaldo real y te lo dice."

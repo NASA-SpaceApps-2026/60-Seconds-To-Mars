@@ -115,7 +115,7 @@ export default function DeepSpaceLink({
                 <Timer className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                 <span className="min-w-0 flex-1 truncate font-semibold">{HOUSTON_PACKAGES[o.id].label}</span>
                 <span className="shrink-0 font-mono text-xs font-semibold">
-                  Llegada estimada en: {left} {left === 1 ? 'Sol' : 'Soles'}
+                  {tr('Llegada estimada en:', 'Estimated arrival in:')} {left} {left === 1 ? tr('Sol', 'Sol') : tr('Soles', 'Sols')}
                 </span>
               </li>
             );

@@ -74,7 +74,7 @@ export default function MenuScreen() {
           THE SOLAR STORM PROTOCOL
         </h2>
         <p className="mt-[clamp(0.4rem,1.5dvh,1rem)] max-w-2xl text-[clamp(0.95rem,min(1.4vw,2.4dvh),1.2rem)] font-semibold text-slate-600">
-          {t('Una tormenta solar real va hacia Marte. ¿Salvarás a tu tripulación?', 'A real solar storm is heading for Mars. Will you save your crew?')}
+          {t('Una tormenta solar va hacia Marte. ¿Salvarás a tu tripulación?', 'A solar storm is heading for Mars. Will you save your crew?')}
         </p>
 
         <motion.button

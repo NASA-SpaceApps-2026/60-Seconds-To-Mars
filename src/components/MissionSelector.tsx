@@ -1,7 +1,7 @@
 import { useAriaScreenReady } from '../utils/useAriaVoiceState';
 import type { ReactElement } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Check, Gauge, ListChecks, Rocket, ShieldHalf, Star, Wrench, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Check, Gauge, ListChecks, Rocket, Star, Sun, Wrench, type LucideIcon } from 'lucide-react';
 import { MISSION_DIFFICULTY_META, getMissionProfile, useGameStore } from '../store/useGameStore';
 import type { MissionDifficulty } from '../types/game';
 import { playButtonClick, playToggle, unlockAudio } from '../utils/soundEffects';
@@ -103,7 +103,7 @@ function buildCards(): Record<MissionDifficulty, ModeCard> {
       accent: '#1e5bc6',
       facts: [
         { Icon: ListChecks, text: tr(`Preguntas con ${exp.answerOptions} respuestas`, `Questions with ${exp.answerOptions} answers`) },
-        { Icon: ShieldHalf, text: tr('Más reservas en la base', 'More supplies in the base') },
+        { Icon: Sun, text: tr('Misión de 5 Soles', '5-Sol mission') },
         { Icon: Wrench, text: tr('Pocas averías', 'Few breakdowns') },
       ],
     },
@@ -115,7 +115,7 @@ function buildCards(): Record<MissionDifficulty, ModeCard> {
       accent: '#fc3d21',
       facts: [
         { Icon: ListChecks, text: tr(`Preguntas con ${cmd.answerOptions} respuestas`, `Questions with ${cmd.answerOptions} answers`) },
-        { Icon: ShieldHalf, text: tr('Menos reservas, más radiación', 'Fewer supplies, more radiation') },
+        { Icon: Sun, text: tr('Misión de 10 Soles', '10-Sol mission') },
         { Icon: Wrench, text: tr('Averías frecuentes', 'Frequent breakdowns') },
       ],
     },
@@ -274,7 +274,7 @@ export default function MissionSelector() {
               {t('¿Qué tipo de ', 'What kind of ')}<span className="text-nasa-red">{t('astronauta', 'astronaut')}</span>{t(' eres?', ' are you?')}
             </motion.h1>
             <p className="mx-auto mt-1 max-w-xl text-[clamp(0.95rem,2.4dvh,1.15rem)] font-semibold text-slate-600">
-              {t('Toca una credencial para elegirla. ¡Podrás cambiar de modo en la próxima misión!', 'Tap a credential to choose it. You can switch modes on your next mission!')}
+              {t('Toca un modo para elegirlo. ¡Podrás cambiarlo en la próxima misión!', 'Tap a mode to choose it. You can switch modes on your next mission!')}
             </p>
           </section>
 
