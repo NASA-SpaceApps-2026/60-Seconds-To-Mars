@@ -387,6 +387,43 @@ function ArtRescueComplete() {
   );
 }
 
+/** Rescate fallido: el rover parado en el camino (averiado o sin tiempo) y la base a lo lejos. */
+function ArtRescueFailed({ destroyed }: { destroyed: boolean }) {
+  return (
+    <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
+      <MarsSky dusk />
+      <BaseDome x={270} y={118} beam scale={0.6} />
+      <g transform="translate(70 150) rotate(-6)">
+        <RescueRover helmets={[CREW_COLORS.leo, CREW_COLORS.vega, CREW_COLORS.max]} />
+      </g>
+      {destroyed ? (
+        <>
+          {[0, 1, 2].map((i) => (
+            <motion.circle
+              key={i}
+              cx={100}
+              cy={130}
+              r={8}
+              fill="#94a3b8"
+              animate={{ cy: [130, 90], opacity: [0.8, 0], r: [6, 16] }}
+              transition={{ duration: 2, repeat: Infinity, delay: i * 0.6 }}
+            />
+          ))}
+          <motion.path d="M120 140 l8 -10 l-4 0 l6 -10" stroke="#fde047" strokeWidth={3} fill="none" animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.6, repeat: Infinity }} />
+        </>
+      ) : (
+        <g transform="translate(160 60)">
+          <circle r={24} fill="#0f172a" stroke="#fc3d21" strokeWidth={3} />
+          <motion.line x1={0} y1={0} x2={0} y2={-16} stroke="#fc3d21" strokeWidth={3} strokeLinecap="round" animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} />
+          <text y={44} textAnchor="middle" fontSize={11} fontWeight={800} fill="#fca5a5" fontFamily="ui-monospace, monospace">00:00</text>
+        </g>
+      )}
+      {/* Equipo de rescate a pie hacia los cadetes */}
+      <Cadet x={232} y={150} color="#fc3d21" mood="brave" scale={0.7} />
+    </svg>
+  );
+}
+
 // ---------------------------------------------------------------------
 // Escenas
 // ---------------------------------------------------------------------
@@ -402,6 +439,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
   const weather = useGameStore((s) => s.nasaWeather);
   const inventory = useGameStore((s) => s.bunkerInventory);
   const complications = useGameStore((s) => s.complications);
+  const rescueResult = useGameStore((s) => s.rescueResult);
   const flare = weather?.flareClass ?? 'X';
   // Credencial de Cadete: el jugador ocupa el 3.er puesto de la tripulación (en lugar de Max)
   const cadetName = useGameStore((s) => s.cadetName).trim().toUpperCase();
@@ -559,13 +597,35 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
           },
         ],
       };
+    case 'rescue_failed': {
+      const destroyed = rescueResult === 'destroyed';
+      return {
+        title: tr('Rescate fallido · Cráter Jezero', 'Rescue failed · Jezero Crater'),
+        panels: [
+          {
+            art: <ArtRescueFailed destroyed={destroyed} />,
+            speaker: tr('Cmdte. Elena', 'Cmdr. Elena'),
+            text: destroyed
+              ? tr(
+                  '¡Oh, no! El rover ha chocado con demasiadas rocas y se ha averiado antes de llegar a ARES-IV. El rescate ha fallado, pero tranquilos: hemos ido a buscaros a pie con los trajes y todos estáis a salvo. ¡Sobrevivisteis a todos los soles!',
+                  'Oh no! The rover hit too many rocks and broke down before reaching ARES-IV. The rescue failed, but don\'t worry: we walked out in our suits to get you and everyone is safe. You survived every sol!',
+                )
+              : tr(
+                  '¡Se acabó el tiempo! No habéis llegado a ARES-IV en 60 segundos. El rescate ha fallado, pero tranquilos: hemos seguido la señal del rover y todos estáis a salvo. ¡Sobrevivisteis a todos los soles!',
+                  'Time is up! You did not reach ARES-IV within 60 seconds. The rescue failed, but don\'t worry: we followed the rover\'s signal and everyone is safe. You survived every sol!',
+                ),
+            sound: playIncoming,
+          },
+        ],
+      };
+    }
   }
 }
 
 /** Texto del botón de la última viñeta de cada escena. */
 function lastButtonLabel(scene: StoryScene): string {
   if (scene === 'rescue_intro') return tr('¡A conducir!', "Let's drive!");
-  if (scene === 'rescue_complete') return tr('Ver resultados', 'See results');
+  if (scene === 'rescue_complete' || scene === 'rescue_failed') return tr('Ver resultados', 'See results');
   return tr('¡A la misión!', 'To the mission!');
 }
 

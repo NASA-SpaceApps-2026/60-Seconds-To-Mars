@@ -10,6 +10,7 @@ import type {
   MissionNotice,
   RepairTarget,
   StoryScene,
+  RescueResult,
   DailyEvent,
   Debrief,
   Difficulty,
@@ -512,8 +513,10 @@ interface GameState {
   repairTried: string[];
   /** Fotos reales de Marte ya recibidas en notas de campo (álbum del Periscopio). */
   unlockedPhotoIds: string[];
-  /** Ciencia sumada por el rescate 3D en rover (null hasta que llega a Ares-IV). */
+  /** Ciencia sumada por el rescate 3D en rover (null hasta que termina; 0 si falla). */
   rescueBonus: number | null;
+  /** Desenlace del rescate 3D (null mientras no ha terminado o si no hubo rescate). */
+  rescueResult: RescueResult | null;
   /** Nota de campo con foto real pendiente de mostrar. */
   fieldNote: FieldNote | null;
   lastFieldNoteSol: number;
@@ -572,6 +575,8 @@ interface GameActions {
   continueAfterReport: () => void;
   /** Llegada del rover 3D a Ares-IV: suma la ciencia (una sola vez) y abre la viñeta final del rescate. */
   completeRoverRescue: (beacons: number) => void;
+  /** Rescate 3D fallido (rover destruido o 60 s agotados): sin bonus; la partida sigue siendo una victoria. */
+  failRoverRescue: (reason: 'destroyed' | 'timeout') => void;
 
   loadDebrief: () => Promise<void>;
   closeStory: () => void;
@@ -629,6 +634,7 @@ const phase2Initial = (difficulty: MissionDifficulty = 'explorer') => ({
   unlockedPhotoIds: [] as string[],
   /** Ciencia sumada por el rescate 3D (null = aún no se ha sumado; evita contarla dos veces). */
   rescueBonus: null as number | null,
+  rescueResult: null as RescueResult | null,
   fieldNote: null as FieldNote | null,
   lastFieldNoteSol: 0,
 });
@@ -890,17 +896,25 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   completeRoverRescue: (beacons) => {
     const s = get();
-    if (s.gamePhase !== 'ROVER_RESCUE' || s.outcome !== 'victory' || s.rescueBonus !== null) return;
+    if (s.gamePhase !== 'ROVER_RESCUE' || s.outcome !== 'victory' || s.rescueResult !== null) return;
     const bonus = ROVER_RESCUE_BONUS + Math.max(0, Math.round(beacons));
     const science = s.scienceScore + bonus;
     set({
       scienceScore: science,
       rescueBonus: bonus,
+      rescueResult: 'completed',
       rank: computeRank('victory', science, s.vitals),
       debrief: null,
       // Viñeta "Rescate completado": al cerrarla (closeStory) se pasa a la pantalla final
       storyScene: 'rescue_complete',
     });
+  },
+
+  failRoverRescue: (reason) => {
+    const s = get();
+    if (s.gamePhase !== 'ROVER_RESCUE' || s.outcome !== 'victory' || s.rescueResult !== null) return;
+    // Sin bonus de rescate; puntuación, rango, historial y barras se conservan tal cual
+    set({ rescueBonus: 0, rescueResult: reason, debrief: null, storyScene: 'rescue_failed' });
   },
 
   forceGameOver: (outcome) => {
@@ -1341,6 +1355,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         gamePhase: survivedAll ? 'ROVER_RESCUE' : 'GAME_OVER',
         storyScene: survivedAll ? 'rescue_intro' : s.storyScene,
         rescueBonus: null,
+        rescueResult: null,
         outcome: s.pendingOutcome,
         rank: computeRank(s.pendingOutcome, s.scienceScore, s.vitals),
         debrief: null,
@@ -1461,7 +1476,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   closeStory: () => {
     const s = get();
     // Tras la viñeta "Rescate completado" llega la pantalla final original
-    if (s.storyScene === 'rescue_complete' && s.gamePhase === 'ROVER_RESCUE') {
+    if ((s.storyScene === 'rescue_complete' || s.storyScene === 'rescue_failed') && s.gamePhase === 'ROVER_RESCUE') {
       set({ storyScene: null, gamePhase: 'GAME_OVER', debrief: null });
       return;
     }

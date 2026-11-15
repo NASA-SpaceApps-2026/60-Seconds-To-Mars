@@ -12,7 +12,8 @@ import { playErrorBuzz, playPickup, playSuccess } from '../utils/soundEffects';
  * Cráter Jezero hasta la base Ares-IV, donde les espera el equipo de rescate. 100 % procedural (sin modelos externos).
  * - Se abre tras las viñetas 'rescue_intro' y, al llegar, el store abre la viñeta 'rescue_complete' → GameOverScreen.
  * - Solo teclado (W/S acelerar-frenar, A/D girar, o flechas). No se puede saltar.
- * - Sin "Game Over": chocar con una roca frena el rover 1,5 s y baja su integridad (nunca por debajo del 25 %).
+ * - Chocar con una roca frena el rover 1,5 s y baja su integridad. Rescate fallido si la integridad llega al 0 %
+ *   o si no se llega en 60 s: sin bonus, pero la partida sigue siendo una victoria (ya se sobrevivió a todos los Soles).
  * - Balizas verdes: impulso de velocidad y +1 punto de ciencia.
  * - Dificultad según el modo de la partida (ROVER_TUNING).
  */
@@ -21,8 +22,18 @@ const TOTAL_DISTANCE = 800; // metros (1 unidad = 1 m)
 const HIT_SLOW_SECONDS = 1.5;
 const BOOST_SECONDS = 1.5;
 const INTRO_SECONDS = 2.6;
-const ARRIVAL_SECONDS = 1.8; // cinemática de llegada antes de la viñeta final
-const MIN_INTEGRITY = 25;
+const ARRIVAL_SECONDS = 1.8; // cinemática de llegada / fallo antes de la viñeta final
+/** Tiempo máximo para llegar a Ares-IV (s). Sin prisas el rover tarda ~25-30 s, así que hay margen de sobra. */
+const RESCUE_TIME_LIMIT = 60;
+
+/** Solo en desarrollo: #qa-rover-timeout (límite de 6 s) y #qa-rover-crash (el primer choque destruye el rover). */
+function devRoverOverrides(): { timeLimit?: number; oneHitDestroys?: boolean } {
+  if (!import.meta.env.DEV) return {};
+  const h = window.location.hash;
+  if (h === '#qa-rover-timeout') return { timeLimit: 6 };
+  if (h === '#qa-rover-crash') return { oneHitDestroys: true };
+  return {};
+}
 const ROAD_LIMIT = 6;
 const CHUNK_W = 150;
 const CHUNK_L = 200;
@@ -47,12 +58,13 @@ const ROVER_TUNING: Record<MissionDifficulty, DriveTuning> = {
   commander: { cruise: 34, max: 52, brake: 10, boost: 60, slow: 12, rowGap: [22, 31], doubleChance: 0.4, beaconChance: 0.35, steer: 12.5, hitDamage: 12, hitbox: 0 },
 };
 
-type Stage = 'waiting' | 'intro' | 'drive' | 'arrived';
-type RoverStatus = 'ready' | 'cruise' | 'fast' | 'brake' | 'boost' | 'hit' | 'arrived';
+type Stage = 'waiting' | 'intro' | 'drive' | 'arrived' | 'destroyed' | 'timeout';
+type RoverStatus = 'ready' | 'cruise' | 'fast' | 'brake' | 'boost' | 'hit' | 'arrived' | 'destroyed' | 'timeout';
 
 interface Hud {
   remaining: number;
   elapsed: number;
+  timeLeft: number;
   status: RoverStatus;
   beacons: number;
   countdown: number;
@@ -370,7 +382,7 @@ export default function RoverRescue3D() {
   const storyOpen = useGameStore((s) => s.storyScene !== null);
   const storyOpenRef = useRef(storyOpen);
   storyOpenRef.current = storyOpen;
-  const [hud, setHud] = useState<Hud>({ remaining: TOTAL_DISTANCE, elapsed: 0, status: 'ready', beacons: 0, countdown: 3, integrity: 100 });
+  const [hud, setHud] = useState<Hud>({ remaining: TOTAL_DISTANCE, elapsed: 0, timeLeft: RESCUE_TIME_LIMIT, status: 'ready', beacons: 0, countdown: 3, integrity: 100 });
   const [stage, setStage] = useState<Stage>('waiting');
   const [webglFailed, setWebglFailed] = useState(false);
 
@@ -380,6 +392,12 @@ export default function RoverRescue3D() {
     finishedRef.current = true;
     useGameStore.getState().completeRoverRescue(beaconsRef.current);
   };
+  /** Rover destruido o tiempo agotado: rescate fallido (sin bonus) → viñeta → pantalla final. */
+  const fail = (reason: 'destroyed' | 'timeout') => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    useGameStore.getState().failRoverRescue(reason);
+  };
 
   useEffect(() => {
     // Se dice al cerrar las viñetas de introducción (la historia retiene la voz del juego)
@@ -387,8 +405,8 @@ export default function RoverRescue3D() {
       .getState()
       .ariaSay(
         tr(
-          '¡Al volante, cadetes! Acelera con W, frena con S y gira con A y D, o usa las flechas. Esquiva las rocas y pasa por las balizas verdes.',
-          'At the wheel, cadets! Speed up with W, brake with S and steer with A and D, or use the arrow keys. Dodge the rocks and drive over the green beacons.',
+          '¡Al volante, cadetes! Tenéis 60 segundos para llegar a Ares-IV. Acelera con W, frena con S y gira con A y D, o usa las flechas. Si chocáis con muchas rocas, el rover se averiará.',
+          'At the wheel, cadets! You have 60 seconds to reach Ares-IV. Speed up with W, brake with S and steer with A and D, or use the arrow keys. Hit too many rocks and the rover will break down.',
         ),
       );
   }, []);
@@ -396,7 +414,10 @@ export default function RoverRescue3D() {
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    const dev = devRoverOverrides();
     const tuning = ROVER_TUNING[useGameStore.getState().missionDifficulty] ?? ROVER_TUNING.explorer;
+    const timeLimit = dev.timeLimit ?? RESCUE_TIME_LIMIT;
+    mount.dataset.roverDifficulty = useGameStore.getState().missionDifficulty;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -674,7 +695,12 @@ export default function RoverRescue3D() {
           setStage('drive');
         }
       } else if (stage === 'drive') {
-        elapsedDrive += dt;
+        elapsedDrive = Math.min(timeLimit, elapsedDrive + dt);
+        if (elapsedDrive >= timeLimit) {
+          stage = 'timeout';
+          setStage('timeout');
+          playErrorBuzz();
+        }
       }
 
       let target = 0;
@@ -685,7 +711,8 @@ export default function RoverRescue3D() {
         target = slowTimer > 0 ? tuning.slow : boostTimer > 0 ? tuning.boost : down ? tuning.brake : up ? tuning.max : tuning.cruise;
       }
       const braking = stage === 'drive' && inputRef.current.down && slowTimer <= 0 && boostTimer <= 0;
-      const accel = stage === 'arrived' ? 4 : slowTimer > 0 || braking ? 5 : 1.6;
+      const ended = stage === 'arrived' || stage === 'destroyed' || stage === 'timeout';
+      const accel = ended ? 4 : slowTimer > 0 || braking ? 5 : 1.6;
       speed += (target - speed) * Math.min(1, accel * dt);
 
       const input = stage === 'drive' ? (inputRef.current.right ? 1 : 0) - (inputRef.current.left ? 1 : 0) : 0;
@@ -703,6 +730,8 @@ export default function RoverRescue3D() {
         setStage('arrived');
         playSuccess();
       }
+      // Al fallar, el rover se detiene poco a poco donde está (sin llegar a la base)
+      if (stage === 'destroyed' || stage === 'timeout') step = Math.min(step, Math.max(0, TOTAL_DISTANCE - traveled - 1));
       traveled = Math.min(TOTAL_DISTANCE, traveled + step);
       const remaining = TOTAL_DISTANCE - traveled;
 
@@ -747,12 +776,16 @@ export default function RoverRescue3D() {
           if (dz < 2.1 + r.r * 0.5 + tuning.hitbox && dx < 1.45 + r.r * 0.6 + tuning.hitbox) {
             r.hit = true;
             slowTimer = HIT_SLOW_SECONDS;
-            integrity = Math.max(MIN_INTEGRITY, integrity - tuning.hitDamage);
+            integrity = dev.oneHitDestroys ? 0 : Math.max(0, integrity - tuning.hitDamage);
             boostTimer = 0;
             shake = reducedMotion ? 0.1 : 0.6;
             speed *= 0.5;
             emitSparks(roverX, 1.0, -1.8);
             playErrorBuzz();
+            if (integrity <= 0) {
+              stage = 'destroyed';
+              setStage('destroyed');
+            }
           }
         }
       }
@@ -823,7 +856,7 @@ export default function RoverRescue3D() {
         desiredLook.set(roverX, 1.7 - t * 0.6, -t * 8);
         camPos.copy(desiredPos);
         camLook.copy(desiredLook);
-      } else if (stage === 'drive') {
+      } else if (stage === 'drive' || stage === 'destroyed' || stage === 'timeout') {
         desiredPos.set(roverX * 0.75, 5.6, 9.5);
         desiredLook.set(roverX * 0.85, 0.9, -10);
         camPos.lerp(desiredPos, Math.min(1, 5 * dt));
@@ -857,8 +890,8 @@ export default function RoverRescue3D() {
         const status: RoverStatus =
           stage === 'intro' || stage === 'waiting'
             ? 'ready'
-            : stage === 'arrived'
-              ? 'arrived'
+            : stage === 'arrived' || stage === 'destroyed' || stage === 'timeout'
+              ? stage
               : slowTimer > 0
                 ? 'hit'
                 : boostTimer > 0
@@ -871,6 +904,7 @@ export default function RoverRescue3D() {
         setHud({
           remaining,
           elapsed: elapsedDrive,
+          timeLeft: Math.max(0, timeLimit - elapsedDrive),
           status,
           beacons: beaconsRef.current,
           countdown: Math.max(0, Math.ceil(INTRO_SECONDS - elapsedIntro)),
@@ -904,17 +938,20 @@ export default function RoverRescue3D() {
   }, []);
 
 
-  // Cinemática de llegada: tras unos segundos ante la cúpula se abre la viñeta "Rescate completado"
+  // Cinemática de llegada / fallo: tras unos segundos se abre la viñeta del desenlace
   useEffect(() => {
-    if (stage !== 'arrived') return;
-    const t = setTimeout(complete, ARRIVAL_SECONDS * 1000);
+    if (stage !== 'arrived' && stage !== 'destroyed' && stage !== 'timeout') return;
+    const t = setTimeout(() => (stage === 'arrived' ? complete() : fail(stage)), ARRIVAL_SECONDS * 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
 
   const progress = Math.min(1, 1 - hud.remaining / TOTAL_DISTANCE);
-  const mm = Math.floor(hud.elapsed / 60);
-  const ss = Math.floor(hud.elapsed % 60);
+  // Cronómetro de rescate: cuenta atrás desde 01:00
+  const left = Math.ceil(hud.timeLeft);
+  const mm = Math.floor(left / 60);
+  const ss = left % 60;
+  const timeColor = left <= 10 && stage === 'drive' ? 'text-nasa-red' : 'text-slate-700';
   const statusText: Record<RoverStatus, string> = {
     ready: tr('Preparando motores', 'Warming up engines'),
     cruise: tr('En ruta', 'On route'),
@@ -923,8 +960,10 @@ export default function RoverRescue3D() {
     boost: tr('¡Impulso!', 'Boost!'),
     hit: tr('¡Choque! Tracción reducida', 'Bump! Reduced traction'),
     arrived: tr('Llegada a la base', 'Arrived at the base'),
+    destroyed: tr('Rover averiado', 'Rover broken down'),
+    timeout: tr('Tiempo agotado', 'Out of time'),
   };
-  const statusColor = hud.status === 'hit' ? 'text-nasa-red' : hud.status === 'boost' ? 'text-emerald-600' : 'text-nasa-blue';
+  const statusColor = hud.status === 'hit' || hud.status === 'destroyed' || hud.status === 'timeout' ? 'text-nasa-red' : hud.status === 'boost' ? 'text-emerald-600' : 'text-nasa-blue';
   const integrityColor = hud.integrity >= 70 ? 'bg-emerald-500' : hud.integrity >= 45 ? 'bg-amber-500' : 'bg-nasa-red';
 
   return (
@@ -957,7 +996,7 @@ export default function RoverRescue3D() {
               <Flag size={18} strokeWidth={1.75} />
               {tr('Distancia a ARES-IV', 'Distance to ARES-IV')}: {Math.ceil(hud.remaining)} m
             </p>
-            <p className="font-display flex items-center gap-1 text-sm font-bold text-slate-700">
+            <p className={`font-display flex items-center gap-1 text-sm font-bold ${timeColor}`} title={tr('Tiempo para llegar a Ares-IV', 'Time left to reach Ares-IV')}>
               <Timer size={16} strokeWidth={1.75} /> {String(mm).padStart(2, '0')}:{String(ss).padStart(2, '0')}
             </p>
           </div>
@@ -993,7 +1032,7 @@ export default function RoverRescue3D() {
           <p className="font-display text-base font-black tracking-[0.2em] text-white drop-shadow-lg sm:text-xl">{tr('RUMBO A ARES-IV', 'HEADING TO ARES-IV')}</p>
           <p className="font-display text-6xl font-black text-white drop-shadow-xl sm:text-8xl">{hud.countdown > 0 ? hud.countdown : tr('¡YA!', 'GO!')}</p>
           <p className="rounded-full bg-black/40 px-4 py-1.5 text-sm font-semibold text-white">
-            {tr('W acelerar · S frenar · A / D girar (o las flechas). Pasa por las balizas verdes.', 'W speed up · S brake · A / D steer (or arrow keys). Drive over the green beacons.')}
+            {tr('Tenéis 60 segundos. W acelerar · S frenar · A / D girar (o las flechas). ¡Cuidado con las rocas!', 'You have 60 seconds. W speed up · S brake · A / D steer (or arrow keys). Watch out for rocks!')}
           </p>
         </div>
       )}
@@ -1003,6 +1042,20 @@ export default function RoverRescue3D() {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <p className="rounded-full bg-black/40 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur">
             {tr('W / ↑ acelerar · S / ↓ frenar · A / ← · D / → girar', 'W / ↑ speed up · S / ↓ brake · A / ← · D / → steer')}
+          </p>
+        </div>
+      )}
+
+      {/* Fallo (breve): luego se abre la viñeta "Rescate fallido" */}
+      {(stage === 'destroyed' || stage === 'timeout') && (
+        <div className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center gap-2 px-4 text-center">
+          <p className="font-display text-3xl font-black tracking-wider text-white drop-shadow-xl sm:text-5xl">
+            {stage === 'destroyed' ? tr('¡ROVER AVERIADO!', 'ROVER BROKEN DOWN!') : tr('¡TIEMPO AGOTADO!', 'OUT OF TIME!')}
+          </p>
+          <p className="rounded-full bg-black/45 px-4 py-1.5 text-sm font-semibold text-white">
+            {stage === 'destroyed'
+              ? tr('La integridad del rover ha llegado al 0 %.', 'The rover integrity has reached 0%.')
+              : tr('No habéis llegado a Ares-IV en 60 segundos.', 'You did not reach Ares-IV within 60 seconds.')}
           </p>
         </div>
       )}
