@@ -9,7 +9,7 @@ import { playErrorBuzz, playPickup, playSuccess } from '../utils/soundEffects';
 
 /**
  * Minijuego 3D final (solo en partidas ganadas): Leo, Vega y el tercer cadete conducen el rover por el
- * Cráter Jezero hasta la base Ares-IV, donde les espera el equipo de rescate. 100 % procedural (sin modelos externos).
+ * Cráter Jezero hasta el Cohete de Retorno a la Tierra (ERV-1), donde les espera el equipo de rescate. 100 % procedural (sin modelos externos).
  * - Se abre tras las viñetas 'rescue_intro' y, al llegar, el store abre la viñeta 'rescue_complete' → GameOverScreen.
  * - Solo teclado (W/S acelerar-frenar, A/D girar, o flechas). No se puede saltar.
  * - Chocar con una roca frena el rover 1,5 s y baja su integridad. Rescate fallido si la integridad llega al 0 %
@@ -23,7 +23,7 @@ const HIT_SLOW_SECONDS = 1.5;
 const BOOST_SECONDS = 1.5;
 const INTRO_SECONDS = 2.6;
 const ARRIVAL_SECONDS = 1.8; // cinemática de llegada / fallo antes de la viñeta final
-/** Tiempo máximo para llegar a Ares-IV (s). Sin prisas el rover tarda ~25-30 s, así que hay margen de sobra. */
+/** Tiempo máximo para llegar al cohete de retorno (s). Sin prisas el rover tarda ~25-30 s, así que hay margen de sobra. */
 const RESCUE_TIME_LIMIT = 60;
 
 /** Solo en desarrollo: #qa-rover-timeout (límite de 6 s) y #qa-rover-crash (el primer choque destruye el rover). */
@@ -317,53 +317,138 @@ function buildRover(scene: THREE.Scene): RoverParts {
 }
 
 // ------------------------------------------------------------
-// Base Ares-IV con cúpula y haz de luz cian
+// Cohete de Retorno a la Tierra (ERV-1) vertical en su plataforma de lanzamiento, con torre de servicio,
+// rampa de embarque iluminada mirando al rover (+z) y haz de luz cian visible desde lejos
 // ------------------------------------------------------------
 function buildBase(scene: THREE.Scene): THREE.Group {
   const g = new THREE.Group();
-  const white = new THREE.MeshStandardMaterial({ color: '#f5f6f8', roughness: 0.4, emissive: '#3a4a60', emissiveIntensity: 0.25 });
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(9, 36, 18, 0, TAU, 0, Math.PI / 2), white);
-  dome.position.y = 1.5;
-  dome.castShadow = true;
-  g.add(dome);
-  const ring = new THREE.Mesh(new THREE.CylinderGeometry(9.4, 9.8, 1.6, 36), new THREE.MeshStandardMaterial({ color: '#cfd4db', roughness: 0.5 }));
-  ring.position.y = 0.8;
-  g.add(ring);
-  const band = new THREE.Mesh(new THREE.CylinderGeometry(9.45, 9.45, 0.3, 36), new THREE.MeshStandardMaterial({ color: '#0B3D91' }));
-  band.position.y = 1.5;
-  g.add(band);
-  const windowMat = new THREE.MeshStandardMaterial({ color: '#bff7ff', emissive: '#22d3ee', emissiveIntensity: 1.6 });
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * TAU;
-    const win = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.7, 0.2), windowMat);
-    win.position.set(Math.sin(a) * 8.1, 4.2, Math.cos(a) * 8.1);
-    win.lookAt(0, 4.2, 0);
-    g.add(win);
+  const white = new THREE.MeshStandardMaterial({ color: '#f5f6f8', roughness: 0.35, emissive: '#3a4a60', emissiveIntensity: 0.22 });
+  const grey = new THREE.MeshStandardMaterial({ color: '#8a929e', roughness: 0.7, metalness: 0.3 });
+  const dark = new THREE.MeshStandardMaterial({ color: '#2a3140', roughness: 0.6, metalness: 0.4 });
+  const blue = new THREE.MeshStandardMaterial({ color: '#0B3D91', roughness: 0.4 });
+  const red = new THREE.MeshStandardMaterial({ color: '#FC3D21', roughness: 0.4 });
+  const glowMat = new THREE.MeshStandardMaterial({ color: '#e6f9ff', emissive: '#22d3ee', emissiveIntensity: 1.4 });
+  const cyan = new THREE.MeshStandardMaterial({ color: '#22d3ee', emissive: '#22d3ee', emissiveIntensity: 1.2 });
+
+  // Plataforma de lanzamiento con borde amarillo de seguridad
+  const pad = new THREE.Mesh(new THREE.CylinderGeometry(11, 12, 1.4, 40), grey);
+  pad.position.y = 0.7;
+  pad.receiveShadow = true;
+  g.add(pad);
+  const padRing = new THREE.Mesh(
+    new THREE.CylinderGeometry(11.05, 11.05, 0.3, 40),
+    new THREE.MeshStandardMaterial({ color: '#facc15', emissive: '#a16207', emissiveIntensity: 0.4 }),
+  );
+  padRing.position.y = 1.35;
+  g.add(padRing);
+
+  // Cohete vertical
+  const rocket = new THREE.Group();
+  rocket.position.y = 1.4;
+  const bell = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 2.4, 2.6, 24, 1, true), dark);
+  bell.position.y = 1.9;
+  rocket.add(bell);
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 24, 32), white);
+  body.position.y = 15.2;
+  body.castShadow = true;
+  rocket.add(body);
+  const bands: [number, THREE.Material][] = [
+    [5.2, blue],
+    [6.0, red],
+    [21.5, blue],
+  ];
+  for (const [y, mat] of bands) {
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(2.65, 2.65, 0.6, 32), mat);
+    band.position.y = y;
+    rocket.add(band);
   }
-  // Puerta (mira hacia el rover, +z)
-  const door = new THREE.Mesh(new THREE.BoxGeometry(3, 3.2, 0.4), new THREE.MeshStandardMaterial({ color: '#e6f9ff', emissive: '#22d3ee', emissiveIntensity: 0.9 }));
-  door.position.set(0, 2.1, 9.3);
-  g.add(door);
-  // Módulos auxiliares
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(2.6, 7, 32), white);
+  nose.position.y = 30.7;
+  nose.castShadow = true;
+  rocket.add(nose);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.4, 20), red);
+  tip.position.y = 33.4;
+  rocket.add(tip);
+  // 4 aletas (en diagonal, para no tapar la escotilla)
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * TAU + Math.PI / 4;
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.35, 6, 3.4), red);
+    fin.position.set(Math.sin(a) * 3.6, 5, Math.cos(a) * 3.6);
+    fin.rotation.y = a;
+    rocket.add(fin);
+  }
+  // Ojos de buey de la cápsula
+  for (const y of [24, 26.4]) {
+    const win = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.25, 20), glowMat);
+    win.rotation.x = Math.PI / 2;
+    win.position.set(0, y, 2.62);
+    rocket.add(win);
+  }
+  // Escotilla abierta e iluminada (mira al rover)
+  const hatch = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3, 0.3), glowMat);
+  hatch.position.set(0, 9.5, 2.62);
+  rocket.add(hatch);
+  g.add(rocket);
+
+  // Rampa de embarque desde el suelo hasta la escotilla
+  const rampTop = new THREE.Vector3(0, 10, 2.8);
+  const rampBottom = new THREE.Vector3(0, 1.4, 11.5);
+  const rampLen = rampTop.distanceTo(rampBottom);
+  const rampMid = rampTop.clone().add(rampBottom).multiplyScalar(0.5);
+  const tilt = Math.atan2(rampTop.y - rampBottom.y, rampBottom.z - rampTop.z);
+  const ramp = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.35, rampLen), grey);
+  ramp.position.copy(rampMid);
+  ramp.rotation.x = tilt;
+  g.add(ramp);
   for (const side of [-1, 1]) {
-    const mod = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 7, 20), white);
-    mod.rotation.z = Math.PI / 2;
-    mod.position.set(side * 13, 2.4, 0);
-    g.add(mod);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, rampLen), cyan);
+    rail.position.set(side * 1.15, rampMid.y + 0.8, rampMid.z);
+    rail.rotation.x = tilt;
+    g.add(rail);
   }
-  // Haz vertical cian visible desde muy lejos (ignora la niebla)
+
+  // Torre de servicio a un lado (estructura roja con plataformas y brazos)
+  const tower = new THREE.Group();
+  tower.position.set(-8, 1.4, -1);
+  const posts: [number, number][] = [
+    [-1.2, -1.2],
+    [1.2, -1.2],
+    [-1.2, 1.2],
+    [1.2, 1.2],
+  ];
+  for (const [x, z] of posts) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.35, 32, 0.35), red);
+    post.position.set(x, 16, z);
+    tower.add(post);
+  }
+  for (let y = 2; y < 32; y += 3) {
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.25, 2.8), dark);
+    deck.position.y = y;
+    tower.add(deck);
+  }
+  for (const y of [12, 26]) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.5, 0.8), grey);
+    arm.position.set(3.4, y, 0);
+    tower.add(arm);
+  }
+  const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 8), new THREE.MeshBasicMaterial({ color: '#ff5a3c' }));
+  beacon.position.y = 32.6;
+  tower.add(beacon);
+  g.add(tower);
+
+  // Haz vertical cian visible desde muy lejos (ignora la niebla), por encima de la punta del cohete
   const beamMat = new THREE.MeshBasicMaterial({ color: '#67e8f9', transparent: true, opacity: 0.45, fog: false, depthWrite: false, blending: THREE.AdditiveBlending });
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.6, 320, 20, 1, true), beamMat);
-  beam.position.y = 160;
+  beam.position.y = 195;
   g.add(beam);
   const core = new THREE.Mesh(
     new THREE.CylinderGeometry(0.35, 0.5, 320, 12, 1, true),
     new THREE.MeshBasicMaterial({ color: '#ecfeff', transparent: true, opacity: 0.8, fog: false, depthWrite: false, blending: THREE.AdditiveBlending }),
   );
-  core.position.y = 160;
+  core.position.y = 195;
   g.add(core);
   const glow = new THREE.PointLight('#67e8f9', 60, 60, 1.5);
-  glow.position.set(0, 10, 10);
+  glow.position.set(0, 10, 12);
   g.add(glow);
   scene.add(g);
   return g;
@@ -386,7 +471,7 @@ export default function RoverRescue3D() {
   const [stage, setStage] = useState<Stage>('waiting');
   const [webglFailed, setWebglFailed] = useState(false);
 
-  /** Llegada a Ares-IV: el store suma la ciencia (una sola vez) y abre la viñeta "Rescate completado". */
+  /** Llegada al cohete de retorno: el store suma la ciencia (una sola vez) y abre la viñeta "Rescate completado". */
   const complete = () => {
     if (finishedRef.current) return;
     finishedRef.current = true;
@@ -405,8 +490,8 @@ export default function RoverRescue3D() {
       .getState()
       .ariaSay(
         tr(
-          '¡Al volante, cadetes! Tenéis 60 segundos para llegar a Ares-IV. El rover solo avanza mientras mantienes pulsado ACELERAR o la tecla W. Frena con S y gira con las flechas o con A y D. Si chocáis con muchas rocas, el rover se averiará.',
-          'At the wheel, cadets! You have 60 seconds to reach Ares-IV. The rover only moves while you hold GO or the W key. Brake with S and steer with the arrows or A and D. Hit too many rocks and the rover will break down.',
+          '¡Al volante, cadetes! Tenéis 60 segundos para llegar al Cohete de Retorno que os llevará a la Tierra. El rover solo avanza mientras mantienes pulsado ACELERAR o la tecla W. Frena con S y gira con las flechas o con A y D. Si chocáis con muchas rocas, el rover se averiará.',
+          'At the wheel, cadets! You have 60 seconds to reach the Return Rocket that will take you back to Earth. The rover only moves while you hold GO or the W key. Brake with S and steer with the arrows or A and D. Hit too many rocks and the rover will break down.',
         ),
       );
   }, []);
@@ -732,7 +817,7 @@ export default function RoverRescue3D() {
         setStage('arrived');
         playSuccess();
       }
-      // Al fallar, el rover se detiene poco a poco donde está (sin llegar a la base)
+      // Al fallar, el rover se detiene poco a poco donde está (sin llegar al cohete)
       if (stage === 'destroyed' || stage === 'timeout') step = Math.min(step, Math.max(0, TOTAL_DISTANCE - traveled - 1));
       traveled = Math.min(TOTAL_DISTANCE, traveled + step);
       const remaining = TOTAL_DISTANCE - traveled;
@@ -757,7 +842,6 @@ export default function RoverRescue3D() {
         }
       }
       base.position.set(0, 0, -(remaining + STOP_GAP + 9));
-      base.rotation.y += dt * 0.02;
 
       // ----- Rocas y colisiones -----
       for (const r of rocks) {
@@ -864,10 +948,10 @@ export default function RoverRescue3D() {
         camPos.lerp(desiredPos, Math.min(1, 5 * dt));
         camLook.lerp(desiredLook, Math.min(1, 5 * dt));
       } else {
-        // Llegada: la cámara se eleva y enseña la cúpula de Ares-IV
+        // Llegada: la cámara se eleva y enseña el cohete de retorno de abajo arriba
         const t = Math.min(1, (clockT - arrivedAt) / 2.5);
-        desiredPos.set(roverX + 7 * Math.sin(t * 0.9), 4.4 + t * 4, 9 - t * 3);
-        desiredLook.set(0, 2 + t * 3, -STOP_GAP);
+        desiredPos.set(roverX + 9 * Math.sin(t * 0.9), 4.4 + t * 5, 9 - t);
+        desiredLook.set(0, 2 + t * 12, -STOP_GAP - 9);
         camPos.lerp(desiredPos, Math.min(1, 3 * dt));
         camLook.lerp(desiredLook, Math.min(1, 3 * dt));
       }
@@ -961,7 +1045,7 @@ export default function RoverRescue3D() {
     brake: tr('Frenando', 'Braking'),
     boost: tr('¡Impulso!', 'Boost!'),
     hit: tr('¡Choque! Tracción reducida', 'Bump! Reduced traction'),
-    arrived: tr('Llegada a la base', 'Arrived at the base'),
+    arrived: tr('Llegada al cohete', 'Arrived at the rocket'),
     destroyed: tr('Rover averiado', 'Rover broken down'),
     timeout: tr('Tiempo agotado', 'Out of time'),
   };
@@ -979,8 +1063,8 @@ export default function RoverRescue3D() {
             <p className="font-display text-lg font-black text-nasa-blue">{tr('Conexión con el rover perdida', 'Rover link lost')}</p>
             <p className="mt-2 text-sm text-slate-600">
               {tr(
-                'Este navegador no puede mostrar la escena 3D, pero el piloto automático del rover os lleva a la base Ares-IV.',
-                'This browser cannot show the 3D scene, but the rover autopilot takes you to the Ares-IV base.',
+                'Este navegador no puede mostrar la escena 3D, pero el piloto automático del rover os lleva al Cohete de Retorno a la Tierra.',
+                'This browser cannot show the 3D scene, but the rover autopilot takes you to the Earth Return Rocket.',
               )}
             </p>
             <button type="button" onClick={complete} className="font-display mt-4 rounded-xl bg-nasa-red px-6 py-3 text-base font-black tracking-wider text-white">
@@ -996,9 +1080,9 @@ export default function RoverRescue3D() {
           <div className="flex items-center justify-between gap-3">
             <p className="font-display flex items-center gap-2 text-sm font-black tracking-wider text-nasa-blue sm:text-base">
               <Flag size={18} strokeWidth={1.75} />
-              {tr('Distancia a ARES-IV', 'Distance to ARES-IV')}: {Math.ceil(hud.remaining)} m
+              {tr('Distancia al cohete', 'Distance to rocket')}: {Math.ceil(hud.remaining)} m
             </p>
-            <p className={`font-display flex items-center gap-1 text-sm font-bold ${timeColor}`} title={tr('Tiempo para llegar a Ares-IV', 'Time left to reach Ares-IV')}>
+            <p className={`font-display flex items-center gap-1 text-sm font-bold ${timeColor}`} title={tr('Tiempo para llegar al cohete de retorno', 'Time left to reach the return rocket')}>
               <Timer size={16} strokeWidth={1.75} /> {String(mm).padStart(2, '0')}:{String(ss).padStart(2, '0')}
             </p>
           </div>
@@ -1031,7 +1115,7 @@ export default function RoverRescue3D() {
       {/* Cuenta atrás de salida */}
       {stage === 'intro' && !webglFailed && (
         <div className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center gap-2 px-4 text-center">
-          <p className="font-display text-base font-black tracking-[0.2em] text-white drop-shadow-lg sm:text-xl">{tr('RUMBO A ARES-IV', 'HEADING TO ARES-IV')}</p>
+          <p className="font-display text-base font-black tracking-[0.2em] text-white drop-shadow-lg sm:text-xl">{tr('RUMBO AL COHETE DE RETORNO', 'HEADING TO THE RETURN ROCKET')}</p>
           <p className="font-display text-6xl font-black text-white drop-shadow-xl sm:text-8xl">{hud.countdown > 0 ? hud.countdown : tr('¡YA!', 'GO!')}</p>
           <p className="rounded-full bg-black/40 px-4 py-1.5 text-sm font-semibold text-white">
             {tr('Tenéis 60 segundos. Mantén ACELERAR (o W) para avanzar · FRENO (o S) · flechas para girar. ¡Cuidado con las rocas!', 'You have 60 seconds. Hold GO (or W) to move · BRAKE (or S) · arrows to steer. Watch out for rocks!')}
@@ -1085,7 +1169,7 @@ export default function RoverRescue3D() {
           <p className="rounded-full bg-black/45 px-4 py-1.5 text-sm font-semibold text-white">
             {stage === 'destroyed'
               ? tr('La integridad del rover ha llegado al 0 %.', 'The rover integrity has reached 0%.')
-              : tr('No habéis llegado a Ares-IV en 60 segundos.', 'You did not reach Ares-IV within 60 seconds.')}
+              : tr('No habéis llegado al cohete en 60 segundos.', 'You did not reach the rocket within 60 seconds.')}
           </p>
         </div>
       )}
@@ -1093,7 +1177,7 @@ export default function RoverRescue3D() {
       {/* Llegada (breve): luego se abre la viñeta "Rescate completado" */}
       {stage === 'arrived' && (
         <div className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center gap-2 px-4 text-center">
-          <p className="font-display text-3xl font-black tracking-wider text-white drop-shadow-xl sm:text-5xl">{tr('¡LLEGADA A ARES-IV!', 'ARRIVED AT ARES-IV!')}</p>
+          <p className="font-display text-3xl font-black tracking-wider text-white drop-shadow-xl sm:text-5xl">{tr('¡A BORDO DEL COHETE!', 'ALL ABOARD THE ROCKET!')}</p>
           <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50/95 px-4 py-1.5 text-sm font-bold text-emerald-700">
             <Zap size={16} strokeWidth={1.75} />
             {tr(`+${ROVER_RESCUE_BONUS} de ciencia por el rescate`, `+${ROVER_RESCUE_BONUS} science for the rescue`)}
