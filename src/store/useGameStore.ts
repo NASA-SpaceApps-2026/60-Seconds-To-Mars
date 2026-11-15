@@ -530,6 +530,8 @@ interface GameActions {
   loadSolEvent: () => Promise<void>;
   chooseOption: (optionId: string) => void;
   continueAfterReport: () => void;
+  /** Fin del minijuego 3D del rover (victoria): suma el bonus de ciencia y pasa a la pantalla final. */
+  finishRoverRescue: (scienceBonus: number) => void;
 
   loadDebrief: () => Promise<void>;
   closeStory: () => void;
@@ -825,6 +827,20 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }));
     get().sealBunker();
     set({ storyScene: null });
+  },
+
+  finishRoverRescue: (scienceBonus) => {
+    const s = get();
+    if (s.gamePhase !== 'ROVER_RESCUE') return;
+    const science = s.scienceScore + Math.max(0, Math.round(scienceBonus));
+    const outcome = s.outcome ?? 'victory';
+    set({
+      gamePhase: 'GAME_OVER',
+      scienceScore: science,
+      outcome,
+      rank: computeRank(outcome, science, s.vitals),
+      debrief: null,
+    });
   },
 
   forceGameOver: (outcome) => {
@@ -1237,7 +1253,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (s.solStage !== 'report') return;
     if (s.pendingOutcome) {
       set({
-        gamePhase: 'GAME_OVER',
+        // Victoria: antes de la pantalla final, el rescate en rover 3D (RoverRescue3D)
+        gamePhase: s.pendingOutcome === 'victory' ? 'ROVER_RESCUE' : 'GAME_OVER',
         outcome: s.pendingOutcome,
         rank: computeRank(s.pendingOutcome, s.scienceScore, s.vitals),
         debrief: null,

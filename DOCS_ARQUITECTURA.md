@@ -41,7 +41,7 @@ Tienen que **sobrevivir 10 Soles** (días marcianos) hasta que vuelva el rover d
 6. **FASE 03 · Mantenimiento y Reparación** — si un sistema falla (avería inicial o avería puntual del 20 % por Sol), **5 minijuegos** en rotación: cables del escudo, polvo de paneles solares, sintonía de radio, fugas de oxígeno y basura espacial en el radar.
 7. **Transmisiones con foto real**: cuando aterriza un envío de Houston (y cada 2-3 Soles), la Comandante Elena entrega una carta con una **foto real de Marte**; después se abre el **contenedor extra** (carrusel tipo *case opening*). Las fotos forman un álbum en el **Periscopio**.
 8. **Viñetas de radio** en los Soles 4 y 8 (el rover se acerca).
-9. **FASE 04 · Rescate** — al resolver el Sol 10: **Finalizar misión final** → **Debriefing**: estado de Leo, Vega y Max, rango, instrumentos, insignias, informe de ingeniería (Gemini) y suministros.
+9. **FASE 04 · Rescate** — al resolver el último Sol (5 en Explorador, 10 en Comandante): **Finalizar misión final** → **Rescate 3D en rover** (`RoverRescue3D`, Three.js procedural: esquivar rocas y pasar por balizas verdes durante 800 m hasta la base Ares-IV; chocar solo frena, nunca hay Game Over; +5 de ciencia al llegar y +1 por baliza) → **Debriefing**: estado de Leo, Vega y Max, rango, instrumentos, insignias, informe de ingeniería (Gemini) y suministros.
 
 ### 1.4 Mecánicas clave
 - **5 barras vitales** (0-100): Oxígeno, Energía, Comida, Blindaje y Salud. Si cualquiera llega a 0 → evacuación.
@@ -93,6 +93,7 @@ src/
 │   ├── StoryComicModal        Viñetas de historia
 │   ├── PeriscopeModal         Telemetría de Jezero, álbum de fotos e insignias
 │   ├── NasaDataSourcesModal   Ficha "Datos Abiertos NASA Utilizados" (para jueces)
+│   ├── RoverRescue3D.tsx      Minijuego 3D final (Three.js) antes del debriefing
 │   └── GameOverScreen.tsx     Debriefing final
 └── utils/                    Sonido, voz, efemérides Tierra-Marte, atajos de QA (solo dev)
 ```

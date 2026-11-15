@@ -18,7 +18,7 @@ Juego web educativo para niños de **7 a 12 años**, en **español**. Dos fases:
 Filosofía: **ninguna decisión es gratis** (trade-offs de ingeniería). Datos reales de NASA DONKI y NASA OSDR.
 
 ## 2. Stack (no cambiar sin acuerdo del equipo)
-Vite 8 · React 19 · TypeScript 7 (`strict`) · TailwindCSS 4 (`@tailwindcss/vite`) · Framer Motion · lucide-react · canvas-confetti · Zustand 5 · `@google/genai`.
+Vite 8 · React 19 · TypeScript 7 (`strict`) · TailwindCSS 4 (`@tailwindcss/vite`) · Framer Motion · lucide-react · canvas-confetti · Zustand 5 · `@google/genai` · Three.js (solo el rescate 3D final, carga diferida).
 Voz = `window.speechSynthesis` · SFX = Web Audio API. **Cero archivos de audio.**
 
 ## 3. Estructura
@@ -49,7 +49,7 @@ src/
 
 ## 4. Tipos clave (`src/types/game.ts`)
 ```ts
-type GamePhase = 'MENU' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'GAME_OVER';
+type GamePhase = 'MENU' | 'MISSION_SELECT' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'ROVER_RESCUE' | 'GAME_OVER';
 type RoomId = 'greenhouse' | 'lab' | 'storage';
 type ItemId = 'lead_blanket' | 'hydro_recycler' | 'osdr_seeds' | 'lithium_battery' | 'freeze_food_a'
   | 'freeze_food_b' | 'o2_tanks' | 'mag_shield_booster' | 'med_kit' | 'high_gain_antenna'
@@ -291,6 +291,13 @@ El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" mues
 - **Historia sin saltos:** con una historia abierta, `StoryComicModal` bloquea el scroll del documento (`html`/`body` `overflow: hidden`);
   la Fase 1 entra solo con fundido (nada de `x` en la animación) y `html, body { overflow-x: clip }` en `index.css`.
   No uses animaciones con desplazamiento lateral en la raíz de una pantalla.
+
+## 17 bis. Rescate final en rover 3D (`RoverRescue3D`)
+- Fase `'ROVER_RESCUE'` (en `GamePhase`): `continueAfterReport` con `pendingOutcome === 'victory'` (último Sol: 5 en Explorador, 10 en Comandante) entra aquí en vez de `GAME_OVER`. La evacuación y la orden "final" siguen yendo directas a la pantalla final.
+- `finishRoverRescue(bonus)` suma la ciencia (+5 por rescate rápido + 1 por baliza verde), recalcula el rango y pasa a `GAME_OVER`. Lo llaman la llegada (a los 2 s del cartel), "Ver Reporte Final" y "Saltar escena 3D".
+- Three.js 100 % procedural (sin `.glb`): terreno periódico en 2 tramos reciclados, rocas `DodecahedronGeometry`, balizas, base con haz cian (`fog: false`, visible desde lejos), rover con 3 astronautas. Sin Game Over: chocar frena 1,5 s. Controles: flechas / A-D y botones táctiles.
+- Limpieza obligatoria al desmontar: `cancelAnimationFrame`, listeners, `dispose()` de geometrías/materiales/luces, `renderer.dispose()` + `forceContextLoss()`. Si WebGL falla, se muestra un aviso con botón al informe final.
+- QA: `#qa-rover`.
 
 ## 18. Despliegue en Cloudflare Pages
 - Proyecto `60-seconds-to-mars` → **https://60-seconds-to-mars.pages.dev** (subdominio gratuito de Pages).
