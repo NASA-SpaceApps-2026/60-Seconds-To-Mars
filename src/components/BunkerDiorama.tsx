@@ -377,10 +377,18 @@ export default function BunkerDiorama({
   cadetName = '',
   cadetPhoto = null,
 }: Props) {
-  // El 3.er puesto (Max) pasa a ser el cadete si tiene credencial; siempre 3 astronautas
-  const crew = CREW.map((c, i) =>
-    i === 2 && (cadetName || cadetPhoto) ? { ...c, name: (cadetName || tr('Cadete', 'Cadet')).toUpperCase(), role: c.role, photo: cadetPhoto } : { ...c, name: c.name, role: c.role, photo: null as string | null },
-  );
+  // Con credencial, el cadete sustituye a Max y se pone EN EL CENTRO (Leo a la izquierda, Vega a la derecha);
+  // siempre 3 astronautas
+  const [leo, vega, max] = CREW;
+  const plain = (c: (typeof CREW)[number], cx: number) => ({ cx, skin: c.skin, hair: c.hair, accent: c.accent, name: c.name, photo: null as string | null });
+  const crew =
+    cadetName || cadetPhoto
+      ? [
+          plain(leo, leo.cx),
+          { ...plain(max, vega.cx), name: (cadetName || tr('Cadete', 'Cadet')).toUpperCase(), photo: cadetPhoto },
+          plain(vega, max.cx),
+        ]
+      : CREW.map((c) => plain(c, c.cx));
   const storm = radiationLevel === 'high' || radiationLevel === 'extreme';
   const alarm = storm || vitals.shield < 35;
   const lowPower = vitals.power < 30;
