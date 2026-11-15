@@ -1065,6 +1065,7 @@ export default function Phase2Bunker() {
             return { ...r, kind };
           })
         }
+        onExit={() => setRepair(null)}
       />
       <PeriscopeModal open={activeOverlay === 'periscope'} onClose={closeOverlay} />
       <ArrivalTransmission visible={!storyScene && !rouletteOpen && !repair} onOpenCrate={openHoustonCrate} />
