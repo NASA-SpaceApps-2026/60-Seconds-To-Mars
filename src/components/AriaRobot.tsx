@@ -95,7 +95,6 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
         className="relative h-16 w-[3.75rem] shrink-0 sm:h-24 sm:w-[5.5rem] rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-nasa-blue/50"
         aria-expanded={open}
         aria-label={open ? t('Plegar el panel de A.R.I.A.', 'Collapse the A.R.I.A. panel') : t('Abrir A.R.I.A.: preguntas y voz', 'Open A.R.I.A.: questions and voice')}
-        title={t('A.R.I.A.: pregúntale lo que quieras', 'A.R.I.A.: ask her anything')}
       >
         <RobotSvg speaking={speaking} />
         {speaking && <span className="absolute inset-0 animate-ping rounded-full border-2 border-sky-300/50" aria-hidden />}
@@ -115,7 +114,7 @@ export default function AriaRobot({ open, onOpenChange, hideBubble = false, clas
           >
             <span className="absolute -top-2 right-9 h-4 w-4 rotate-45 border-l-2 border-t-2 border-slate-900 bg-white" />
             <div className="flex items-start gap-2">
-              <p className="thin-scroll max-h-28 flex-1 overflow-y-auto text-sm sm:max-h-40 sm:text-base leading-snug text-slate-900" title={message}>
+              <p className="thin-scroll max-h-28 flex-1 overflow-y-auto text-sm sm:max-h-40 sm:text-base leading-snug text-slate-900">
                 <span className="mr-1 font-mono text-xs font-bold tracking-widest text-nasa-blue">A.R.I.A.</span>
                 {typed}
               </p>

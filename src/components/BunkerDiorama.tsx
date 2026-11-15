@@ -456,7 +456,6 @@ export default function BunkerDiorama({
   return (
     <div ref={wrapRef} className="h-full w-full">
       <svg viewBox={`0 0 ${VW} ${SH}`} preserveAspectRatio="xMidYMid slice" className="block h-full w-full" role="img" aria-label={summary}>
-        <title>{summary}</title>
         <defs>
           <linearGradient id="mars-sky" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={storm ? '#1e1b4b' : '#0b1026'} />

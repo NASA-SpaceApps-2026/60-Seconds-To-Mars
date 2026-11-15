@@ -561,7 +561,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             extra: (
               <div className="flex flex-wrap gap-1.5">
                 {inventory.slice(0, 12).map((id) => (
-                  <span key={id} title={ITEMS_BY_ID[id].name} className="grid h-8 w-8 place-items-center rounded-md border border-slate-300 bg-white text-nasa-blue">
+                  <span key={id} role="img" aria-label={ITEMS_BY_ID[id].name} className="grid h-8 w-8 place-items-center rounded-md border border-slate-300 bg-white text-nasa-blue">
                     <ItemIcon id={id} className="h-5 w-5" />
                   </span>
                 ))}

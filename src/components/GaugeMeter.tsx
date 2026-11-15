@@ -21,7 +21,7 @@ const CY = 62;
 const R = 46;
 
 /** Velocímetro semicircular estilo cabina del transbordador espacial. */
-export default function GaugeMeter({ label, shortLabel, resource, value, forecast, nativeTitle = true, className = '' }: Props) {
+export default function GaugeMeter({ label, shortLabel, resource, value, forecast, className = '' }: Props) {
   const v = Math.max(0, Math.min(100, Math.round(value)));
   const color = v > 50 ? '#16a34a' : v >= 25 ? '#f59e0b' : '#dc2626';
   const critical = v < 25;
@@ -44,7 +44,6 @@ export default function GaugeMeter({ label, shortLabel, resource, value, forecas
   return (
     <div
       className={`flex min-w-0 flex-col items-center ${className}`}
-      title={nativeTitle ? `${label}: ${v}/100${forecast !== undefined ? ` · Previsión al acabar el Sol: ${forecast >= 0 ? '+' : ''}${forecast}` : ''}` : undefined}
     >
       <svg viewBox="0 0 120 74" className="w-full max-w-[140px]" role="img" aria-label={tr(`${label} ${v} de 100`, `${label} ${v} of 100`)}>
         {/* Bisel del instrumento */}

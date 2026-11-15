@@ -181,7 +181,6 @@ function OptionButton({
         onChoose();
       }}
       aria-disabled={!available}
-      title={option.description || undefined}
       className={`box-border flex w-full min-w-0 flex-col gap-[clamp(0.35rem,1.2dvh,0.75rem)] rounded-2xl border-2 px-3 py-[clamp(0.45rem,1.5dvh,1rem)] text-left transition-colors sm:px-4 ${
         !available
           ? 'cursor-not-allowed border-slate-200 bg-slate-100 opacity-60'
@@ -242,8 +241,8 @@ function LegendButton({
     <button
       type="button"
       onClick={onClick}
+      aria-label={`${label}: ${status}`}
       className="flex min-w-0 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-white transition hover:bg-white/10 max-sm:flex-1 max-sm:flex-col max-sm:gap-1 max-sm:px-1 max-sm:py-1 max-sm:text-center"
-      title={label}
     >
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-white/10 text-sky-300">
         <Icon className="h-5 w-5" strokeWidth={1.75} />
@@ -261,7 +260,6 @@ function RepairButton({ tried, onClick }: { tried: boolean; onClick: () => void 
       type="button"
       onClick={onClick}
       disabled={tried}
-      title={tried ? tr('Ya lo intentaste este Sol: vuelve a probar mañana', 'You already tried this Sol: try again tomorrow') : tr('Reparar con un minijuego', 'Repair with a mini-game')}
       className="flex shrink-0 items-center gap-1.5 rounded-lg bg-nasa-red px-3 py-1.5 text-sm font-black text-white transition hover:brightness-110 disabled:bg-slate-300 disabled:text-slate-600"
     >
       <Wrench className="h-4 w-4" strokeWidth={2} /> {tried ? tr('Mañana', 'Tomorrow') : tr('Reparar Averías', 'Fix Breakdowns')}
@@ -470,7 +468,6 @@ export default function Phase2Bunker() {
             type="button"
             onClick={() => openOverlay('periscope')}
             className="font-display relative ml-auto flex shrink-0 items-center gap-2 rounded-lg border-2 border-nasa-blue bg-white px-2.5 py-2 text-sm font-black tracking-[0.12em] text-nasa-blue shadow-sm transition hover:bg-blue-50 sm:ml-0 sm:px-4 sm:py-2.5"
-            title={tr('Periscopio: telemetría real del Cráter Jezero e insignias de misión', 'Periscope: real Jezero Crater telemetry and mission badges')}
           >
             <Telescope className="h-5 w-5" strokeWidth={1.75} /> <span className="hidden sm:inline">{tr('PERISCOPIO', 'PERISCOPE')}</span>
             <span className="rounded bg-nasa-blue px-1.5 font-mono text-xs text-white">{badgeCount}/5</span>
@@ -773,12 +770,10 @@ export default function Phase2Bunker() {
                       {activeItems.map((item) => {
                         const on = Boolean(machineStates[item.id]);
                         const broken = isMachineBroken(item.id, complications, brokenMachines);
-                        const seedNote = item.id === 'osdr_seeds' && on ? ` · Crecimiento ${seedGrowth}/2` : '';
                         return (
                           <article
                             key={item.id}
                             className={`flex min-w-0 flex-col gap-2 rounded-lg border-2 p-2.5 ${broken ? 'border-red-200 bg-red-50/60' : 'border-slate-200 bg-white'}`}
-                            title={`${item.name}\n${item.description}${seedNote}`}
                           >
                             <div className="flex items-center gap-2">
                               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-slate-200 bg-slate-50 text-nasa-blue">
@@ -841,7 +836,7 @@ export default function Phase2Bunker() {
                         <b className="text-slate-700">{tr('No conseguidos', 'Not obtained')} ({leftOut.length}):</b>
                         <div className="mt-1 flex flex-wrap gap-1.5">
                           {leftOut.map((i) => (
-                            <span key={i.id} title={i.name} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 bg-slate-50 text-slate-400">
+                            <span key={i.id} role="img" aria-label={i.name} className="grid h-8 w-8 place-items-center rounded-md border border-slate-200 bg-slate-50 text-slate-400">
                               <ItemIcon id={i.id} className="h-4 w-4" />
                             </span>
                           ))}
@@ -916,7 +911,6 @@ export default function Phase2Bunker() {
                       closeOverlay();
                     }}
                     className="ml-auto flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
-                    title={tr('Minimiza el ordenador para mirar a la tripulación, consultar a A.R.I.A. o encender máquinas', 'Minimize the computer to look at the crew, ask A.R.I.A. or switch machines on')}
                   >
                     <Minus className="h-4 w-4" /> {tr('Minimizar ordenador', 'Minimize computer')}
                   </button>
@@ -946,10 +940,10 @@ export default function Phase2Bunker() {
                             </p>
                             <h2 className="mt-0.5 text-[clamp(1.15rem,3.6dvh,1.875rem)] font-bold leading-tight text-slate-900">{event.title}</h2>
                           </div>
-                          <p className="line-clamp-4 text-[clamp(0.95rem,2.5dvh,1.125rem)] leading-snug text-slate-700" title={`${event.ariaVoiceAlert}\n\n${event.description}`}>
+                          <p className="line-clamp-4 text-[clamp(0.95rem,2.5dvh,1.125rem)] leading-snug text-slate-700">
                             {event.description}
                           </p>
-                          <div className="rounded-xl bg-amber-50 px-3 py-[clamp(0.4rem,1.3dvh,0.75rem)]" title={event.nasaSource}>
+                          <div className="rounded-xl bg-amber-50 px-3 py-[clamp(0.4rem,1.3dvh,0.75rem)]">
                             <p className="text-[clamp(0.85rem,2.2dvh,1rem)] leading-snug text-amber-950">
                               <FlaskConical className="mr-1 inline h-4 w-4 align-[-2px]" strokeWidth={1.75} />
                               <b>{tr('Dato Real NASA', 'Real NASA Fact')} ({event.radiationLevel === 'high' || event.radiationLevel === 'extreme' ? 'DONKI' : 'DONKI / OSDR'}) ·</b> {event.nasaFact}

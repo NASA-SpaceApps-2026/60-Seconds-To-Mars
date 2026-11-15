@@ -73,7 +73,6 @@ function VoiceSettings() {
           disabled={!hasFemale}
           onClick={() => ariaVoice.setGender('female')}
           className="flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1 font-bold text-slate-700 hover:border-nasa-blue hover:text-nasa-blue disabled:opacity-40"
-          title={hasFemale ? t('Usar una voz femenina', 'Use a female voice') : t('No hay voces femeninas reconocidas en tu navegador', 'No female voices found in your browser')}
         >
           {t('Femenina', 'Female')}
         </button>
@@ -82,7 +81,6 @@ function VoiceSettings() {
           disabled={!hasMale}
           onClick={() => ariaVoice.setGender('male')}
           className="flex-1 rounded-lg border border-slate-300 bg-white px-2 py-1 font-bold text-slate-700 hover:border-nasa-blue hover:text-nasa-blue disabled:opacity-40"
-          title={hasMale ? t('Usar una voz masculina', 'Use a male voice') : t('No hay voces masculinas reconocidas en tu navegador', 'No male voices found in your browser')}
         >
           {t('Masculina', 'Male')}
         </button>
@@ -162,7 +160,6 @@ export default function AriaAssistantWidget({ compact = false, className = '' }:
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.2 }}
               className={`text-slate-800 ${compact ? 'line-clamp-2 text-sm' : 'line-clamp-3 text-base'}`}
-              title={message}
             >
               {shown}
               {shown.length < message.length && <span className="ml-0.5 inline-block h-3 w-1.5 animate-pulse bg-nasa-blue align-middle" />}
@@ -172,7 +169,7 @@ export default function AriaAssistantWidget({ compact = false, className = '' }:
 
         {/* Selector de modo de audio: botón visible + <select> nativo invisible encima */}
         <div className="flex shrink-0 items-center gap-1">
-          <label className="relative" title={current.title}>
+          <label className="relative">
             <span className="sr-only">{t('Modo de audio de A.R.I.A.', 'A.R.I.A. audio mode')}</span>
             <span
               aria-hidden
@@ -204,7 +201,6 @@ export default function AriaAssistantWidget({ compact = false, className = '' }:
               type="button"
               onClick={() => setSettingsOpen((o) => !o)}
               className={`rounded-lg border p-1.5 transition ${settingsOpen ? 'border-nasa-blue bg-nasa-blue text-white' : 'border-slate-300 bg-white text-slate-600 hover:text-nasa-blue'}`}
-              title={t('Elegir voz, tono y velocidad', 'Choose voice, pitch and speed')}
               aria-expanded={settingsOpen}
             >
               <Settings2 size={16} />

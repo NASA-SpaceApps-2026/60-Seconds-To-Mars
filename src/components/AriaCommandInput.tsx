@@ -99,14 +99,12 @@ export default function AriaCommandInput({ className = '' }: { className?: strin
           maxLength={60}
           placeholder={t('Orden para A.R.I.A....', 'Command for A.R.I.A....')}
           aria-label={t('Orden para A.R.I.A.', 'Command for A.R.I.A.')}
-          title={t('Órdenes rápidas: 10 · final · derrota', 'Quick commands: 10 · end · defeat')}
           className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
         />
         {Recognition && (
           <button
             type="button"
             onClick={toggleMic}
-            title={listening ? t('Escuchando... pulsa para parar', 'Listening... tap to stop') : t('Decir la orden en voz alta', 'Say the command out loud')}
             aria-label={listening ? t('Parar micrófono', 'Stop microphone') : t('Decir la orden en voz alta', 'Say the command out loud')}
             className={`rounded-lg p-1 transition ${listening ? 'animate-pulse bg-nasa-red text-white' : 'text-slate-500 hover:text-nasa-blue'}`}
           >
