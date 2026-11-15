@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
-import { Flag, Gauge, ShieldCheck, Timer, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsUp, Flag, Gauge, Octagon, ShieldCheck, Timer, Zap } from 'lucide-react';
 import { ROVER_RESCUE_BONUS, useGameStore } from '../store/useGameStore';
 import type { MissionDifficulty } from '../types/game';
 import { tr } from '../i18n/core';
@@ -405,8 +405,8 @@ export default function RoverRescue3D() {
       .getState()
       .ariaSay(
         tr(
-          '¡Al volante, cadetes! Tenéis 60 segundos para llegar a Ares-IV. Acelera con W, frena con S y gira con A y D, o usa las flechas. Si chocáis con muchas rocas, el rover se averiará.',
-          'At the wheel, cadets! You have 60 seconds to reach Ares-IV. Speed up with W, brake with S and steer with A and D, or use the arrow keys. Hit too many rocks and the rover will break down.',
+          '¡Al volante, cadetes! Tenéis 60 segundos para llegar a Ares-IV. El rover solo avanza mientras mantienes pulsado ACELERAR o la tecla W. Frena con S y gira con las flechas o con A y D. Si chocáis con muchas rocas, el rover se averiará.',
+          'At the wheel, cadets! You have 60 seconds to reach Ares-IV. The rover only moves while you hold GO or the W key. Brake with S and steer with the arrows or A and D. Hit too many rocks and the rover will break down.',
         ),
       );
   }, []);
@@ -708,11 +708,13 @@ export default function RoverRescue3D() {
         slowTimer = Math.max(0, slowTimer - dt);
         boostTimer = Math.max(0, boostTimer - dt);
         const { up, down } = inputRef.current;
-        target = slowTimer > 0 ? tuning.slow : boostTimer > 0 ? tuning.boost : down ? tuning.brake : up ? tuning.max : tuning.cruise;
+        // SIN acelerador automático: solo avanza mientras se mantiene W / flecha arriba / pedal táctil
+        target = down || !up ? 0 : slowTimer > 0 ? tuning.slow : boostTimer > 0 ? tuning.boost : tuning.max;
       }
       const braking = stage === 'drive' && inputRef.current.down && slowTimer <= 0 && boostTimer <= 0;
       const ended = stage === 'arrived' || stage === 'destroyed' || stage === 'timeout';
-      const accel = ended ? 4 : slowTimer > 0 || braking ? 5 : 1.6;
+      const coasting = stage === 'drive' && !inputRef.current.up && !braking;
+      const accel = ended ? 4 : slowTimer > 0 || braking ? 5 : coasting ? 1.2 : 1.6;
       speed += (target - speed) * Math.min(1, accel * dt);
 
       const input = stage === 'drive' ? (inputRef.current.right ? 1 : 0) - (inputRef.current.left ? 1 : 0) : 0;
@@ -954,7 +956,7 @@ export default function RoverRescue3D() {
   const timeColor = left <= 10 && stage === 'drive' ? 'text-nasa-red' : 'text-slate-700';
   const statusText: Record<RoverStatus, string> = {
     ready: tr('Preparando motores', 'Warming up engines'),
-    cruise: tr('En ruta', 'On route'),
+    cruise: tr('Parado: mantén ACELERAR o W', 'Stopped: hold GO or W'),
     fast: tr('Acelerando', 'Speeding up'),
     brake: tr('Frenando', 'Braking'),
     boost: tr('¡Impulso!', 'Boost!'),
@@ -1032,17 +1034,45 @@ export default function RoverRescue3D() {
           <p className="font-display text-base font-black tracking-[0.2em] text-white drop-shadow-lg sm:text-xl">{tr('RUMBO A ARES-IV', 'HEADING TO ARES-IV')}</p>
           <p className="font-display text-6xl font-black text-white drop-shadow-xl sm:text-8xl">{hud.countdown > 0 ? hud.countdown : tr('¡YA!', 'GO!')}</p>
           <p className="rounded-full bg-black/40 px-4 py-1.5 text-sm font-semibold text-white">
-            {tr('Tenéis 60 segundos. W acelerar · S frenar · A / D girar (o las flechas). ¡Cuidado con las rocas!', 'You have 60 seconds. W speed up · S brake · A / D steer (or arrow keys). Watch out for rocks!')}
+            {tr('Tenéis 60 segundos. Mantén ACELERAR (o W) para avanzar · FRENO (o S) · flechas para girar. ¡Cuidado con las rocas!', 'You have 60 seconds. Hold GO (or W) to move · BRAKE (or S) · arrows to steer. Watch out for rocks!')}
           </p>
         </div>
       )}
 
       {/* Recordatorio de controles durante la conducción */}
       {stage === 'drive' && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] [@media(pointer:coarse)]:hidden">
           <p className="rounded-full bg-black/40 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur">
             {tr('W / ↑ acelerar · S / ↓ frenar · A / ← · D / → girar', 'W / ↑ speed up · S / ↓ brake · A / ← · D / → steer')}
           </p>
+        </div>
+      )}
+
+      {/* Mandos táctiles (móvil y ratón): girar a la izquierda, frenar y ACELERAR (hay que mantenerlo pulsado) */}
+      {(stage === 'intro' || stage === 'drive') && !webglFailed && (
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-5 [@media(pointer:fine)]:pb-16">
+          <div className="flex gap-3">
+            <TouchPad dir="left" inputRef={inputRef} label={tr('Girar a la izquierda', 'Steer left')} className="h-20 w-20 sm:h-24 sm:w-24">
+              <ChevronLeft className="h-10 w-10" strokeWidth={2.5} />
+            </TouchPad>
+            <TouchPad dir="right" inputRef={inputRef} label={tr('Girar a la derecha', 'Steer right')} className="h-20 w-20 sm:h-24 sm:w-24">
+              <ChevronRight className="h-10 w-10" strokeWidth={2.5} />
+            </TouchPad>
+          </div>
+          <div className="flex items-end gap-3">
+            <TouchPad dir="down" inputRef={inputRef} label={tr('Frenar', 'Brake')} className="h-16 w-16 sm:h-20 sm:w-20" tone="brake">
+              <span className="flex flex-col items-center text-xs font-black">
+                <Octagon className="h-6 w-6" strokeWidth={2.25} />
+                {tr('FRENO', 'BRAKE')}
+              </span>
+            </TouchPad>
+            <TouchPad dir="up" inputRef={inputRef} label={tr('Acelerar (mantener pulsado)', 'Go (hold)')} className="h-24 w-24 sm:h-28 sm:w-28" tone="go">
+              <span className="flex flex-col items-center text-sm font-black">
+                <ChevronsUp className="h-9 w-9" strokeWidth={2.5} />
+                {tr('ACELERAR', 'GO')}
+              </span>
+            </TouchPad>
+          </div>
         </div>
       )}
 
@@ -1072,5 +1102,64 @@ export default function RoverRescue3D() {
         </div>
       )}
     </div>
+  );
+}
+
+type Dir = 'left' | 'right' | 'up' | 'down';
+
+/**
+ * Botón táctil que mantiene pulsada una dirección mientras el dedo (o el ratón) está encima.
+ * Usa pointer capture para no perder el "soltar" aunque el dedo se deslice fuera del botón.
+ */
+function TouchPad({
+  dir,
+  inputRef,
+  label,
+  className = '',
+  tone = 'steer',
+  children,
+}: {
+  dir: Dir;
+  inputRef: { current: Record<Dir, boolean> };
+  label: string;
+  className?: string;
+  tone?: 'steer' | 'go' | 'brake';
+  children: ReactNode;
+}) {
+  const [pressed, setPressed] = useState(false);
+  const set = (v: boolean) => {
+    inputRef.current[dir] = v;
+    setPressed(v);
+  };
+  const palette =
+    tone === 'go'
+      ? pressed
+        ? 'bg-emerald-500 border-emerald-200'
+        : 'bg-emerald-600/85 border-emerald-300'
+      : tone === 'brake'
+        ? pressed
+          ? 'bg-nasa-red border-red-200'
+          : 'bg-nasa-red/80 border-red-300'
+        : pressed
+          ? 'bg-nasa-blue border-sky-200'
+          : 'bg-slate-900/55 border-white/60';
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      className={`grid shrink-0 touch-none select-none place-items-center rounded-full border-[3px] text-white shadow-xl backdrop-blur transition-transform [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${pressed ? 'scale-95' : ''} ${palette} ${className}`}
+      onPointerDown={(e) => {
+        e.preventDefault();
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        set(true);
+      }}
+      onPointerUp={() => set(false)}
+      onPointerCancel={() => set(false)}
+      onLostPointerCapture={() => set(false)}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {children}
+    </button>
   );
 }
