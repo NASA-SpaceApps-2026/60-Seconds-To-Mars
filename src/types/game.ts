@@ -2,7 +2,7 @@
 // Contrato de tipos de "60 Seconds to Mars: The Solar Storm Protocol"
 // ============================================================
 
-export type GamePhase = 'MENU' | 'MISSION_SELECT' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'GAME_OVER';
+export type GamePhase = 'MENU' | 'MISSION_SELECT' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'ROVER_RESCUE' | 'GAME_OVER';
 
 export type RoomId = 'greenhouse' | 'lab' | 'storage';
 

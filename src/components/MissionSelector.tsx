@@ -1,7 +1,7 @@
 import { useAriaScreenReady } from '../utils/useAriaVoiceState';
 import type { ReactElement } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Check, Gauge, ListChecks, Rocket, ShieldHalf, Star, Wrench, type LucideIcon } from 'lucide-react';
+import { ArrowLeft, Check, Gauge, ListChecks, Rocket, Star, Sun, Wrench, type LucideIcon } from 'lucide-react';
 import { MISSION_DIFFICULTY_META, getMissionProfile, useGameStore } from '../store/useGameStore';
 import type { MissionDifficulty } from '../types/game';
 import { playButtonClick, playToggle, unlockAudio } from '../utils/soundEffects';
@@ -103,7 +103,7 @@ function buildCards(): Record<MissionDifficulty, ModeCard> {
       accent: '#1e5bc6',
       facts: [
         { Icon: ListChecks, text: tr(`Preguntas con ${exp.answerOptions} respuestas`, `Questions with ${exp.answerOptions} answers`) },
-        { Icon: ShieldHalf, text: tr('Más reservas en la base', 'More supplies in the base') },
+        { Icon: Sun, text: tr('Misión de 5 Soles', '5-Sol mission') },
         { Icon: Wrench, text: tr('Pocas averías', 'Few breakdowns') },
       ],
     },
@@ -115,7 +115,7 @@ function buildCards(): Record<MissionDifficulty, ModeCard> {
       accent: '#fc3d21',
       facts: [
         { Icon: ListChecks, text: tr(`Preguntas con ${cmd.answerOptions} respuestas`, `Questions with ${cmd.answerOptions} answers`) },
-        { Icon: ShieldHalf, text: tr('Menos reservas, más radiación', 'Fewer supplies, more radiation') },
+        { Icon: Sun, text: tr('Misión de 10 Soles', '10-Sol mission') },
         { Icon: Wrench, text: tr('Averías frecuentes', 'Frequent breakdowns') },
       ],
     },
@@ -156,7 +156,7 @@ function ModeCredential({ difficulty, selected, onSelect }: { difficulty: Missio
       whileTap={{ scale: 0.97 }}
       animate={selected ? { scale: 1.02 } : { scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className={`group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] bg-white text-left shadow-lg transition-colors ${
+      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[1.75rem] border-[3px] bg-white text-left shadow-lg transition-colors ${
         selected ? 'shadow-[0_18px_40px_-18px_rgba(11,61,145,0.7)]' : 'border-slate-200 hover:border-slate-300'
       }`}
       style={selected ? { borderColor: card.accent } : undefined}
@@ -182,8 +182,8 @@ function ModeCredential({ difficulty, selected, onSelect }: { difficulty: Missio
             </span>
           </span>
           <span className="min-w-0">
-            <span className="font-display block text-[clamp(1.2rem,3.4dvh,1.6rem)] font-black leading-tight tracking-wide text-slate-900">{meta.label}</span>
-            <span className="mt-0.5 block text-[clamp(0.95rem,2.4dvh,1.1rem)] font-bold" style={{ color: card.accent }}>
+            <span className="font-display block whitespace-nowrap text-[clamp(1rem,2.7dvh,1.35rem)] font-black leading-tight tracking-wide text-slate-900">{meta.label}</span>
+            <span className="mt-0.5 block whitespace-nowrap text-[clamp(0.85rem,2dvh,1rem)] font-bold" style={{ color: card.accent }}>
               {card.tagline}
             </span>
             <span className="mt-1.5 block">
@@ -274,14 +274,15 @@ export default function MissionSelector() {
               {t('¿Qué tipo de ', 'What kind of ')}<span className="text-nasa-red">{t('astronauta', 'astronaut')}</span>{t(' eres?', ' are you?')}
             </motion.h1>
             <p className="mx-auto mt-1 max-w-xl text-[clamp(0.95rem,2.4dvh,1.15rem)] font-semibold text-slate-600">
-              {t('Toca una credencial para elegirla. ¡Podrás cambiar de modo en la próxima misión!', 'Tap a credential to choose it. You can switch modes on your next mission!')}
+              {t('Toca un modo para elegirlo. ¡Podrás cambiarlo en la próxima misión!', 'Tap a mode to choose it. You can switch modes on your next mission!')}
             </p>
           </section>
 
-          <section aria-label={t('Modo de juego', 'Game mode')} className="mx-auto mt-[clamp(0.75rem,3dvh,2rem)] grid w-full gap-[clamp(0.9rem,2.5dvh,1.5rem)] pb-4 sm:grid-cols-2">
+          <section aria-label={t('Modo de juego', 'Game mode')} className="mx-auto mt-[clamp(0.75rem,3dvh,2rem)] grid w-full max-w-4xl justify-center gap-[clamp(0.9rem,2.5dvh,1.5rem)] pb-4 sm:grid-cols-2">
             {(Object.keys(MISSION_DIFFICULTY_META) as MissionDifficulty[]).map((difficulty, i) => (
               <motion.div
                 key={difficulty}
+                className="w-full max-w-[26rem] justify-self-center"
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.12, type: 'spring', stiffness: 160, damping: 18 }}

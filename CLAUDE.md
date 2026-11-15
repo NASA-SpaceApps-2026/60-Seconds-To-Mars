@@ -18,7 +18,7 @@ Juego web educativo para niños de **7 a 12 años**, en **español**. Dos fases:
 Filosofía: **ninguna decisión es gratis** (trade-offs de ingeniería). Datos reales de NASA DONKI y NASA OSDR.
 
 ## 2. Stack (no cambiar sin acuerdo del equipo)
-Vite 8 · React 19 · TypeScript 7 (`strict`) · TailwindCSS 4 (`@tailwindcss/vite`) · Framer Motion · lucide-react · canvas-confetti · Zustand 5 · `@google/genai`.
+Vite 8 · React 19 · TypeScript 7 (`strict`) · TailwindCSS 4 (`@tailwindcss/vite`) · Framer Motion · lucide-react · canvas-confetti · Zustand 5 · `@google/genai` · Three.js (solo el rescate 3D final, carga diferida).
 Voz = `window.speechSynthesis` · SFX = Web Audio API. **Cero archivos de audio.**
 
 ## 3. Estructura
@@ -49,7 +49,7 @@ src/
 
 ## 4. Tipos clave (`src/types/game.ts`)
 ```ts
-type GamePhase = 'MENU' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'GAME_OVER';
+type GamePhase = 'MENU' | 'MISSION_SELECT' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'ROVER_RESCUE' | 'GAME_OVER';
 type RoomId = 'greenhouse' | 'lab' | 'storage';
 type ItemId = 'lead_blanket' | 'hydro_recycler' | 'osdr_seeds' | 'lithium_battery' | 'freeze_food_a'
   | 'freeze_food_b' | 'o2_tanks' | 'mag_shield_booster' | 'med_kit' | 'high_gain_antenna'
@@ -104,7 +104,7 @@ type MissionOutcome = 'victory' | 'evacuation';
 | `tickTimer()` | −1 s y avisos de A.R.I.A. en 40/20/10 s |
 | `sealBunker()` | → `PHASE_2_BUNKER`, máquinas ON por defecto |
 | `debugSkipToPhase2()` | Fase 2 con `DEBUG_INVENTORY` (sin botón en pantalla; lo usan las órdenes y `devQa`) |
-| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación (ES / EN): **supervivencia / survival** → base espacial, **final / end** → pantalla final (victoria), **derrota / defeat** → evacuación. También en el panel del robot A.R.I.A. de la base. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
+| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación (ES / EN): **supervivencia / survival** → base espacial, **final / end** → rescate 3D en rover y luego pantalla final (victoria), **derrota / defeat** → evacuación. También en el panel del robot A.R.I.A. de la base. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
 | `toggleMachine`, `useConsumable` | Panel de ingeniería |
 | `loadSolEvent()` | Gemini/fallback, mínimo 700 ms de animación, ignora resultados obsoletos (`requestId`) |
 | `chooseOption(id)` | Aplica opción → `computeSolTick` → `solStage: 'report'` |
@@ -282,3 +282,27 @@ Si cambias una mecánica o un texto visible que aparece en estos documentos, act
 ## 16. Cápsula Orbital: tirada ponderada por rareza
 `pickWeightedPrize(kind)` (`data/salvagePrizes.ts`) con `TIER_WEIGHTS`: Estándar 50 · Avanzado 26 · Prototipo 12 · Legendario 3 (antes era uniforme).
 El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" muestra el % real de cada premio (`prizeOdds`).
+
+## 17. Móvil (< 640 px) en la base y estabilidad de la historia
+- **Base espacial en móvil:** cabecera en 2 filas (SOL + Periscopio solo icono · 5 velocímetros + Ciencia en `grid-cols-6`, grupos con `max-sm:contents`,
+  etiqueta corta `VITAL_META.short` vía `GaugeMeter shortLabel`, sin la palabra "mañana"). Leyenda = fila de 3 botones encima de "Resolver Misión" (a todo el ancho).
+  Robot y bocadillo más pequeños. Terminal de decisión, Sistemas, Periscopio y minijuegos se apilan (`flex-wrap`, columnas sin `min-h-0` en móvil).
+  Comprobado sin desbordamientos a 390×844 en todos los paneles.
+- **Historia sin saltos:** con una historia abierta, `StoryComicModal` bloquea el scroll del documento (`html`/`body` `overflow: hidden`);
+  la Fase 1 entra solo con fundido (nada de `x` en la animación) y `html, body { overflow-x: clip }` en `index.css`.
+  No uses animaciones con desplazamiento lateral en la raíz de una pantalla.
+
+## 17 bis. Rescate final en rover 3D (`RoverRescue3D`)
+- Fase `'ROVER_RESCUE'` (en `GamePhase`): `continueAfterReport` con `pendingOutcome === 'victory'` (último Sol: 5 en Explorador, 10 en Comandante) entra aquí en vez de `GAME_OVER`. La orden "final" también pasa por el rover (y, si ya estás en él, salta al informe); la evacuación va directa a la pantalla final.
+- `finishRoverRescue(bonus)` suma la ciencia (+5 por rescate rápido + 1 por baliza verde), recalcula el rango y pasa a `GAME_OVER`. Lo llaman la llegada (a los 2 s del cartel), "Ver Reporte Final" y "Saltar escena 3D".
+- Three.js 100 % procedural (sin `.glb`): terreno periódico en 2 tramos reciclados, rocas `DodecahedronGeometry`, balizas, base con haz cian (`fog: false`, visible desde lejos), rover con 3 astronautas. Sin Game Over: chocar frena 1,5 s. Controles: flechas / A-D y botones táctiles.
+- Limpieza obligatoria al desmontar: `cancelAnimationFrame`, listeners, `dispose()` de geometrías/materiales/luces, `renderer.dispose()` + `forceContextLoss()`. Si WebGL falla, se muestra un aviso con botón al informe final.
+- QA: `#qa-rover`.
+
+## 18. Despliegue en Cloudflare Pages
+- Proyecto `60-seconds-to-mars` → **https://60-seconds-to-mars.pages.dev** (subdominio gratuito de Pages).
+  Desplegar: `npm run build` y `npx wrangler pages deploy dist --project-name 60-seconds-to-mars --branch main` (desde la raíz, así se suben también `functions/`).
+- **Proxy `/api/gemini`:** solo acepta POST del propio juego (sin `Origin`, con `Origin` ajeno o `Sec-Fetch-Site` distinto de `same-origin` ⇒ 403)
+  y como máximo 20 peticiones por minuto e IP (⇒ 429). El GET no revela si hay clave. La clave vive SOLO como secreto `GEMINI_API_KEY` en Cloudflare.
+- `public/_headers`: cabeceras de seguridad (nosniff, `X-Frame-Options: DENY`, `Permissions-Policy` solo micrófono propio, HSTS).
+- Antes de cada despliegue: `grep -rE "AIza[0-9A-Za-z_-]{20,}" dist` debe salir vacío.

@@ -81,6 +81,7 @@ import {
 /** Compatibilidad: duración de la Fase 1 (trivia contrarreloj). */
 export const PHASE1_SECONDS = QUIZ_SECONDS;
 export const TOTAL_SOLS = 10;
+export const EXPLORER_TOTAL_SOLS = 5;
 export const MIN_LOADING_MS = 700;
 
 /**
@@ -114,6 +115,7 @@ const MISSION_PROFILES: Record<
     radiationMultiplier: number;
     breakdownChance: number;
     quizSeconds: number;
+    totalSols: number;
     /** Respuestas por pregunta en la trivia (fácil: 2, normal: 4). */
     answerOptions: number;
   }
@@ -125,6 +127,7 @@ const MISSION_PROFILES: Record<
     breakdownChance: 0.1,
     quizSeconds: 60,
     answerOptions: 2,
+    totalSols: EXPLORER_TOTAL_SOLS,
   },
   commander: {
     initialVitals: INITIAL_VITALS,
@@ -133,6 +136,7 @@ const MISSION_PROFILES: Record<
     breakdownChance: 0.3,
     quizSeconds: 60,
     answerOptions: 4,
+    totalSols: TOTAL_SOLS,
   },
 };
 
@@ -396,6 +400,7 @@ export type SpinAvailability = Record<SpinKind, { ok: boolean; reason?: string }
 interface GameState {
   gamePhase: GamePhase;
   missionDifficulty: MissionDifficulty;
+  totalSols: number;
 
   // NASA DONKI
   nasaWeather: NASAWeather | null;
@@ -510,7 +515,7 @@ interface GameActions {
   finishQuiz: () => void;
   sealBunker: () => void;
   debugSkipToPhase2: () => void;
-  /** Comandos rápidos de presentación: 'supervivencia', 'final', 'derrota'. Devuelve true si lo reconoce. */
+  /** Comandos rápidos de presentación: '10', 'final', 'derrota'. Devuelve true si lo reconoce. */
   runAriaCommand: (text: string) => boolean;
   /** Termina la partida al instante y lleva a la pantalla final. */
   forceGameOver: (outcome: MissionOutcome) => void;
@@ -525,6 +530,8 @@ interface GameActions {
   loadSolEvent: () => Promise<void>;
   chooseOption: (optionId: string) => void;
   continueAfterReport: () => void;
+  /** Fin del minijuego 3D del rover (victoria): suma el bonus de ciencia y pasa a la pantalla final. */
+  finishRoverRescue: (scienceBonus: number) => void;
 
   loadDebrief: () => Promise<void>;
   closeStory: () => void;
@@ -558,6 +565,7 @@ const phase1Initial = (difficulty: MissionDifficulty = 'explorer') => ({
 
 const phase2Initial = (difficulty: MissionDifficulty = 'explorer') => ({
   sol: 1,
+  totalSols: getMissionProfile(difficulty).totalSols,
   vitals: { ...getMissionProfile(difficulty).initialVitals },
   scienceScore: 0,
   machineStates: {} as Partial<Record<ItemId, boolean>>,
@@ -821,7 +829,26 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     set({ storyScene: null });
   },
 
+  finishRoverRescue: (scienceBonus) => {
+    const s = get();
+    if (s.gamePhase !== 'ROVER_RESCUE') return;
+    const science = s.scienceScore + Math.max(0, Math.round(scienceBonus));
+    const outcome = s.outcome ?? 'victory';
+    set({
+      gamePhase: 'GAME_OVER',
+      scienceScore: science,
+      outcome,
+      rank: computeRank(outcome, science, s.vitals),
+      debrief: null,
+    });
+  },
+
   forceGameOver: (outcome) => {
+    // Ya en el rescate 3D: "final" salta directamente al informe final
+    if (get().gamePhase === 'ROVER_RESCUE' && outcome === 'victory') {
+      get().finishRoverRescue(5);
+      return;
+    }
     // Desde el menú, el selector o la trivia: montar antes una base espacial de demostración
     if (get().gamePhase !== 'PHASE_2_BUNKER') get().debugSkipToPhase2();
     const s = get();
@@ -832,7 +859,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       vitals = { ...vitals, [failedVital]: 0 };
     }
     set((st) => ({
-      gamePhase: 'GAME_OVER',
+      // Victoria: primero el rescate en rover 3D (RoverRescue3D), luego la pantalla final
+      gamePhase: outcome === 'victory' ? 'ROVER_RESCUE' : 'GAME_OVER',
       requestId: st.requestId + 1,
       storyScene: null,
       fieldNote: null,
@@ -852,19 +880,20 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       .toLowerCase()
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z]+/g, ' ')
+      .replace(/[^a-z0-9]+/g, ' ')
       .trim()
       .split(' ');
-    if (words.includes('supervivencia') || words.includes('survival')) {
+    const command = words.join(' ');
+    if (command === '10' || command === 'supervivencia' || command === 'survival') {
       get().debugSkipToPhase2();
-      get().ariaSay(tr('Comando aceptado. Saltamos directamente a la fase de supervivencia en la base espacial.', 'Command accepted. Jumping straight to the survival phase in the space base.'));
+      get().ariaSay(tr('Comando aceptado. Saltamos directamente a los 10 Soles en la base espacial.', 'Command accepted. Jumping straight to the 10-Sol mission in the space base.'));
       return true;
     }
-    if (words.includes('final') || words.includes('end')) {
+    if (command === 'final' || command === 'end') {
       get().forceGameOver('victory');
       return true;
     }
-    if (words.includes('derrota') || words.includes('defeat')) {
+    if (command === 'derrota' || command === 'defeat') {
       get().forceGameOver('evacuation');
       return true;
     }
@@ -1110,7 +1139,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     const [event] = await Promise.all([
       generateDailyMissionEvent({
         sol: s.sol,
-        totalSols: TOTAL_SOLS,
+        totalSols: s.totalSols,
         vitals: s.vitals,
         science: s.scienceScore,
         inventory: availableItems(s.bunkerInventory, s.consumedItems),
@@ -1190,7 +1219,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     };
 
     const failed = findFailedVital(vitals);
-    const pendingOutcome: MissionOutcome | null = failed ? 'evacuation' : s.sol >= TOTAL_SOLS ? 'victory' : null;
+    const pendingOutcome: MissionOutcome | null = failed ? 'evacuation' : s.sol >= s.totalSols ? 'victory' : null;
 
     set({
       vitals,
@@ -1218,7 +1247,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       );
     } else if (pendingOutcome === 'victory') {
       playSuccess();
-      get().ariaSay(`${option.ariaReactionVoice} ${tr(`¡Sol ${TOTAL_SOLS} completado! ¡La tormenta ha pasado!`, `Sol ${TOTAL_SOLS} complete! The storm has passed!`)}`);
+      get().ariaSay(`${option.ariaReactionVoice} ${tr(`¡Sol ${s.totalSols} completado! ¡La tormenta ha pasado!`, `Sol ${s.totalSols} complete! The storm has passed!`)}`);
     } else {
       get().ariaSay(option.ariaReactionVoice + (tick.harvest ? tr(' ¡Y hoy hemos cosechado lechugas!', ' And today we harvested lettuce!') : ''));
     }
@@ -1230,7 +1259,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     if (s.solStage !== 'report') return;
     if (s.pendingOutcome) {
       set({
-        gamePhase: 'GAME_OVER',
+        // Victoria: antes de la pantalla final, el rescate en rover 3D (RoverRescue3D)
+        gamePhase: s.pendingOutcome === 'victory' ? 'ROVER_RESCUE' : 'GAME_OVER',
         outcome: s.pendingOutcome,
         rank: computeRank(s.pendingOutcome, s.scienceScore, s.vitals),
         debrief: null,
@@ -1334,8 +1364,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       outcome: s.outcome,
       rank: s.rank ?? computeRank(s.outcome, s.scienceScore, s.vitals),
       failedVital: s.failedVital,
-      solsSurvived: s.outcome === 'victory' ? TOTAL_SOLS : s.history.length - 1,
-      totalSols: TOTAL_SOLS,
+      solsSurvived: s.outcome === 'victory' ? s.totalSols : s.history.length - 1,
+      totalSols: s.totalSols,
       vitals: s.vitals,
       science: s.scienceScore,
       loadedItems: s.bunkerInventory,

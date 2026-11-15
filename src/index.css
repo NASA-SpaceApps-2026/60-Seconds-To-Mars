@@ -23,6 +23,12 @@ body,
   height: 100%;
 }
 
+/* Ninguna animación lateral puede sacar scroll horizontal (clip no crea contenedor de scroll) */
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   font-family: var(--font-sans);
   color: #0f172a;

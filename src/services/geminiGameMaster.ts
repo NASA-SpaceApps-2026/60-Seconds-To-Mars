@@ -39,7 +39,7 @@ import {
 const PLACEHOLDER_KEYS = ['', 'tu_clave_aqui', 'your_key_here'];
 const rawDevKey = import.meta.env.DEV ? (import.meta.env.VITE_GEMINI_API_KEY ?? '').trim() : '';
 const DEV_KEY = PLACEHOLDER_KEYS.includes(rawDevKey) ? '' : rawDevKey;
-const MODEL = import.meta.env.VITE_GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
+const MODEL = (import.meta.env.VITE_GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL).replace(/\s+/g, '-').toLowerCase();
 const PROXY_URL = '/api/gemini';
 const TIMEOUT_MS = 12000;
 const MAX_FAILURES = 2;
@@ -670,6 +670,111 @@ const VITAL_ADVICE: Record<Exclude<VitalKey, 'crewHealth'>, { items: ItemId[]; t
   },
 };
 
+const SPACE_TOPIC_WORDS = new Set([
+  'agujero',
+  'astronauta',
+  'astronautas',
+  'astronautica',
+  'astronaut',
+  'astronauts',
+  'astronomia',
+  'astronomy',
+  'astrofisica',
+  'astrophysics',
+  'asteroide',
+  'asteroid',
+  'asteroids',
+  'black',
+  'cometa',
+  'comet',
+  'cosmos',
+  'cohete',
+  'cohetes',
+  'rocket',
+  'rockets',
+  'constelacion',
+  'constelaciones',
+  'crater',
+  'eclipse',
+  'espacio',
+  'espacial',
+  'espaciales',
+  'space',
+  'spaceship',
+  'estrella',
+  'estrellas',
+  'star',
+  'stars',
+  'exoplaneta',
+  'exoplanet',
+  'galaxia',
+  'galaxias',
+  'galaxy',
+  'galaxies',
+  'gravedad',
+  'gravity',
+  'hole',
+  'luna',
+  'moon',
+  'marte',
+  'mars',
+  'meteorito',
+  'meteoro',
+  'nasa',
+  'nebulosa',
+  'orbita',
+  'orbit',
+  'planeta',
+  'planetas',
+  'planet',
+  'planets',
+  'pluton',
+  'radiacion',
+  'radiation',
+  'rover',
+  'satelite',
+  'satelites',
+  'satélites',
+  'satellite',
+  'satellites',
+  'solar',
+  'sol',
+  'sun',
+  'sonda',
+  'sondas',
+  'probe',
+  'probes',
+  'telescopio',
+  'telescope',
+  'universo',
+  'universe',
+]);
+
+const MISSION_TOPIC_WORDS = new Set([
+  'ares',
+  'bateria',
+  'bunker',
+  'comida',
+  'escudo',
+  'energia',
+  'engineering',
+  'invernadero',
+  'maquina',
+  'machine',
+  'mission',
+  'mision',
+  'oxigeno',
+  'oxygen',
+  'propulsion',
+  'tripulacion',
+  'crew',
+]);
+
+function isSpaceRelatedQuestion(question: string): boolean {
+  const words = question.split(/[^a-z0-9áéíóúüñ]+/i).filter(Boolean);
+  return words.some((word) => SPACE_TOPIC_WORDS.has(word) || MISSION_TOPIC_WORDS.has(word));
+}
+
 /** Respuesta local coherente con el estado del juego (sin conexión o si falla la API). */
 export function getFallbackAriaAnswer(question: string, gameState: AriaGameState, currentEvent: DailyEvent | null): string {
   const q = normalize(question);
@@ -743,6 +848,12 @@ export async function askAriaQuestion(
 ): Promise<string> {
   const q = safeText(question, '', MAX_QUESTION_CHARS);
   if (!q) return tr('¿Puedes repetir la pregunta con otras palabras? Estoy aquí para ayudarte.', 'Can you ask that again in other words? I am here to help.');
+  if (!isSpaceRelatedQuestion(normalize(q))) {
+    return tr(
+      'Puedo ayudarte con astronomía, el espacio, la NASA y la misión A.R.E.S. Prueba a preguntarme sobre un planeta, una estrella o la base.',
+      'I can help with astronomy, space, NASA, and the A.R.E.S. mission. Try asking about a planet, a star, or the base.',
+    );
+  }
   const fallback = getFallbackAriaAnswer(q, gameState, currentEvent);
   if (!isGeminiActive()) return fallback;
 
