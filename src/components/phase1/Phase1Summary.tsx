@@ -49,7 +49,6 @@ function SupplyCard({ id, index }: { id: ItemId; index: number }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: 0.05 * index }}
       className={`flex min-w-0 flex-col gap-1.5 rounded-lg border-2 bg-white p-2.5 shadow-sm big:gap-2 big:p-4 ${rarity.ring}`}
-      title={`${item.name} · ${rarity.label}\n${item.description}`}
     >
       <div className="flex items-center gap-2">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-slate-200 bg-slate-50 text-nasa-blue big:h-12 big:w-12">
@@ -165,7 +164,7 @@ export default function Phase1Summary() {
               <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">{tr('RANGO DE LA TRIPULACIÓN', 'CREW RANK')}</p>
               <p className="text-lg font-black leading-tight text-slate-900 big:text-2xl">{cadetRank(correct, accuracy)}</p>
               {hasCadet && (
-                <p className="truncate text-xs text-slate-600 big:text-sm" title={tr('Responsable de la carga asegurada', 'In charge of the secured cargo')}>
+                <p className="truncate text-xs text-slate-600 big:text-sm">
                   {tr('Responsable de carga', 'Cargo officer')}: <span className="font-mono font-bold text-nasa-blue">{cadetDisplayName(cadetName)}</span> · {cadetRoleLabel(cadetRole)}
                 </p>
               )}

@@ -225,7 +225,7 @@ export default function SalvageRouletteModal({
                     VITAL_ORDER.map((k) => (
                       <span
                         key={k}
-                        title={VITAL_META[k].label}
+                        aria-label={VITAL_META[k].label}
                         className={`flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono ${
                           vitals[k] < 30 ? 'border-nasa-red bg-nasa-red text-white' : 'border-white/15 bg-white/10 text-white'
                         }`}
@@ -234,7 +234,7 @@ export default function SalvageRouletteModal({
                       </span>
                     ))}
                   {!inPhase1 && (
-                    <span title={tr('Ciencia', 'Science')} className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2 py-1 font-mono text-white">
+                    <span className="flex items-center gap-1.5 rounded-md border border-white/15 bg-white/10 px-2 py-1 font-mono text-white">
                       <ResourceIcon k="science" /> {science}
                     </span>
                   )}
@@ -256,7 +256,6 @@ export default function SalvageRouletteModal({
                       type="button"
                       disabled={spinning}
                       onClick={() => selectKind(k)}
-                      title={a.ok ? SPIN_META[k].description : `${SPIN_META[k].description} · ${a.reason}`}
                       className={`flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-sm font-extrabold transition ${
                         active ? 'border-nasa-red bg-nasa-red/15 text-white' : 'border-white/15 bg-white/5 text-white hover:bg-white/10'
                       } ${!a.ok && !active ? 'opacity-60' : ''}`}

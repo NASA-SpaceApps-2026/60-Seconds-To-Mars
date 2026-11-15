@@ -44,7 +44,6 @@ function CadetBadgeCard() {
             type="button"
             onClick={openModal}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-300 text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
-            title={t('Cambiar credencial', 'Change badge')}
             aria-label={t('Cambiar credencial', 'Change badge')}
           >
             <Pencil className="h-4 w-4" strokeWidth={1.75} />
@@ -56,7 +55,6 @@ function CadetBadgeCard() {
               clearCadetProfile();
             }}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-300 text-slate-600 transition hover:border-nasa-red hover:text-nasa-red"
-            title={t('Borrar credencial', 'Delete badge')}
             aria-label={t('Borrar credencial', 'Delete badge')}
           >
             <Trash2 className="h-4 w-4" strokeWidth={1.75} />

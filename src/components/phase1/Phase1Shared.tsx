@@ -92,7 +92,6 @@ export function RewardChip({ id, highlight = false }: { id: ItemId; highlight?: 
       className={`inline-flex items-center gap-1.5 rounded-lg border-2 bg-white px-2 py-1 text-xs font-extrabold text-slate-800 shadow-sm ${meta.ring} ${
         highlight ? 'ring-2 ring-nasa-blue/40' : ''
       }`}
-      title={`${meta.label} · ${item.description}`}
     >
       <ItemIcon id={id} className="h-4 w-4 text-nasa-blue" />
       {item.shortName}

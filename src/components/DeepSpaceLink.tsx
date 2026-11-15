@@ -53,13 +53,13 @@ export default function DeepSpaceLink({
         <SatelliteDish className="h-5 w-5 text-nasa-blue" strokeWidth={1.75} />
         <h2 className="text-base font-bold text-slate-800">{tr('Enlace Deep Space Network (Tierra)', 'Deep Space Network Link (Earth)')}</h2>
       </div>
-      <p className="mt-0.5 text-sm text-slate-600" title={tr('La luz tarda entre 3 y 22 minutos en viajar entre Marte y la Tierra; un envío orbital tarda días.', 'Light takes 3 to 22 minutes to travel between Mars and Earth; an orbital shipment takes days.')}>
+      <p className="mt-0.5 text-sm text-slate-600">
         {tr('Señal a Houston', 'Signal to Houston')}: ≈ {delay} min · {tr('Envío', 'Shipment')}: {HOUSTON_DELAY_SOLS} {tr('Soles', 'Sols')} · {tr('Coste hoy', 'Cost today')}: −{HOUSTON_COST_POWER} {tr('Energía', 'Power')}
       </p>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p className="font-mono text-xs font-bold tracking-[0.18em] text-nasa-blue">{tr('PEDIR SUMINISTROS', 'ORDER SUPPLIES')}</p>
-        <p className="text-xs font-semibold text-slate-600" title={tr(`Máximo ${HOUSTON_MAX_ORDERS} pedidos por misión y solo ${HOUSTON_MAX_IN_TRANSIT} en camino a la vez`, `Up to ${HOUSTON_MAX_ORDERS} orders per mission and only ${HOUSTON_MAX_IN_TRANSIT} on its way at a time`)}>
+        <p className="text-xs font-semibold text-slate-600">
           {tr('Quedan', 'Left')} <b className="text-nasa-blue">{remaining}/{HOUSTON_MAX_ORDERS}</b> · {tr('En camino', 'On its way')}{' '}
           <b className="text-nasa-blue">{orders.length}/{HOUSTON_MAX_IN_TRANSIT}</b>
         </p>
@@ -73,7 +73,6 @@ export default function DeepSpaceLink({
               key={id}
               type="button"
               disabled={disabled}
-              title={tr(`${pkg.label}: +${pkg.amount}. Llega en ${HOUSTON_DELAY_SOLS} Soles.`, `${pkg.label}: +${pkg.amount}. Arrives in ${HOUSTON_DELAY_SOLS} Sols.`)}
               onClick={() => {
                 const r = order(id);
                 if ('error' in r) {

@@ -273,6 +273,75 @@ function BaseDome({ x, y, beam = false, scale = 1 }: { x: number; y: number; bea
   );
 }
 
+/**
+ * Cohete de Retorno a la Tierra (ERV-1) vertical en su plataforma de lanzamiento, con torre de servicio.
+ * Origen (0,0) = centro de la base de la plataforma. `ramp` dibuja la rampa de embarque hacia la derecha;
+ * `landing` lo hace bajar con la llama encendida; `beam` añade el haz de luz cian de localización.
+ */
+function ReturnRocket({ x, y, scale = 1, beam = false, ramp = false, landing = false }: { x: number; y: number; scale?: number; beam?: boolean; ramp?: boolean; landing?: boolean }) {
+  const body = (
+    <g>
+      {/* Llama (solo al aterrizar) */}
+      {landing && (
+        <motion.path
+          d="M-6 -12 Q0 14 6 -12 Z"
+          fill="#fb923c"
+          animate={{ scaleY: [0.8, 1.25, 0.8], opacity: [0.9, 0.6, 0.9] }}
+          transition={{ duration: 0.25, repeat: Infinity }}
+          style={{ transformOrigin: '0px -12px' }}
+        />
+      )}
+      {/* Tobera */}
+      <path d="M-5 -14 L-7 -8 H7 L5 -14 Z" fill="#334155" />
+      {/* Aletas */}
+      <path d="M-9 -34 L-19 -10 L-9 -16 Z" fill="#fc3d21" stroke="#9a1d0f" strokeWidth={0.8} />
+      <path d="M9 -34 L19 -10 L9 -16 Z" fill="#fc3d21" stroke="#9a1d0f" strokeWidth={0.8} />
+      {/* Cuerpo */}
+      <rect x={-9} y={-82} width={18} height={68} rx={3} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1.2} />
+      <rect x={-9} y={-24} width={18} height={3} fill="#0b3d91" />
+      <rect x={-9} y={-21} width={18} height={2} fill="#fc3d21" />
+      <rect x={-9} y={-74} width={18} height={3} fill="#0b3d91" />
+      {/* Morro */}
+      <path d="M-9 -82 Q-8 -100 0 -110 Q8 -100 9 -82 Z" fill="#f8fafc" stroke="#94a3b8" strokeWidth={1.2} />
+      <path d="M-3 -104 Q0 -109 3 -104 Z" fill="#fc3d21" />
+      {/* Ojo de buey y escotilla iluminada */}
+      <circle cx={0} cy={-62} r={3.6} fill="#67e8f9" stroke="#0b3d91" strokeWidth={1.2} />
+      <rect x={-4} y={-42} width={8} height={11} rx={1.5} fill="#cffafe" stroke="#0b3d91" strokeWidth={1} />
+      <text x={0} y={-48} textAnchor="middle" fontSize={5.5} fontWeight={800} fill="#0b3d91" fontFamily="ui-monospace, monospace">
+        ERV-1
+      </text>
+    </g>
+  );
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      {beam && (
+        <motion.rect x={-4} y={-320} width={8} height={210} fill="#67e8f9" animate={{ opacity: [0.3, 0.75, 0.3] }} transition={{ duration: 1.6, repeat: Infinity }} />
+      )}
+      {/* Torre de servicio */}
+      <g>
+        <rect x={-30} y={-104} width={3} height={98} fill="#b91c1c" />
+        <rect x={-22} y={-104} width={3} height={98} fill="#b91c1c" />
+        {Array.from({ length: 8 }).map((_, i) => (
+          <line key={i} x1={-28.5} y1={-98 + i * 12} x2={-20.5} y2={-92 + i * 12} stroke="#b91c1c" strokeWidth={1.2} />
+        ))}
+        <rect x={-20} y={-70} width={11} height={2.5} fill="#64748b" />
+        <motion.circle cx={-25} cy={-107} r={2.2} fill="#fc3d21" animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 1, repeat: Infinity }} />
+      </g>
+      {/* Plataforma de lanzamiento */}
+      <rect x={-34} y={-8} width={68} height={8} rx={2} fill="#64748b" stroke="#334155" strokeWidth={1} />
+      <rect x={-34} y={-8} width={68} height={2} fill="#facc15" />
+      {ramp && <path d="M4 -33 L44 -2 L52 -2 L10 -33 Z" fill="#94a3b8" stroke="#22d3ee" strokeWidth={1.2} />}
+      {landing ? (
+        <motion.g initial={{ y: -90 }} animate={{ y: 0 }} transition={{ duration: 2.6, ease: 'easeOut' }}>
+          {body}
+        </motion.g>
+      ) : (
+        body
+      )}
+    </g>
+  );
+}
+
 /** Rover de rescate con 3 cascos a bordo. */
 function RescueRover({ helmets }: { helmets: string[] }) {
   return (
@@ -295,25 +364,20 @@ function RescueRover({ helmets }: { helmets: string[] }) {
   );
 }
 
-/** Rescate · viñeta 1: el equipo de astronautas regresa hacia la base. */
+/** Rescate · viñeta 1: el Cohete de Retorno aterriza en su plataforma, cerca de la base Ares-IV. */
 function ArtRescueReturn() {
   return (
     <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
       <MarsSky />
-      <circle cx={60} cy={40} r={14} fill="#fef3c7" opacity={0.8} />
-      <BaseDome x={262} y={128} />
-      <motion.g initial={{ x: -40 }} animate={{ x: 60 }} transition={{ duration: 3, ease: 'easeOut' }}>
-        <ellipse cx={60} cy={146} rx={44} ry={6} fill="#fdba74" opacity={0.6} />
-        <g transform="translate(30 118)">
-          <RescueRover helmets={['#fc3d21', '#0b3d91', '#0b3d91']} />
-        </g>
-      </motion.g>
-      <text x={300} y={190} textAnchor="end" fontSize={10} fontWeight={800} fill="#fff7ed" fontFamily="ui-monospace, monospace">ROVER-1 → ARES-IV</text>
+      <circle cx={46} cy={36} r={14} fill="#fef3c7" opacity={0.8} />
+      <BaseDome x={74} y={146} scale={0.7} />
+      <ReturnRocket x={230} y={168} scale={1.05} landing />
+      <text x={310} y={192} textAnchor="end" fontSize={10} fontWeight={800} fill="#fff7ed" fontFamily="ui-monospace, monospace">ERV-1 · ATERRIZAJE</text>
     </svg>
   );
 }
 
-/** Rescate · viñeta 2: los cadetes cogen el rover; ruta con rocas hasta Ares-IV. */
+/** Rescate · viñeta 2: los cadetes cogen el rover; ruta con rocas hasta el cohete de retorno. */
 function ArtRescueDrive() {
   return (
     <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
@@ -326,7 +390,7 @@ function ArtRescueDrive() {
       ].map(([x, y], i) => (
         <circle key={i} cx={x} cy={y} r={1.2} fill="#ffffff" />
       ))}
-      <BaseDome x={262} y={118} beam scale={0.7} />
+      <ReturnRocket x={262} y={124} beam scale={0.62} />
       {/* Camino con rocas y una baliza verde */}
       <path d="M0 190 Q120 150 240 120" stroke="#fdba74" strokeWidth={10} fill="none" opacity={0.5} strokeDasharray="14 10" />
       {[
@@ -344,18 +408,18 @@ function ArtRescueDrive() {
       </motion.g>
       <rect x={8} y={8} width={96} height={22} rx={4} fill="#020617" opacity={0.85} />
       <text x={56} y={23} textAnchor="middle" fontSize={10} fontWeight={800} fill="#86efac" fontFamily="ui-monospace, monospace">
-        ARES-IV · 800 M
+        ERV-1 · 800 M
       </text>
     </svg>
   );
 }
 
-/** Rescate completado: cadetes y equipo de rescate juntos ante la base. */
+/** Rescate completado: los cadetes llegan al cohete y suben por la rampa con el equipo de rescate. */
 function ArtRescueComplete() {
   return (
     <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
       <MarsSky />
-      <BaseDome x={160} y={118} beam />
+      <ReturnRocket x={196} y={176} scale={1.25} ramp />
       {/* Estrellas de celebración */}
       {[
         [40, 40, '#facc15'],
@@ -372,27 +436,29 @@ function ArtRescueComplete() {
           style={{ transformOrigin: `${x}px ${y}px` }}
         />
       ))}
-      <g transform="translate(232 150)">
-        <RescueRover helmets={['#fc3d21', '#0b3d91', '#0b3d91']} />
+      {/* El rover aparcado junto a la plataforma */}
+      <g transform="translate(20 152)">
+        <RescueRover helmets={['#0b3d91', '#0b3d91', '#0b3d91']} />
       </g>
-      <Cadet x={70} y={150} color={CREW_COLORS.leo} mood="brave" scale={0.8} />
-      <Cadet x={110} y={146} color={CREW_COLORS.vega} mood="brave" scale={0.8} />
-      <Cadet x={150} y={150} color={CREW_COLORS.max} mood="brave" scale={0.8} />
-      <Cadet x={198} y={146} color="#fc3d21" mood="brave" scale={0.85} />
-      <rect x={96} y={182} width={128} height={16} rx={4} fill="#020617" opacity={0.85} />
-      <text x={160} y={194} textAnchor="middle" fontSize={9} fontWeight={800} fill="#86efac" fontFamily="ui-monospace, monospace">
-        MISIÓN CUMPLIDA
+      {/* Cadetes subiendo por la rampa y la astronauta de rescate en la escotilla */}
+      <Cadet x={196} y={122} color="#fc3d21" mood="brave" scale={0.28} />
+      <Cadet x={219} y={132} color={CREW_COLORS.max} mood="brave" scale={0.32} />
+      <Cadet x={234} y={143} color={CREW_COLORS.vega} mood="brave" scale={0.32} />
+      <Cadet x={249} y={155} color={CREW_COLORS.leo} mood="brave" scale={0.32} />
+      <rect x={70} y={182} width={150} height={16} rx={4} fill="#020617" opacity={0.85} />
+      <text x={145} y={194} textAnchor="middle" fontSize={9} fontWeight={800} fill="#86efac" fontFamily="ui-monospace, monospace">
+        RUMBO A LA TIERRA
       </text>
     </svg>
   );
 }
 
-/** Rescate fallido: el rover parado en el camino (averiado o sin tiempo) y la base a lo lejos. */
+/** Rescate fallido: el rover parado en el camino (averiado o sin tiempo) y el cohete de retorno a lo lejos. */
 function ArtRescueFailed({ destroyed }: { destroyed: boolean }) {
   return (
     <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
       <MarsSky dusk />
-      <BaseDome x={270} y={118} beam scale={0.6} />
+      <ReturnRocket x={270} y={124} beam scale={0.55} />
       <g transform="translate(70 150) rotate(-6)">
         <RescueRover helmets={[CREW_COLORS.leo, CREW_COLORS.vega, CREW_COLORS.max]} />
       </g>
@@ -495,7 +561,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             extra: (
               <div className="flex flex-wrap gap-1.5">
                 {inventory.slice(0, 12).map((id) => (
-                  <span key={id} title={ITEMS_BY_ID[id].name} className="grid h-8 w-8 place-items-center rounded-md border border-slate-300 bg-white text-nasa-blue">
+                  <span key={id} role="img" aria-label={ITEMS_BY_ID[id].name} className="grid h-8 w-8 place-items-center rounded-md border border-slate-300 bg-white text-nasa-blue">
                     <ItemIcon id={id} className="h-5 w-5" />
                   </span>
                 ))}
@@ -566,8 +632,8 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtRescueReturn />,
             speaker: 'A.R.I.A.',
             text: tr(
-              '¡Lo habéis conseguido! Habéis sobrevivido a todos los soles en Marte. El equipo de astronautas que os dejó en la base está regresando para rescataros. ¡Vuestra aventura está a punto de terminar!',
-              'You did it! You survived every sol on Mars. The team of astronauts who left you at the base is coming back to rescue you. Your adventure is about to end!',
+              '¡Lo habéis conseguido! Habéis sobrevivido a todos los soles en Marte. El equipo de rescate acaba de aterrizar el Cohete de Retorno ERV-1 en una plataforma a 800 metros de la base. ¡Ese cohete os llevará sanos y salvos de vuelta a la Tierra!',
+              'You did it! You survived every sol on Mars. The rescue team has just landed the ERV-1 Return Rocket on a launch pad 800 meters from the base. That rocket will take you safely back to Earth!',
             ),
             sound: playIncoming,
           },
@@ -575,8 +641,8 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtRescueDrive />,
             speaker: tr('Cmdte. Elena', 'Cmdr. Elena'),
             text: tr(
-              '¡Rápido! Coged el rover y conducid hasta la base ARES-IV. Vuestros compañeros os están esperando. Esquivad las rocas y atravesad el terreno marciano para llegar hasta ellos. ¡El rescate depende de vosotros!',
-              'Quick! Take the rover and drive to the ARES-IV base. Your teammates are waiting for you. Dodge the rocks and cross the Martian terrain to reach them. The rescue depends on you!',
+              '¡Rápido! Coged el rover y conducid hasta el Cohete de Retorno. Os esperamos en la plataforma de lanzamiento para despegar rumbo a la Tierra. Esquivad las rocas y atravesad el terreno marciano. ¡El rescate depende de vosotros!',
+              'Quick! Take the rover and drive to the Return Rocket. We are waiting for you on the launch pad to lift off for Earth. Dodge the rocks and cross the Martian terrain. The rescue depends on you!',
             ),
             sound: playIncoming,
           },
@@ -584,14 +650,14 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
       };
     case 'rescue_complete':
       return {
-        title: tr('Rescate completado · Base Ares-IV', 'Rescue complete · Ares-IV Base'),
+        title: tr('Rescate completado · Rumbo a la Tierra', 'Rescue complete · Heading to Earth'),
         panels: [
           {
             art: <ArtRescueComplete />,
             speaker: tr('Narrador', 'Narrator'),
             text: tr(
-              '¡Lo habéis conseguido! Habéis llegado sanos y salvos a la base ARES-IV. El equipo de rescate ha conseguido reunirse con vosotros y todos los cadetes están a salvo. ¡Habéis sobrevivido a Marte y completado vuestra misión con éxito!',
-              'You did it! You reached the ARES-IV base safe and sound. The rescue team has joined you and every cadet is safe. You survived Mars and completed your mission successfully!',
+              '¡Lo habéis conseguido! Habéis llegado sanos y salvos al Cohete de Retorno. El equipo de rescate os recibe a bordo y todos los cadetes están a salvo. Despegue en 3, 2, 1... ¡rumbo a la Tierra! Habéis sobrevivido a Marte y completado vuestra misión con éxito.',
+              'You did it! You reached the Return Rocket safe and sound. The rescue team welcomes you aboard and every cadet is safe. Liftoff in 3, 2, 1... heading back to Earth! You survived Mars and completed your mission successfully.',
             ),
             sound: playSuccess,
           },
@@ -607,12 +673,12 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             speaker: tr('Cmdte. Elena', 'Cmdr. Elena'),
             text: destroyed
               ? tr(
-                  '¡Oh, no! El rover ha chocado con demasiadas rocas y se ha averiado antes de llegar a ARES-IV. El rescate ha fallado, pero tranquilos: hemos ido a buscaros a pie con los trajes y todos estáis a salvo. ¡Sobrevivisteis a todos los soles!',
-                  'Oh no! The rover hit too many rocks and broke down before reaching ARES-IV. The rescue failed, but don\'t worry: we walked out in our suits to get you and everyone is safe. You survived every sol!',
+                  '¡Oh, no! El rover ha chocado con demasiadas rocas y se ha averiado antes de llegar al cohete. El rescate ha fallado, pero tranquilos: hemos ido a buscaros a pie con los trajes, os hemos llevado al Cohete de Retorno y volvéis todos a salvo a la Tierra. ¡Sobrevivisteis a todos los soles!',
+                  'Oh no! The rover hit too many rocks and broke down before reaching the rocket. The rescue failed, but don\'t worry: we walked out in our suits, brought you to the Return Rocket and everyone is flying safely back to Earth. You survived every sol!',
                 )
               : tr(
-                  '¡Se acabó el tiempo! No habéis llegado a ARES-IV en 60 segundos. El rescate ha fallado, pero tranquilos: hemos seguido la señal del rover y todos estáis a salvo. ¡Sobrevivisteis a todos los soles!',
-                  'Time is up! You did not reach ARES-IV within 60 seconds. The rescue failed, but don\'t worry: we followed the rover\'s signal and everyone is safe. You survived every sol!',
+                  '¡Se acabó el tiempo! No habéis llegado al cohete en 60 segundos. El rescate ha fallado, pero tranquilos: hemos seguido la señal del rover, os hemos llevado al Cohete de Retorno y volvéis todos a salvo a la Tierra. ¡Sobrevivisteis a todos los soles!',
+                  'Time is up! You did not reach the rocket within 60 seconds. The rescue failed, but don\'t worry: we followed the rover\'s signal, brought you to the Return Rocket and everyone is flying safely back to Earth. You survived every sol!',
                 ),
             sound: playIncoming,
           },

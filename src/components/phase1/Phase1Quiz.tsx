@@ -237,13 +237,11 @@ export default function Phase1Quiz() {
                     </span>
                     <span
                       className="flex items-center gap-1 rounded-full border-2 border-emerald-300 bg-emerald-50 px-3.5 py-1 text-sm font-bold text-emerald-700"
-                      title={tr('Aciertos', 'Right answers')}
                     >
                       <Check className="h-4 w-4" strokeWidth={3} /> {correctCount}
                     </span>
                     <span
                       className="flex items-center gap-1 rounded-full border-2 border-red-300 bg-red-50 px-3.5 py-1 text-sm font-bold text-nasa-red"
-                      title={tr('Fallos', 'Wrong answers')}
                     >
                       <X className="h-4 w-4" strokeWidth={3} /> {wrongCount}
                     </span>
@@ -258,7 +256,6 @@ export default function Phase1Quiz() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           className={`flex items-center gap-2 text-lg font-bold ${result.correct ? 'text-nasa-blue' : 'text-slate-600'}`}
-                          title={q.fact}
                         >
                           {reward && <ItemIcon id={reward.id} className="h-7 w-7" />}
                           {result.correct
@@ -350,7 +347,6 @@ export default function Phase1Quiz() {
                           animate={{ scale: 1 }}
                           transition={{ type: 'spring', delay: 0.55 }}
                           className={`flex items-center gap-1 rounded-md border-2 bg-white px-1.5 py-0.5 text-xs font-bold text-slate-800 ${RARITY_META[ITEMS_BY_ID[id].rarity].ring}`}
-                          title={`${ITEMS_BY_ID[id].name} · ${RARITY_META[ITEMS_BY_ID[id].rarity].label}`}
                         >
                           <ItemIcon id={id} className="h-4 w-4 text-nasa-blue" />
                           {ITEMS_BY_ID[id].shortName}
