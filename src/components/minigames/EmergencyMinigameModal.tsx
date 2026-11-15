@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Cable, CircleCheck, Crosshair, Dices, Droplets, Radio, SatelliteDish, SunMedium, Timer, TriangleExclamationPoint, Wrench } from 'lucide-react';
+import { ArrowLeft, Cable, CircleCheck, Crosshair, Dices, Droplets, Radio, SatelliteDish, SunMedium, Timer, TriangleExclamationPoint, Wrench } from 'lucide-react';
 import { DebrisGame, LeakGame } from './QuickGames';
 import type { MinigameKind } from '../../types/game';
 import { MINIGAME_META, debrisFact, dustFact, leakFact } from '../../data/missionExtras';
@@ -387,14 +387,28 @@ interface Props {
   onResult: (success: boolean) => void;
   /** "Cambiar prueba": otro de los 5 minijuegos si el niño se atasca (sin penalización). */
   onSwitch?: () => void;
+  /** Cierra el minijuego sin resolver la avería. */
+  onExit?: () => void;
 }
 
 /** Minijuegos de emergencia: si lo superas a tiempo, la crisis no ocurre. */
-export default function EmergencyMinigameModal({ kind, stakes, onResult, onSwitch }: Props) {
-  return <AnimatePresence>{kind && <MinigameCard key={kind} kind={kind} stakes={stakes} onResult={onResult} onSwitch={onSwitch} />}</AnimatePresence>;
+export default function EmergencyMinigameModal({ kind, stakes, onResult, onSwitch, onExit }: Props) {
+  return <AnimatePresence>{kind && <MinigameCard key={kind} kind={kind} stakes={stakes} onResult={onResult} onSwitch={onSwitch} onExit={onExit} />}</AnimatePresence>;
 }
 
-function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind; stakes: string; onResult: (success: boolean) => void; onSwitch?: () => void }) {
+function MinigameCard({
+  kind,
+  stakes,
+  onResult,
+  onSwitch,
+  onExit,
+}: {
+  kind: MinigameKind;
+  stakes: string;
+  onResult: (success: boolean) => void;
+  onSwitch?: () => void;
+  onExit?: () => void;
+}) {
   const meta = MINIGAME_META[kind];
   const Icon = KIND_ICON[kind];
   const telemetry = useTelemetryLine(kind);
@@ -448,22 +462,24 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
             <h2 className="font-display text-lg font-black leading-tight text-nasa-blue sm:text-2xl">{meta.title}</h2>
             <p className="text-sm font-semibold text-slate-600">{stakes}</p>
           </div>
-          {onSwitch && !done && (
-            <button
-              type="button"
-              onClick={() => {
-                playButtonClick();
-                onSwitch();
-              }}
-              className="flex shrink-0 items-center justify-center gap-1.5 self-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue max-sm:order-last max-sm:w-full"
-              title={tr('Prueba otro de los 5 minijuegos', 'Try another of the 5 mini-games')}
-            >
-              <Dices className="h-4 w-4" strokeWidth={1.75} /> {tr('Cambiar prueba', 'Switch test')}
-            </button>
-          )}
-          <div className={`font-display shrink-0 rounded-xl border-2 px-3 py-1 text-center sm:px-4 ${pct < 35 && phase === 'play' ? 'border-nasa-red text-nasa-red' : 'border-nasa-blue text-nasa-blue'}`}>
-            <Timer className="mx-auto h-4 w-4" />
-            <span className="text-2xl font-black tabular-nums sm:text-3xl">{(left / 1000).toFixed(1)}</span>
+          <div className="flex shrink-0 items-start gap-2">
+            {onSwitch && !done && (
+              <button
+                type="button"
+                onClick={() => {
+                  playButtonClick();
+                  onSwitch();
+                }}
+                className="flex shrink-0 items-center justify-center gap-1.5 self-start whitespace-nowrap rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue sm:px-3 sm:text-sm"
+                title={tr('Prueba otro de los 5 minijuegos', 'Try another of the 5 mini-games')}
+              >
+                <Dices className="h-4 w-4" strokeWidth={1.75} /> {tr('Cambiar prueba', 'Switch test')}
+              </button>
+            )}
+            <div className={`font-display w-20 shrink-0 rounded-xl border-2 px-3 py-1 text-center sm:w-24 sm:px-4 ${pct < 35 && phase === 'play' ? 'border-nasa-red text-nasa-red' : 'border-nasa-blue text-nasa-blue'}`}>
+              <Timer className="mx-auto h-4 w-4" />
+              <span className="text-2xl font-black tabular-nums sm:text-3xl">{(left / 1000).toFixed(1)}</span>
+            </div>
           </div>
         </div>
 
@@ -539,6 +555,20 @@ function MinigameCard({ kind, stakes, onResult, onSwitch }: { kind: MinigameKind
             </motion.div>
           )}
         </AnimatePresence>
+        {onExit && (
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                playButtonClick();
+                onExit();
+              }}
+              className="font-display flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
+            >
+              <ArrowLeft className="h-4 w-4" strokeWidth={1.75} /> {tr('Volver', 'Back')}
+            </button>
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
