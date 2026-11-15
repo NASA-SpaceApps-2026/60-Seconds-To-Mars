@@ -356,6 +356,8 @@ export default function Phase2Bunker() {
   const drawer = activeOverlay === 'systems' || activeOverlay === 'houston' ? activeOverlay : null;
   const terminalOpen = activeOverlay === 'decision';
   const houstonCrates = useGameStore((s) => s.houstonCrates);
+  const cadetName = useGameStore((s) => s.cadetName);
+  const cadetPhoto = useGameStore((s) => s.cadetPhoto);
   const houstonOrders = useGameStore((s) => s.houstonOrders);
   const houstonOrderedSol = useGameStore((s) => s.houstonOrderedSol);
   const houstonOrdersPlaced = useGameStore((s) => s.houstonOrdersPlaced);
@@ -530,6 +532,8 @@ export default function Phase2Bunker() {
             houstonArrived={houstonCrates > 0}
             onHabitatClick={() => openOverlay('systems')}
             onAntennaClick={() => openOverlay('houston')}
+            cadetName={cadetName}
+            cadetPhoto={cadetPhoto}
           />
         </div>
 

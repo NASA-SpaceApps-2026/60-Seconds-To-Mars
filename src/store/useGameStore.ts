@@ -60,6 +60,34 @@ import {
 import { ariaVoice, type VoiceMode } from '../utils/ariaVoice';
 import { getLang, localizeRecord, setLangCore, tr, type Lang } from '../i18n/core';
 
+// ---- Credencial de Cadete (foto de la webcam + nombre + puesto). 100 % local: solo vive en este navegador. ----
+const CADET_STORAGE_KEY = 'ares-iv-cadet-v1';
+export const DEFAULT_CADET_ROLE = 'Especialista de Misión';
+function loadCadetProfile(): { cadetPhoto: string | null; cadetName: string; cadetRole: string } {
+  try {
+    const raw = localStorage.getItem(CADET_STORAGE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw) as { photo?: unknown; name?: unknown; role?: unknown };
+      return {
+        cadetPhoto: typeof p.photo === 'string' && p.photo.startsWith('data:image/') ? p.photo : null,
+        cadetName: typeof p.name === 'string' ? p.name.slice(0, 14) : '',
+        cadetRole: typeof p.role === 'string' && p.role ? p.role.slice(0, 40) : DEFAULT_CADET_ROLE,
+      };
+    }
+  } catch {
+    /* almacenamiento bloqueado: perfil vacío */
+  }
+  return { cadetPhoto: null, cadetName: '', cadetRole: DEFAULT_CADET_ROLE };
+}
+function saveCadetProfile(photo: string | null, name: string, role: string) {
+  try {
+    if (!photo && !name) localStorage.removeItem(CADET_STORAGE_KEY);
+    else localStorage.setItem(CADET_STORAGE_KEY, JSON.stringify({ photo, name, role }));
+  } catch {
+    /* sin almacenamiento: el perfil dura solo esta sesión */
+  }
+}
+
 const ARIA_GREETING = {
   es: 'Hola, soy A.R.I.A., la inteligencia de a bordo. ¡Estoy lista para ayudarte!',
   en: "Hi, I'm A.R.I.A., the onboard intelligence. I'm ready to help you!",
@@ -423,6 +451,11 @@ interface GameState {
   voiceMuted: boolean;
   ariaMessage: string;
 
+  // Credencial de Cadete (se conserva al reiniciar partida)
+  cadetPhoto: string | null;
+  cadetName: string;
+  cadetRole: string;
+
   // Fase 1: trivia contrarreloj
   phase1Stage: Phase1Stage;
   quizQueue: TriviaQuestion[];
@@ -502,6 +535,9 @@ interface GameActions {
   setVoiceMode: (mode: VoiceMode) => void;
   /** Cambia el idioma de todo el juego (ES / EN) en tiempo real. */
   setLanguage: (language: Lang) => void;
+  /** Guarda la credencial del cadete (foto local en dataURL, nombre y puesto). */
+  setCadetProfile: (photo: string | null, name: string, role?: string) => void;
+  clearCadetProfile: () => void;
 
   // Fase 1
   enterMissionSelector: () => void;
@@ -621,6 +657,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   requestId: 0,
   storyScene: null,
   badges: [],
+  ...loadCadetProfile(),
   ...phase1Initial('explorer'),
   ...phase2Initial('explorer'),
   ...gameOverInitial(),
@@ -685,6 +722,21 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     get().ariaSay(tr('Idioma cambiado a español.', 'Language switched to English.'));
   },
 
+  setCadetProfile: (photo, name, role) => {
+    const cadetName = name.trim().slice(0, 14);
+    const cadetRole = (role ?? get().cadetRole).trim() || DEFAULT_CADET_ROLE;
+    saveCadetProfile(photo, cadetName, cadetRole);
+    set({ cadetPhoto: photo, cadetName, cadetRole });
+    if (cadetName)
+      get().ariaSay(
+        tr(`¡Credencial registrada! Bienvenido a bordo, Cadete ${cadetName.toUpperCase()}.`, `Badge registered! Welcome aboard, Cadet ${cadetName.toUpperCase()}.`),
+      );
+  },
+  clearCadetProfile: () => {
+    saveCadetProfile(null, '', DEFAULT_CADET_ROLE);
+    set({ cadetPhoto: null, cadetName: '', cadetRole: DEFAULT_CADET_ROLE });
+  },
+
   // ---------------- FASE 1: TRIVIA CONTRARRELOJ ----------------
   setMissionDifficulty: (missionDifficulty) => {
     if (get().gamePhase !== 'MENU' && get().gamePhase !== 'MISSION_SELECT') return;
@@ -710,10 +762,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }));
     playAlarmBeep();
     const w = get().nasaWeather;
+    const cadet = get().cadetName.toUpperCase();
     get().ariaSay(
       tr(
-        `¡Alerta! NASA DONKI detecta una tormenta solar${w ? ` de clase ${w.flareClass}` : ''}. Tienes 60 segundos para responder preguntas: ¡cada acierto manda equipo a la base espacial!`,
-        `Alert! NASA DONKI detects a solar storm${w ? ` of class ${w.flareClass}` : ''}. You have 60 seconds to answer questions: every right answer sends equipment to the space base!`,
+        `${cadet ? `¡Atención, Cadete ${cadet}! ` : ''}¡Alerta! NASA DONKI detecta una tormenta solar${w ? ` de clase ${w.flareClass}` : ''}. Tienes 60 segundos para responder preguntas: ¡cada acierto manda equipo a la base espacial!`,
+        `${cadet ? `Attention, Cadet ${cadet}! ` : ''}Alert! NASA DONKI detects a solar storm${w ? ` of class ${w.flareClass}` : ''}. You have 60 seconds to answer questions: every right answer sends equipment to the space base!`,
       ),
     );
   },

@@ -55,6 +55,9 @@ interface Props {
   onHabitatClick?: () => void;
   /** Clic en la antena del tejado → Enlace Houston. */
   onAntennaClick?: () => void;
+  /** Credencial de Cadete: sustituye al 3.er tripulante (Max) por el jugador. */
+  cadetName?: string;
+  cadetPhoto?: string | null;
 }
 
 const CREW = [
@@ -181,6 +184,7 @@ function Astronaut({
   mood,
   shiver,
   showStatus = true,
+  photo = null,
 }: {
   cx: number;
   skin: string;
@@ -190,6 +194,8 @@ function Astronaut({
   mood: Mood;
   shiver: boolean;
   showStatus?: boolean;
+  /** Foto del cadete (dataURL local) encajada en el visor del casco. */
+  photo?: string | null;
 }) {
   const hy = 112; // centro del casco
   const faceTint = mood === 'dizzy' ? '#93c5fd' : skin;
@@ -227,10 +233,26 @@ function Astronaut({
         <rect x={cx - 3} y={hy - 34} width={6} height={8} rx={2} fill="#94a3b8" />
         <circle cx={cx} cy={hy - 35} r={2.5} fill={accent} />
         <ellipse cx={cx} cy={hy + 1} rx={20} ry={18} fill="#0c4a6e" />
-        {/* Cara */}
-        <circle cx={cx} cy={hy + 3} r={14} fill={faceTint} />
-        <path d={`M${cx - 14} ${hy} Q${cx - 12} ${hy - 14} ${cx} ${hy - 13} Q${cx + 13} ${hy - 14} ${cx + 14} ${hy - 1} Q${cx + 6} ${hy - 9} ${cx - 14} ${hy}`} fill={hair} />
-        <Face cx={cx} cy={hy + 4} mood={mood} />
+        {photo ? (
+          /* Cara real del cadete dentro del visor (foto local, nunca sale del navegador) */
+          <g>
+            <defs>
+              <clipPath id="cadet-visor-clip">
+                <ellipse cx={cx} cy={hy + 1} rx={19} ry={17} />
+              </clipPath>
+            </defs>
+            <image href={photo} x={cx - 19} y={hy - 17} width={38} height={38} preserveAspectRatio="xMidYMid slice" clipPath="url(#cadet-visor-clip)" />
+            {mood === 'dizzy' && <ellipse cx={cx} cy={hy + 1} rx={19} ry={17} fill="#93c5fd" opacity={0.3} />}
+            <ellipse cx={cx} cy={hy + 1} rx={19} ry={17} fill="#0ea5e9" opacity={0.12} />
+          </g>
+        ) : (
+          <>
+            {/* Cara */}
+            <circle cx={cx} cy={hy + 3} r={14} fill={faceTint} />
+            <path d={`M${cx - 14} ${hy} Q${cx - 12} ${hy - 14} ${cx} ${hy - 13} Q${cx + 13} ${hy - 14} ${cx + 14} ${hy - 1} Q${cx + 6} ${hy - 9} ${cx - 14} ${hy}`} fill={hair} />
+            <Face cx={cx} cy={hy + 4} mood={mood} />
+          </>
+        )}
         {/* Brillo del visor */}
         <path d={`M${cx - 15} ${hy - 6} Q${cx - 13} ${hy - 15} ${cx - 4} ${hy - 16}`} stroke="#ffffff" strokeWidth={2.5} fill="none" opacity={0.55} strokeLinecap="round" />
       </motion.g>
@@ -352,7 +374,13 @@ export default function BunkerDiorama({
   houstonArrived = false,
   onHabitatClick,
   onAntennaClick,
+  cadetName = '',
+  cadetPhoto = null,
 }: Props) {
+  // El 3.er puesto (Max) pasa a ser el cadete si tiene credencial; siempre 3 astronautas
+  const crew = CREW.map((c, i) =>
+    i === 2 && (cadetName || cadetPhoto) ? { ...c, name: (cadetName || tr('Cadete', 'Cadet')).toUpperCase(), role: c.role, photo: cadetPhoto } : { ...c, name: c.name, role: c.role, photo: null as string | null },
+  );
   const storm = radiationLevel === 'high' || radiationLevel === 'extreme';
   const alarm = storm || vitals.shield < 35;
   const lowPower = vitals.power < 30;
@@ -363,7 +391,7 @@ export default function BunkerDiorama({
   const machines = visible.filter((id) => ITEMS_BY_ID[id].kind === 'machine');
   const activeIcons = machines.slice(0, 8);
 
-  const summary = `${tr('Hábitat Ares-IV en el Cráter Jezero', 'Ares-IV habitat in Jezero Crater')}: ${CREW.map((c, i) => `${c.name} ${MOOD_LABEL[moods[i]]}`).join(', ')}.${lowPower ? tr(' Luces en modo ahorro.', ' Lights in power-saving mode.') : ''}${alarm ? tr(' Alarma de radiación activa.', ' Radiation alarm on.') : ''}${needsRepair ? tr(' Hay una avería en el hábitat.', ' There is a breakdown in the habitat.') : ''}`;
+  const summary = `${tr('Hábitat Ares-IV en el Cráter Jezero', 'Ares-IV habitat in Jezero Crater')}: ${crew.map((c, i) => `${c.name} ${MOOD_LABEL[moods[i]]}`).join(', ')}.${lowPower ? tr(' Luces en modo ahorro.', ' Lights in power-saving mode.') : ''}${alarm ? tr(' Alarma de radiación activa.', ' Radiation alarm on.') : ''}${needsRepair ? tr(' Hay una avería en el hábitat.', ' There is a breakdown in the habitat.') : ''}`;
 
   // El paisaje se estira a todo el contenedor
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -604,7 +632,7 @@ export default function BunkerDiorama({
           </g>
 
           {/* Chapitas de estado de cada tripulante (sobre el visor, en el chasis) */}
-          {CREW.map((c, i) =>
+          {crew.map((c, i) =>
             moods[i] in STATUS_CHIP ? (
               <StatusChip key={c.name} x={crewX(c.cx) - 11} y={WIN.y - BEZEL.top - 28} {...STATUS_CHIP[moods[i] as keyof typeof STATUS_CHIP]} />
             ) : null,
@@ -653,8 +681,8 @@ export default function BunkerDiorama({
             })}
             {/* Cascos de la tripulación (el torso queda oculto bajo el chasis) */}
             <g transform={`translate(${hx} ${WIN.y}) scale(${CREW_SCALE}) translate(-320 ${-CREW_TOP})`}>
-              {CREW.map((c, i) => (
-                <Astronaut key={c.name} {...c} mood={moods[i]} shiver={lowPower} showStatus={false} />
+              {crew.map((c, i) => (
+                <Astronaut key={i} cx={c.cx} skin={c.skin} hair={c.hair} accent={c.accent} name={c.name} photo={c.photo} mood={moods[i]} shiver={lowPower} showStatus={false} />
               ))}
             </g>
             {lowPower && <rect x={winX} y={WIN.y} width={WIN.w} height={WIN.h} fill="#020617" opacity={0.35} />}
@@ -669,7 +697,7 @@ export default function BunkerDiorama({
 
           {/* Banda azul marino del bisel con las 3 placas de nombre integradas */}
           <rect x={winX - 8} y={SILL.y} width={WIN.w + 16} height={SILL.h} rx={8} fill="#0b3d91" />
-          {CREW.map((c) => (
+          {crew.map((c) => (
             <g key={c.name}>
               <rect x={crewX(c.cx) - 50} y={SILL.y + 4} width={100} height={16} rx={3} fill="url(#id-plate)" stroke="#0f172a" strokeWidth={0.8} />
               <rect x={crewX(c.cx) - 50} y={SILL.y + 4} width={4} height={16} fill={c.accent} />
