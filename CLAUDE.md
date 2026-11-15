@@ -299,3 +299,13 @@ El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" mues
   y como máximo 20 peticiones por minuto e IP (⇒ 429). El GET no revela si hay clave. La clave vive SOLO como secreto `GEMINI_API_KEY` en Cloudflare.
 - `public/_headers`: cabeceras de seguridad (nosniff, `X-Frame-Options: DENY`, `Permissions-Policy` solo micrófono propio, HSTS).
 - Antes de cada despliegue: `grep -rE "AIza[0-9A-Za-z_-]{20,}" dist` debe salir vacío.
+
+## 19. Credencial de Cadete (webcam 100 % local)
+- `CadetCameraModal` (botón en la portada): `getUserMedia` (vídeo 512, sin audio) en un visor de casco; captura 256×256 en `<canvas>` (espejo + contraste + nitidez) → dataURL JPEG 0,85.
+  Nombre (máx. 14) y puesto (`data/cadetRoles.ts`, `cadetRoleLabel`). Sin cámara/permiso ⇒ casco ilustrado (`DefaultHelmetArt`) y se guarda igual.
+  **La cámara se apaga siempre** (al capturar, cerrar, desmontar o si el permiso llega tras cerrar: `aliveRef`).
+- Store: `cadetPhoto`, `cadetName`, `cadetRole`, `setCadetProfile()`, `clearCadetProfile()`; persiste en `localStorage` (`ares-iv-cadet-v1`, solo `data:image/`) y sobrevive a `startGame`/`resetToMenu`.
+- **Privacidad:** la foto y el nombre NUNCA se envían a ningún servidor ni a Gemini (no aparecen en prompts). `public/_headers`: `camera=(self)`.
+- Dónde sale (`CadetFramedAvatar`): portada (miniatura + editar/borrar), prólogo y radios (`StoryComicModal`, sustituye a Max), `ArrivalTransmission`,
+  base espacial (`BunkerDiorama`: el cadete va EN EL CENTRO del visor con su foto en el casco, Leo a la izquierda y Vega a la derecha), `Phase1Summary` (responsable de carga)
+  y `GameOverScreen` (3.er tripulante + "Registrado a nombre de" en el Informe de ingeniería). Voz de A.R.I.A. personalizada al empezar y al final.

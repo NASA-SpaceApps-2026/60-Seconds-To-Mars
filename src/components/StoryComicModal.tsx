@@ -267,6 +267,11 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
   const inventory = useGameStore((s) => s.bunkerInventory);
   const complications = useGameStore((s) => s.complications);
   const flare = weather?.flareClass ?? 'X';
+  // Credencial de Cadete: el jugador ocupa el 3.er puesto de la tripulación (en lugar de Max)
+  const cadetName = useGameStore((s) => s.cadetName).trim().toUpperCase();
+  const third = cadetName || 'Max';
+  const hey = cadetName ? tr(`¡Atención, Cadete ${cadetName}! `, `Attention, Cadet ${cadetName}! `) : '';
+  const heyRover = cadetName ? tr(`¡Aquí el rover, Cadete ${cadetName}! `, `Rover here, Cadet ${cadetName}! `) : '';
 
   switch (scene) {
     case 'prologue':
@@ -277,16 +282,16 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtRoverLeaving />,
             speaker: tr('Narrador', 'Narrator'),
             text: tr(
-              'Año 2038. Los astronautas adultos salen en el rover a explorar a 40 km de la base. En el hábitat se quedan los Cadetes Junior: Leo, Vega y Max.',
-              'Year 2038. The adult astronauts drive off in the rover to explore 40 km from the base. The Junior Cadets stay in the habitat: Leo, Vega and Max.',
+              `Año 2038. Los astronautas adultos salen en el rover a explorar a 40 km de la base. En el hábitat se quedan los Cadetes Junior: Leo, Vega y ${third}.`,
+              `Year 2038. The adult astronauts drive off in the rover to explore 40 km from the base. The Junior Cadets stay in the habitat: Leo, Vega and ${third}.`,
             ),
           },
           {
             art: <ArtSolarFlare flareClass={flare} />,
             speaker: 'A.R.I.A.',
             text: tr(
-              `¡Alerta! El satélite SOHO y NASA DONKI detectan una llamarada solar de clase ${flare} rumbo a Marte. La tormenta ha cortado el camino del rover.`,
-              `Alert! The SOHO satellite and NASA DONKI detect a class ${flare} solar flare heading for Mars. The storm has cut off the rover's path.`,
+              `${hey}¡Alerta! El satélite SOHO y NASA DONKI detectan una llamarada solar de clase ${flare} rumbo a Marte. La tormenta ha cortado el camino del rover.`,
+              `${hey}Alert! The SOHO satellite and NASA DONKI detect a class ${flare} solar flare heading for Mars. The storm has cut off the rover's path.`,
             ),
             sound: playIncoming,
           },
@@ -327,7 +332,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
           },
           {
             art: <ArtLockdown damaged={damaged} />,
-            speaker: 'Max',
+            speaker: third,
             text: damaged
               ? tr(
                   '¡La onda de choque ha dañado los sistemas donde fallamos preguntas! Podremos repararlos con los minijuegos de reparación de la base espacial.',
@@ -356,8 +361,8 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtRadio progress={0.35} />,
             speaker: tr('Rover de rescate', 'Rescue rover'),
             text: tr(
-              '¡Cadetes, resistid! Ya hemos cruzado el cañón, estamos a pocos Soles de la base. ¡Estamos muy orgullosos de vosotros!',
-              'Cadets, hold on! We have crossed the canyon and we are a few Sols from the base. We are so proud of you!',
+              `${heyRover}¡Cadetes, resistid! Ya hemos cruzado el cañón, estamos a pocos Soles de la base. ¡Estamos muy orgullosos de vosotros!`,
+              `${heyRover}Cadets, hold on! We have crossed the canyon and we are a few Sols from the base. We are so proud of you!`,
             ),
             sound: playIncoming,
           },
@@ -371,8 +376,8 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtRadio progress={0.8} />,
             speaker: tr('Rover de rescate', 'Rescue rover'),
             text: tr(
-              '¡Ya vemos las luces de Ares-IV en el horizonte! Dos Soles más y llegamos. Mantened esas barras arriba, ¡casi lo tenéis!',
-              'We can see the lights of Ares-IV on the horizon! Two more Sols and we are there. Keep those bars up, you are almost there!',
+              `${heyRover}¡Ya vemos las luces de Ares-IV en el horizonte! Dos Soles más y llegamos. Mantened esas barras arriba, ¡casi lo tenéis!`,
+              `${heyRover}We can see the lights of Ares-IV on the horizon! Two more Sols and we are there. Keep those bars up, you are almost there!`,
             ),
             sound: playIncoming,
           },
