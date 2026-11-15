@@ -182,8 +182,8 @@ function ModeCredential({ difficulty, selected, onSelect }: { difficulty: Missio
             </span>
           </span>
           <span className="min-w-0">
-            <span className="font-display block whitespace-nowrap text-[clamp(1.1rem,3.1dvh,1.5rem)] font-black leading-tight tracking-wide text-slate-900">{meta.label}</span>
-            <span className="mt-0.5 block whitespace-nowrap text-[clamp(0.95rem,2.4dvh,1.1rem)] font-bold" style={{ color: card.accent }}>
+            <span className="font-display block whitespace-nowrap text-[clamp(1rem,2.7dvh,1.35rem)] font-black leading-tight tracking-wide text-slate-900">{meta.label}</span>
+            <span className="mt-0.5 block whitespace-nowrap text-[clamp(0.85rem,2dvh,1rem)] font-bold" style={{ color: card.accent }}>
               {card.tagline}
             </span>
             <span className="mt-1.5 block">
