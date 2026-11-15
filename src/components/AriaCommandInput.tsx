@@ -26,7 +26,7 @@ function getRecognition(): RecognitionCtor | null {
 /**
  * Terminal de órdenes de A.R.I.A. (atajos para las presentaciones):
  *  - "10" → salta la trivia y empieza en la base espacial.
- *  - "final" / "end"               → termina la partida y abre la pantalla final.
+ *  - "final" / "end"               → victoria de demostración: viñetas, rescate 3D en rover y pantalla final.
  *  - "derrota" / "defeat"          → pantalla final de evacuación (con el análisis de fallos).
  * Se puede escribir o decir en voz alta (micrófono, si el navegador lo permite).
  */

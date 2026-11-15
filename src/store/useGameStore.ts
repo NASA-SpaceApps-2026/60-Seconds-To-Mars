@@ -906,6 +906,27 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   forceGameOver: (outcome) => {
     // Desde el menú, el selector o la trivia: montar antes una base espacial de demostración
     if (get().gamePhase !== 'PHASE_2_BUNKER') get().debugSkipToPhase2();
+    if (outcome === 'victory') {
+      // Victoria de demostración ("final"): se da por superado el último Sol con todas las barras por
+      // encima de 0 y se sigue el MISMO camino que una partida ganada (viñetas → rover 3D → resultados).
+      const lifted = Object.fromEntries(
+        (Object.entries(get().vitals) as [VitalKey, number][]).map(([k, v]) => [k, Math.max(v, 20)]),
+      ) as unknown as Vitals;
+      set((st) => ({
+        requestId: st.requestId + 1,
+        storyScene: null,
+        fieldNote: null,
+        houstonLanding: false,
+        vitals: lifted,
+        failedVital: null,
+        sol: st.totalSols,
+        solStage: 'report',
+        pendingOutcome: 'victory',
+      }));
+      get().awardBadge('ares_hero');
+      get().continueAfterReport();
+      return;
+    }
     const s = get();
     let vitals = s.vitals;
     let failedVital: VitalKey | null = null;
