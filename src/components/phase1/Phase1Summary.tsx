@@ -11,6 +11,8 @@ import { ItemIcon, ResourceIcon, type ResourceKey } from '../icons';
 import { Phase1Header, SYSTEM_META } from './Phase1Shared';
 import { devOpenCapsule } from '../../utils/devQa';
 import { tr } from '../../i18n/core';
+import CadetFramedAvatar from '../CadetFramedAvatar';
+import { cadetDisplayName, cadetRoleLabel } from '../../data/cadetRoles';
 
 /** Rango de los cadetes según cuántos aciertos lograron y con qué precisión. */
 function cadetRank(correct: number, accuracy: number): string {
@@ -84,6 +86,10 @@ export default function Phase1Summary() {
   const inventory = (rawInventory ?? []).filter((id) => Boolean(ITEMS_BY_ID[id]));
   const complications = (rawComplications ?? []).filter((c) => Boolean(COMPLICATIONS[c]));
   const sealBunker = useGameStore((s) => s.sealBunker);
+  const cadetPhoto = useGameStore((s) => s.cadetPhoto);
+  const cadetName = useGameStore((s) => s.cadetName);
+  const cadetRole = useGameStore((s) => s.cadetRole);
+  const hasCadet = Boolean(cadetPhoto || cadetName);
 
   const [rouletteOpen, setRouletteOpen] = useState(devOpenCapsule);
   const [sealing, setSealing] = useState(false);
@@ -148,12 +154,21 @@ export default function Phase1Summary() {
             <p className="text-xs text-slate-500 big:text-sm">{tr('Equipo conseguido y estado inicial de las barras.', 'Equipment obtained and starting bar levels.')}</p>
           </div>
           <div className="hw-panel flex items-center gap-3 p-3 big:gap-4 big:p-6">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-nasa-blue text-white big:h-16 big:w-16">
-              <Award className="h-6 w-6 big:h-9 big:w-9" strokeWidth={1.75} />
-            </span>
+            {hasCadet ? (
+              <CadetFramedAvatar photo={cadetPhoto} name={cadetName} role={cadetRole} size="sm" plate={false} />
+            ) : (
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-nasa-blue text-white big:h-16 big:w-16">
+                <Award className="h-6 w-6 big:h-9 big:w-9" strokeWidth={1.75} />
+              </span>
+            )}
             <div className="min-w-0">
               <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500 big:text-sm">{tr('RANGO DE LA TRIPULACIÓN', 'CREW RANK')}</p>
               <p className="text-lg font-black leading-tight text-slate-900 big:text-2xl">{cadetRank(correct, accuracy)}</p>
+              {hasCadet && (
+                <p className="truncate text-xs text-slate-600 big:text-sm" title={tr('Responsable de la carga asegurada', 'In charge of the secured cargo')}>
+                  {tr('Responsable de carga', 'Cargo officer')}: <span className="font-mono font-bold text-nasa-blue">{cadetDisplayName(cadetName)}</span> · {cadetRoleLabel(cadetRole)}
+                </p>
+              )}
             </div>
           </div>
         </section>

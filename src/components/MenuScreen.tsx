@@ -1,7 +1,7 @@
 import { useAriaScreenReady } from '../utils/useAriaVoiceState';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Rocket } from 'lucide-react';
+import { Camera, Pencil, Rocket, Trash2 } from 'lucide-react';
 import { useGameStore } from '../store/useGameStore';
 import { playButtonClick, unlockAudio } from '../utils/soundEffects';
 import AriaAssistantWidget from './AriaAssistantWidget';
@@ -10,6 +10,71 @@ import MissionPatch from './MissionPatchLogo';
 import LanguageToggle from './LanguageToggle';
 import SpaceBackdrop from './SpaceBackdrop';
 import { useT } from '../i18n/useT';
+import CadetCameraModal from './CadetCameraModal';
+import CadetFramedAvatar from './CadetFramedAvatar';
+import { cadetDisplayName, cadetRoleLabel } from '../data/cadetRoles';
+
+/** Tarjeta compacta de la Credencial de Cadete (webcam 100 % local). */
+function CadetBadgeCard() {
+  const t = useT();
+  const photo = useGameStore((s) => s.cadetPhoto);
+  const name = useGameStore((s) => s.cadetName);
+  const role = useGameStore((s) => s.cadetRole);
+  const clearCadetProfile = useGameStore((s) => s.clearCadetProfile);
+  const [open, setOpen] = useState(false);
+  const hasProfile = Boolean(photo || name);
+  const openModal = () => {
+    unlockAudio();
+    playButtonClick();
+    setOpen(true);
+  };
+
+  return (
+    <>
+      {hasProfile ? (
+        <div className="mt-[clamp(0.6rem,2dvh,1rem)] flex max-w-full shrink-0 items-center gap-3 rounded-2xl border-2 border-slate-300 bg-white/90 py-1.5 pl-1.5 pr-2 text-left shadow-sm">
+          <CadetFramedAvatar photo={photo} name={name} role={role} size="sm" plate={false} />
+          <div className="min-w-0">
+            <p className="truncate font-mono text-sm font-black tracking-wider text-nasa-blue">
+              {t('CADETE', 'CADET')} {cadetDisplayName(name)}
+            </p>
+            <p className="truncate text-xs font-semibold text-slate-600">{cadetRoleLabel(role)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={openModal}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-300 text-slate-600 transition hover:border-nasa-blue hover:text-nasa-blue"
+            title={t('Cambiar credencial', 'Change badge')}
+            aria-label={t('Cambiar credencial', 'Change badge')}
+          >
+            <Pencil className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              playButtonClick();
+              clearCadetProfile();
+            }}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-300 text-slate-600 transition hover:border-nasa-red hover:text-nasa-red"
+            title={t('Borrar credencial', 'Delete badge')}
+            aria-label={t('Borrar credencial', 'Delete badge')}
+          >
+            <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={openModal}
+          className="mt-[clamp(0.6rem,2dvh,1rem)] flex shrink-0 items-center gap-2 rounded-xl border-2 border-slate-300 bg-white/90 px-4 py-2 text-sm font-bold text-nasa-blue shadow-sm transition hover:border-nasa-blue"
+        >
+          <Camera className="h-5 w-5" strokeWidth={1.75} /> {t('Credencial de Cadete (Webcam)', 'Cadet Badge (Webcam)')}
+        </button>
+      )}
+      {open && <CadetCameraModal onClose={() => setOpen(false)} />}
+    </>
+  );
+}
 
 /**
  * Portada. Cabe entera en el viewport (h-dvh) a 100 % de zoom: todos los tamaños y márgenes
@@ -90,6 +155,8 @@ export default function MenuScreen() {
         >
           <Rocket size={26} /> {t('COMENZAR MISIÓN', 'START MISSION')}
         </motion.button>
+
+        <CadetBadgeCard />
 
         <AriaAssistantWidget className="mt-[clamp(0.9rem,4dvh,2rem)] w-full max-w-xl shrink-0 text-left" />
         <AriaCommandInput className="mt-2 w-full max-w-xl shrink-0 text-left" />

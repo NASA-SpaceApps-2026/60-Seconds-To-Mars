@@ -30,6 +30,8 @@ import { playButtonClick } from '../utils/soundEffects';
 import GaugeMeter from './GaugeMeter';
 import MissionPatch from './MissionPatchLogo';
 import { BadgeShelf } from './PeriscopeModal';
+import CadetFramedAvatar from './CadetFramedAvatar';
+import { cadetDisplayName, cadetRoleLabel } from '../data/cadetRoles';
 
 const RANK_STYLE: Record<Rank, { Icon: LucideIcon; text: string }> = {
   'Cadete Espacial': {
@@ -128,6 +130,9 @@ export default function GameOverScreen() {
   const rank = useGameStore((s) => s.rank) ?? 'Cadete Espacial';
   const failedVital = useGameStore((s) => s.failedVital);
   const vitals = useGameStore((s) => s.vitals);
+  const cadetPhoto = useGameStore((s) => s.cadetPhoto);
+  const cadetName = useGameStore((s) => s.cadetName);
+  const cadetRole = useGameStore((s) => s.cadetRole);
   const science = useGameStore((s) => s.scienceScore);
   const inventory = useGameStore((s) => s.bunkerInventory);
   const history = useGameStore((s) => s.history);
@@ -168,13 +173,16 @@ export default function GameOverScreen() {
         if (Date.now() < end) requestAnimationFrame(frame);
       };
       frame();
-      ariaSay(tr(`¡Misión cumplida! Has alcanzado el rango de ${RANK_LABEL[rank]}. Aquí tienes tu informe de la NASA.`, `Mission accomplished! You reached the rank of ${RANK_LABEL[rank]}. Here is your NASA report.`));
+      const who = cadetName.trim() ? cadetName.trim().toUpperCase() : '';
+      ariaSay(tr(`¡Misión cumplida${who ? `, Cadete ${who}` : ''}! Has alcanzado el rango de ${RANK_LABEL[rank]}. Aquí tienes tu informe de la NASA.`, `Mission accomplished${who ? `, Cadet ${who}` : ''}! You reached the rank of ${RANK_LABEL[rank]}. Here is your NASA report.`));
     } else {
-      ariaSay(tr(`La tripulación está a salvo en órbita. Has conseguido el rango de ${RANK_LABEL[rank]}. Veamos qué podemos aprender.`, `The crew is safe in orbit. You earned the rank of ${RANK_LABEL[rank]}. Let's see what we can learn.`));
+      const who = cadetName.trim() ? cadetName.trim().toUpperCase() : '';
+      ariaSay(tr(`${who ? `Cadete ${who}: l` : 'L'}a tripulación está a salvo en órbita. Has conseguido el rango de ${RANK_LABEL[rank]}. Veamos qué podemos aprender.`, `${who ? `Cadet ${who}: t` : 'T'}he crew is safe in orbit. You earned the rank of ${RANK_LABEL[rank]}. Let's see what we can learn.`));
     }
-  }, [loadDebrief, victory, rank, ariaSay]);
+  }, [loadDebrief, victory, rank, ariaSay, cadetName]);
 
   const rankStyle = RANK_STYLE[rank];
+  const hasCadet = Boolean(cadetPhoto || cadetName);
   const health = Math.round(vitals.crewHealth);
   const crewStatus = !victory
     ? tr('Evacuado a la órbita · a salvo', 'Evacuated to orbit · safe')
@@ -224,7 +232,24 @@ export default function GameOverScreen() {
           </div>
           {/* Estado de supervivencia de la tripulación */}
           <div className="grid gap-px border-t border-slate-800 bg-slate-800 sm:grid-cols-3">
-            {CREW.map((c) => (
+            {CREW.map((c, i) =>
+              i === 2 && hasCadet ? (
+                /* 3.er puesto: el cadete con su credencial oficial (foto enmarcada + nombre + puesto + salud) */
+                <div key="cadet" className="flex items-center gap-3 bg-gradient-to-r from-slate-900 to-[#0b2a63] px-4 py-2.5">
+                  <CadetFramedAvatar photo={cadetPhoto} name={cadetName} role={cadetRole} size="sm" plate={false} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-mono text-sm font-bold tracking-wider text-amber-300">
+                      {tr('CADETE', 'CADET')} {cadetDisplayName(cadetName)}
+                    </p>
+                    <p className="truncate text-xs text-slate-300">
+                      {cadetRoleLabel(cadetRole)} · {crewStatus}
+                    </p>
+                  </div>
+                  <span className="flex items-center gap-1 font-mono text-xs font-semibold text-slate-300" title={tr('Salud de la tripulación', 'Crew health')}>
+                    <HeartPulse className="h-4 w-4 text-rose-400" strokeWidth={1.75} /> {health}
+                  </span>
+                </div>
+              ) : (
               <div key={c.name} className="flex items-center gap-3 bg-slate-900 px-4 py-2.5">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 bg-slate-800" style={{ borderColor: c.accent }}>
                   <UserRound className="h-5 w-5 text-slate-200" strokeWidth={1.75} />
@@ -239,7 +264,8 @@ export default function GameOverScreen() {
                   <HeartPulse className="h-4 w-4 text-rose-400" strokeWidth={1.75} /> {health}
                 </span>
               </div>
-            ))}
+              ),
+            )}
           </div>
         </motion.header>
 
@@ -349,6 +375,28 @@ export default function GameOverScreen() {
                 </div>
               ) : (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  {hasCadet && (
+                    <div className="mt-3 flex items-center gap-3 rounded-xl border-2 border-nasa-blue/30 bg-gradient-to-r from-sky-50 to-white p-3">
+                      <CadetFramedAvatar photo={cadetPhoto} name={cadetName} role={cadetRole} size="md" />
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs font-bold tracking-[0.18em] text-slate-500">{tr('REGISTRADO A NOMBRE DE', 'FILED UNDER THE NAME OF')}</p>
+                        <p className="font-display text-lg font-black leading-tight text-nasa-blue">
+                          {tr('Cadete', 'Cadet')} {cadetDisplayName(cadetName)}
+                        </p>
+                        <p className="text-sm text-slate-700">
+                          {victory
+                            ? tr(
+                                `Como ${cadetRoleLabel(cadetRole)}, mantuviste a la tripulación a salvo durante los ${totalSols} Soles. ¡La NASA ya tiene tu nombre en la lista de Artemisa!`,
+                                `As ${cadetRoleLabel(cadetRole)}, you kept the crew safe for all ${totalSols} Sols. NASA already has your name on the Artemis list!`,
+                              )
+                            : tr(
+                                `Como ${cadetRoleLabel(cadetRole)}, llevaste a la tripulación sana y salva a la órbita. ¡Cada misión te hace mejor ingeniero espacial!`,
+                                `As ${cadetRoleLabel(cadetRole)}, you got the crew safely to orbit. Every mission makes you a better space engineer!`,
+                              )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <h2 className="mt-2 text-xl font-black leading-tight text-slate-900">{debrief.headline}</h2>
                   <p className="mt-2 leading-relaxed text-slate-700">{shortReport(debrief.report, science)}</p>
                   {debrief.lessons.length > 0 && (
