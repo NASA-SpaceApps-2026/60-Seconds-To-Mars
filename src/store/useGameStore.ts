@@ -573,7 +573,7 @@ interface GameActions {
   loadSolEvent: () => Promise<void>;
   chooseOption: (optionId: string) => void;
   continueAfterReport: () => void;
-  /** Llegada del rover 3D a Ares-IV: suma la ciencia (una sola vez) y abre la viñeta final del rescate. */
+  /** Llegada del rover 3D al Cohete de Retorno: suma la ciencia (una sola vez) y abre la viñeta final del rescate. */
   completeRoverRescue: (beacons: number) => void;
   /** Rescate 3D fallido (rover destruido o 60 s agotados): sin bonus; la partida sigue siendo una victoria. */
   failRoverRescue: (reason: 'destroyed' | 'timeout') => void;
