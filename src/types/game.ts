@@ -2,7 +2,7 @@
 // Contrato de tipos de "60 Seconds to Mars: The Solar Storm Protocol"
 // ============================================================
 
-export type GamePhase = 'MENU' | 'MISSION_SELECT' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'GAME_OVER';
+export type GamePhase = 'MENU' | 'MISSION_SELECT' | 'PHASE_1_SCAVENGE' | 'PHASE_2_BUNKER' | 'ROVER_RESCUE' | 'GAME_OVER';
 
 export type RoomId = 'greenhouse' | 'lab' | 'storage';
 
@@ -244,7 +244,9 @@ export type MissionOutcome = 'victory' | 'evacuation';
 
 // ---------------- Historia (viñetas de cómic entre pantallas) ----------------
 /** Escenas del Modo Historia: prólogo, cierre de compuertas y radio del rover en los Soles 4 y 8. */
-export type StoryScene = 'prologue' | 'lockdown' | 'radio_sol4' | 'radio_sol8';
+export type StoryScene = 'prologue' | 'lockdown' | 'radio_sol4' | 'radio_sol8' | 'rescue_intro' | 'rescue_complete' | 'rescue_failed';
+/** Desenlace del rescate 3D en rover (solo en partidas ganadas). */
+export type RescueResult = 'completed' | 'destroyed' | 'timeout';
 
 // ---------------- Enlace Deep Space Network (retraso Tierra-Marte) ----------------
 export type HoustonPackageId = 'oxygen_reserve' | 'battery_patch' | 'emergency_rations';

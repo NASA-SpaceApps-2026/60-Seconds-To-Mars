@@ -12,6 +12,7 @@ import { tr } from './i18n/core';
 const Phase1Scavenge = lazy(() => import('./components/Phase1Scavenge'));
 const Phase2Bunker = lazy(() => import('./components/Phase2Bunker'));
 const GameOverScreen = lazy(() => import('./components/GameOverScreen'));
+const RoverRescue3D = lazy(() => import('./components/RoverRescue3D'));
 const StoryComicModal = lazy(() => import('./components/StoryComicModal'));
 
 function ScreenLoader() {
@@ -87,6 +88,7 @@ export default function App() {
             {gamePhase === 'MISSION_SELECT' && <MissionSelector />}
             {gamePhase === 'PHASE_1_SCAVENGE' && <Phase1Scavenge />}
             {gamePhase === 'PHASE_2_BUNKER' && <Phase2Bunker />}
+            {gamePhase === 'ROVER_RESCUE' && <RoverRescue3D />}
             {gamePhase === 'GAME_OVER' && <GameOverScreen />}
           </Suspense>
         </ScreenErrorBoundary>

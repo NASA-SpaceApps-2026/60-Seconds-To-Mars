@@ -11,7 +11,8 @@ import { getFallbackMarsPhotos } from '../services/nasaApi';
  *   #qa-capsule  → resumen con la Cápsula Orbital ya abierta
  *   #qa-bunker   → base espacial (inventario de depuración)
  *   #qa-bunker-systems / #qa-bunker-decision → base espacial con ese panel ya abierto
- *   #qa-gameover → pantalla final (victoria)
+ *   #qa-gameover → pantalla final (victoria) · #qa-rover → rescate 3D en rover
+ *   #qa-rover-timeout (límite de 6 s) · #qa-rover-crash (el primer choque destruye el rover)
  *   #qa-selector → selector de modo · #qa-transmission → carta de Houston con foto
  * En producción no hace nada (se elimina del bundle con import.meta.env.DEV).
  */
@@ -72,6 +73,13 @@ export function runDevQaScenario(): void {
         vitals: { ...st.vitals, oxygen: 62, power: 48, food: 55, shield: 41, crewHealth: 77 },
       }));
     }
+  }
+  if (scenario.startsWith('qa-rover')) {
+    s().debugSkipToPhase2();
+    s().closeStory();
+    // Mismo camino que una partida real: último Sol superado → viñetas de rescate → rover 3D
+    store.setState((st) => ({ sol: st.totalSols, solStage: 'report', pendingOutcome: 'victory', scienceScore: 30 }));
+    s().continueAfterReport();
   }
 }
 
