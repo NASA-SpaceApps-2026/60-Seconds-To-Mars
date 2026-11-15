@@ -104,7 +104,7 @@ type MissionOutcome = 'victory' | 'evacuation';
 | `tickTimer()` | −1 s y avisos de A.R.I.A. en 40/20/10 s |
 | `sealBunker()` | → `PHASE_2_BUNKER`, máquinas ON por defecto |
 | `debugSkipToPhase2()` | Fase 2 con `DEBUG_INVENTORY` (sin botón en pantalla; lo usan las órdenes y `devQa`) |
-| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación (ES / EN): **supervivencia / survival** → base espacial, **final / end** → rescate 3D en rover y luego pantalla final (victoria), **derrota / defeat** → evacuación. También en el panel del robot A.R.I.A. de la base. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
+| `runAriaCommand(text)` / `forceGameOver(outcome)` | Órdenes de presentación (ES / EN): **supervivencia / survival** → base espacial, **final / end** → pantalla final (victoria; no abre el rescate en rover), **derrota / defeat** → evacuación. También en el panel del robot A.R.I.A. de la base. Se escriben/dicen en `AriaCommandInput` (menú, con micrófono si el navegador lo permite), en la consola de A.R.I.A. de la base espacial, o se teclean en cualquier pantalla fuera de un campo de texto (`App.tsx`). |
 | `toggleMachine`, `useConsumable` | Panel de ingeniería |
 | `loadSolEvent()` | Gemini/fallback, mínimo 700 ms de animación, ignora resultados obsoletos (`requestId`) |
 | `chooseOption(id)` | Aplica opción → `computeSolTick` → `solStage: 'report'` |
@@ -171,7 +171,7 @@ fallback local `getFallbackAriaAnswer` (barra más baja / qué máquina apagar /
 
 ## 10. Historia, Deep Space Network e insignias
 - **Lore:** año 2038, base Ares-IV (Cráter Jezero). Los adultos se fueron en el rover a 40 km; la tormenta solar (DONKI) les corta el paso. Leo, Vega, Max y A.R.I.A. aguantan 10 Soles.
-- **Modo Historia** (`StoryComicModal`, montado en `App.tsx` con carga diferida): lee `storyScene` del store (`'prologue' | 'lockdown' | 'radio_sol4' | 'radio_sol8'`).
+- **Modo Historia** (`StoryComicModal`, montado en `App.tsx` con carga diferida): lee `storyScene` del store (`'prologue' | 'lockdown' | 'radio_sol4' | 'radio_sol8' | 'rescue_intro' | 'rescue_complete'`; las dos últimas, solo al ganar: ver 17 bis).
   `startGame` → prólogo · `sealBunker` → compuertas · `continueAfterReport` al llegar a los Soles 4 y 8 → radio del rover. `closeStory()` la cierra ("Saltar historia").
   **Sin saltos de layout:** raíz `h-dvh overflow-hidden`; único scroll en la zona de viñetas (`[scrollbar-gutter:stable]`); cada celda reserva el tamaño final de su viñeta con una copia invisible (`PanelFrame reserve`) y usa `overflow-clip` para que la animación de entrada no cree barra de scroll.- **Deep Space Network** (`DeepSpaceLink`, `data/missionExtras.ts`): `orderHoustonPackage(id)` cuesta −10 Energía hoy, 1 pedido por Sol, **máx. 3 pedidos por partida** (`HOUSTON_MAX_ORDERS`, contador `houstonOrdersPlaced`) y **solo 1 en camino a la vez** (`HOUSTON_MAX_IN_TRANSIT = 1`: hasta que no llega a la base no se puede pedir otro), llega en 2 Soles (`houstonOrders`; se entrega en `continueAfterReport`).
 - **Insignias** (`BADGES`, `awardBadge`, `badges`): Ingeniero Solar, Botánico GeneLab, Maestro del Trueque, Comunicador Deep Space, Héroe de Ares-IV. Se ven en el Periscopio (`PeriscopeModal`) y en la pantalla final.
@@ -293,11 +293,15 @@ El carrusel usa la misma ponderación y la lista "Contenido de la cápsula" mues
   No uses animaciones con desplazamiento lateral en la raíz de una pantalla.
 
 ## 17 bis. Rescate final en rover 3D (`RoverRescue3D`)
-- Fase `'ROVER_RESCUE'` (en `GamePhase`): `continueAfterReport` con `pendingOutcome === 'victory'` (último Sol: 5 en Explorador, 10 en Comandante) entra aquí en vez de `GAME_OVER`. La orden "final" también pasa por el rover (y, si ya estás en él, salta al informe); la evacuación va directa a la pantalla final.
-- `finishRoverRescue(bonus)` suma la ciencia (+5 por rescate rápido + 1 por baliza verde), recalcula el rango y pasa a `GAME_OVER`. Lo llaman la llegada (a los 2 s del cartel), "Ver Reporte Final" y "Saltar escena 3D".
-- Three.js 100 % procedural (sin `.glb`): terreno periódico en 2 tramos reciclados, rocas `DodecahedronGeometry`, balizas, base con haz cian (`fog: false`, visible desde lejos), rover con 3 astronautas. Sin Game Over: chocar frena 1,5 s. Controles: flechas / A-D y botones táctiles.
-- Limpieza obligatoria al desmontar: `cancelAnimationFrame`, listeners, `dispose()` de geometrías/materiales/luces, `renderer.dispose()` + `forceContextLoss()`. Si WebGL falla, se muestra un aviso con botón al informe final.
-- QA: `#qa-rover`.
+- **Solo en partidas ganadas de verdad.** `continueAfterReport` comprueba el estado real: `pendingOutcome === 'victory'`, `sol >= totalSols` (5 en Explorador, 10 en Comandante) y ninguna barra a 0 (`findFailedVital`). Entonces: `gamePhase: 'ROVER_RESCUE'` + `storyScene: 'rescue_intro'`. Si no, `GAME_OVER` directo, igual que antes (sin viñetas ni rover).
+- **Flujo:** último Sol → viñetas `rescue_intro` (2: regreso del equipo de rescate · la última misión) → rover 3D (espera a que se cierre la historia) → llegada → `completeRoverRescue(balizas)` → viñeta `rescue_complete` → `closeStory()` → `GAME_OVER` (`GameOverScreen` original, sin cambios).
+- **Ciencia una sola vez:** `completeRoverRescue` suma `ROVER_RESCUE_BONUS` (5) + 1 por baliza y lo guarda en `rescueBonus` (null hasta llegar; se reinicia con cada partida). Recalcula el rango. No toca historial ni barras.
+- **No se puede saltar:** sin botones de saltar ni táctiles; `runAriaCommand` ignora las órdenes durante `ROVER_RESCUE`; "final" / "derrota" siguen yendo directas a la pantalla final (no abren el rescate). "Saltar historia" solo salta las viñetas, no la conducción.
+- **Controles (solo teclado):** W / flecha arriba acelerar · S / flecha abajo frenar · A / flecha izquierda · D / flecha derecha. Con las viñetas abiertas el rover ignora las teclas.
+- **Dificultad por modo** (`ROVER_TUNING` en `RoverRescue3D`): Explorador más lento, filas de rocas cada 36-48 m, casi nunca 2 rocas juntas, más balizas y choque más permisivo; Comandante más rápido, filas cada 22-31 m, 40 % de filas dobles. Sin derrota: chocar frena 1,5 s y baja la **integridad** del HUD (mínimo 25 %).
+- Three.js 100 % procedural (sin `.glb`): terreno periódico en 2 tramos reciclados, rocas `DodecahedronGeometry`, balizas, base con haz cian (`fog: false`), rover con Leo, Vega y el tercer cadete (colores de la tripulación).
+- Limpieza obligatoria al desmontar: `cancelAnimationFrame`, listeners, `dispose()` de geometrías/materiales/luces, `renderer.dispose()` + `forceContextLoss()`. Si WebGL falla, aviso con "Continuar" (piloto automático) para no dejar la pantalla en blanco.
+- QA: `#qa-rover` (solo dev; recorre el mismo camino que una partida real desde el último Sol).
 
 ## 18. Despliegue en Cloudflare Pages
 - Proyecto `60-seconds-to-mars` → **https://60-seconds-to-mars.pages.dev** (subdominio gratuito de Pages).

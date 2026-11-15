@@ -76,7 +76,9 @@ export function runDevQaScenario(): void {
   if (scenario === 'qa-rover') {
     s().debugSkipToPhase2();
     s().closeStory();
-    store.setState({ gamePhase: 'ROVER_RESCUE', outcome: 'victory', pendingOutcome: null, scienceScore: 30 });
+    // Mismo camino que una partida real: último Sol superado → viñetas de rescate → rover 3D
+    store.setState((st) => ({ sol: st.totalSols, solStage: 'report', pendingOutcome: 'victory', scienceScore: 30 }));
+    s().continueAfterReport();
   }
 }
 

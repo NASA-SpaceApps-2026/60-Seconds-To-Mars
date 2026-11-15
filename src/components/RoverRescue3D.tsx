@@ -1,34 +1,54 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { ArrowLeft, ArrowRight, FastForward, Flag, Gauge, Timer, Zap } from 'lucide-react';
-import { useGameStore } from '../store/useGameStore';
+import { Flag, Gauge, ShieldCheck, Timer, Zap } from 'lucide-react';
+import { ROVER_RESCUE_BONUS, useGameStore } from '../store/useGameStore';
+import type { MissionDifficulty } from '../types/game';
 import { tr } from '../i18n/core';
 import { useAriaScreenReady } from '../utils/useAriaVoiceState';
-import { playButtonClick, playErrorBuzz, playPickup, playSuccess } from '../utils/soundEffects';
+import { playErrorBuzz, playPickup, playSuccess } from '../utils/soundEffects';
 
 /**
- * Minijuego 3D final: la Comandante Elena y su equipo conducen el Rover de Rescate por el
- * Cráter Jezero hasta la base Ares-IV. 100 % procedural (sin modelos externos).
- * - Sin "Game Over": chocar con una roca solo frena el rover 1,5 s (chispas + vibración).
+ * Minijuego 3D final (solo en partidas ganadas): Leo, Vega y el tercer cadete conducen el rover por el
+ * Cráter Jezero hasta la base Ares-IV, donde les espera el equipo de rescate. 100 % procedural (sin modelos externos).
+ * - Se abre tras las viñetas 'rescue_intro' y, al llegar, el store abre la viñeta 'rescue_complete' → GameOverScreen.
+ * - Solo teclado (W/S acelerar-frenar, A/D girar, o flechas). No se puede saltar.
+ * - Sin "Game Over": chocar con una roca frena el rover 1,5 s y baja su integridad (nunca por debajo del 25 %).
  * - Balizas verdes: impulso de velocidad y +1 punto de ciencia.
- * - Llegada: +5 de ciencia por rescate rápido y paso a la pantalla final.
+ * - Dificultad según el modo de la partida (ROVER_TUNING).
  */
 
 const TOTAL_DISTANCE = 800; // metros (1 unidad = 1 m)
-const BASE_SPEED = 38;
-const BOOST_SPEED = 58;
-const SLOW_SPEED = 13;
 const HIT_SLOW_SECONDS = 1.5;
 const BOOST_SECONDS = 1.5;
 const INTRO_SECONDS = 2.6;
-const RESCUE_BONUS = 5;
+const ARRIVAL_SECONDS = 1.8; // cinemática de llegada antes de la viñeta final
+const MIN_INTEGRITY = 25;
 const ROAD_LIMIT = 6;
 const CHUNK_W = 150;
 const CHUNK_L = 200;
 const STOP_GAP = 16; // el rover se detiene a esta distancia de la cúpula
 
-type Stage = 'intro' | 'drive' | 'arrived';
-type RoverStatus = 'ready' | 'cruise' | 'boost' | 'hit' | 'arrived';
+/** Ajustes de conducción por modo: el Explorador (7 años) es claramente más fácil que el Comandante. */
+interface DriveTuning {
+  cruise: number; // velocidad sin tocar nada (m/s)
+  max: number; // con W / flecha arriba
+  brake: number; // con S / flecha abajo
+  boost: number; // tras pasar por una baliza
+  slow: number; // tras chocar
+  rowGap: [number, number]; // separación entre filas de rocas (m)
+  doubleChance: number; // probabilidad de 2 rocas en la misma fila
+  beaconChance: number;
+  steer: number; // velocidad lateral
+  hitDamage: number; // % de integridad por choque
+  hitbox: number; // margen de choque (negativo = más permisivo)
+}
+const ROVER_TUNING: Record<MissionDifficulty, DriveTuning> = {
+  explorer: { cruise: 28, max: 42, brake: 10, boost: 50, slow: 12, rowGap: [36, 48], doubleChance: 0.08, beaconChance: 0.6, steer: 15, hitDamage: 8, hitbox: -0.3 },
+  commander: { cruise: 34, max: 52, brake: 10, boost: 60, slow: 12, rowGap: [22, 31], doubleChance: 0.4, beaconChance: 0.35, steer: 12.5, hitDamage: 12, hitbox: 0 },
+};
+
+type Stage = 'waiting' | 'intro' | 'drive' | 'arrived';
+type RoverStatus = 'ready' | 'cruise' | 'fast' | 'brake' | 'boost' | 'hit' | 'arrived';
 
 interface Hud {
   remaining: number;
@@ -36,7 +56,10 @@ interface Hud {
   status: RoverStatus;
   beacons: number;
   countdown: number;
+  integrity: number;
 }
+
+const CREW_COLORS = { leo: '#f97316', vega: '#22c55e', third: '#3b82f6' } as const;
 
 // ------------------------------------------------------------
 // Terreno: función de altura periódica en z (los tramos encajan sin costuras)
@@ -181,9 +204,9 @@ function buildRover(scene: THREE.Scene): RoverParts {
 
   // 3 ocupantes: la Comandante Elena (franja roja) y dos ingenieros (franja azul)
   const crew: Array<[number, number, string]> = [
-    [-0.55, -0.55, '#FC3D21'],
-    [0.55, -0.55, '#0B3D91'],
-    [0, 0.8, '#0B3D91'],
+    [-0.55, -0.55, CREW_COLORS.leo],
+    [0.55, -0.55, CREW_COLORS.vega],
+    [0, 0.8, CREW_COLORS.third],
   ];
   for (const [x, z, stripe] of crew) {
     const seat = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.12), dark);
@@ -340,26 +363,32 @@ function buildBase(scene: THREE.Scene): THREE.Group {
 export default function RoverRescue3D() {
   useAriaScreenReady();
   const mountRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef({ left: false, right: false });
+  const inputRef = useRef({ left: false, right: false, up: false, down: false });
   const finishedRef = useRef(false);
   const beaconsRef = useRef(0);
-  const [hud, setHud] = useState<Hud>({ remaining: TOTAL_DISTANCE, elapsed: 0, status: 'ready', beacons: 0, countdown: 3 });
-  const [stage, setStage] = useState<Stage>('intro');
+  // Mientras las viñetas del rescate estén abiertas, el rover espera (la carrera empieza al cerrarlas)
+  const storyOpen = useGameStore((s) => s.storyScene !== null);
+  const storyOpenRef = useRef(storyOpen);
+  storyOpenRef.current = storyOpen;
+  const [hud, setHud] = useState<Hud>({ remaining: TOTAL_DISTANCE, elapsed: 0, status: 'ready', beacons: 0, countdown: 3, integrity: 100 });
+  const [stage, setStage] = useState<Stage>('waiting');
   const [webglFailed, setWebglFailed] = useState(false);
 
-  const finish = () => {
+  /** Llegada a Ares-IV: el store suma la ciencia (una sola vez) y abre la viñeta "Rescate completado". */
+  const complete = () => {
     if (finishedRef.current) return;
     finishedRef.current = true;
-    useGameStore.getState().finishRoverRescue(RESCUE_BONUS + beaconsRef.current);
+    useGameStore.getState().completeRoverRescue(beaconsRef.current);
   };
 
   useEffect(() => {
+    // Se dice al cerrar las viñetas de introducción (la historia retiene la voz del juego)
     useGameStore
       .getState()
       .ariaSay(
         tr(
-          '¡El rover de la Comandante Elena viene a buscaros! Esquiva las rocas con las flechas y pasa por las balizas verdes para ir más rápido.',
-          "Commander Elena's rover is coming for you! Dodge the rocks with the arrow keys and drive over the green beacons to go faster.",
+          '¡Al volante, cadetes! Acelera con W, frena con S y gira con A y D, o usa las flechas. Esquiva las rocas y pasa por las balizas verdes.',
+          'At the wheel, cadets! Speed up with W, brake with S and steer with A and D, or use the arrow keys. Dodge the rocks and drive over the green beacons.',
         ),
       );
   }, []);
@@ -367,6 +396,7 @@ export default function RoverRescue3D() {
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    const tuning = ROVER_TUNING[useGameStore.getState().missionDifficulty] ?? ROVER_TUNING.explorer;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -533,7 +563,8 @@ export default function RoverRescue3D() {
     scene.add(dust);
 
     // ---------- Estado de la carrera ----------
-    let stage: Stage = 'intro';
+    let stage: Stage = 'waiting';
+    let integrity = 100;
     let elapsedIntro = 0;
     let elapsedDrive = 0;
     let traveled = 0;
@@ -554,7 +585,7 @@ export default function RoverRescue3D() {
       const remainingAtRow = TOTAL_DISTANCE - traveled - -z;
       if (remainingAtRow < 55) return; // tramo final despejado
       const free = Math.floor(Math.random() * 3);
-      const count = Math.random() < 0.35 ? 2 : 1;
+      const count = Math.random() < tuning.doubleChance ? 2 : 1;
       const order = [0, 1, 2].filter((l) => l !== free).sort(() => Math.random() - 0.5).slice(0, count);
       for (const lane of order) {
         const rock = rocks.find((r) => !r.active);
@@ -567,7 +598,7 @@ export default function RoverRescue3D() {
         rock.mesh.position.set(x, rock.r * 0.55, z + (Math.random() - 0.5) * 3);
         rock.mesh.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
       }
-      if (Math.random() < 0.4) {
+      if (Math.random() < tuning.beaconChance) {
         const b = beacons.find((bb) => !bb.active);
         if (b) {
           b.active = true;
@@ -590,21 +621,29 @@ export default function RoverRescue3D() {
     const ro = new ResizeObserver(onResize);
     ro.observe(mount);
 
+    // Controles: W/flecha arriba acelerar · S/flecha abajo frenar · A/flecha izquierda · D/flecha derecha
+    const KEY_MAP: Record<string, 'left' | 'right' | 'up' | 'down'> = {
+      arrowleft: 'left',
+      a: 'left',
+      arrowright: 'right',
+      d: 'right',
+      arrowup: 'up',
+      w: 'up',
+      arrowdown: 'down',
+      s: 'down',
+    };
     const onKey = (down: boolean) => (e: KeyboardEvent) => {
-      const k = e.key.toLowerCase();
-      if (k === 'arrowleft' || k === 'a') {
-        inputRef.current.left = down;
-        e.preventDefault();
-      } else if (k === 'arrowright' || k === 'd') {
-        inputRef.current.right = down;
-        e.preventDefault();
-      }
+      // Con las viñetas abiertas, las teclas son de la historia (Enter / flecha derecha = siguiente)
+      if (storyOpenRef.current) return;
+      const dir = KEY_MAP[e.key.toLowerCase()];
+      if (!dir) return;
+      inputRef.current[dir] = down;
+      e.preventDefault();
     };
     const onKeyDown = onKey(true);
     const onKeyUp = onKey(false);
     const onBlur = () => {
-      inputRef.current.left = false;
-      inputRef.current.right = false;
+      inputRef.current = { left: false, right: false, up: false, down: false };
     };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
@@ -623,6 +662,11 @@ export default function RoverRescue3D() {
       clockT += dt;
 
       // ----- Velocidad y dirección -----
+      if (stage === 'waiting' && !storyOpenRef.current) {
+        stage = 'intro';
+        setStage('intro');
+        onBlur();
+      }
       if (stage === 'intro') {
         elapsedIntro += dt;
         if (elapsedIntro >= INTRO_SECONDS) {
@@ -637,13 +681,15 @@ export default function RoverRescue3D() {
       if (stage === 'drive') {
         slowTimer = Math.max(0, slowTimer - dt);
         boostTimer = Math.max(0, boostTimer - dt);
-        target = slowTimer > 0 ? SLOW_SPEED : boostTimer > 0 ? BOOST_SPEED : BASE_SPEED;
+        const { up, down } = inputRef.current;
+        target = slowTimer > 0 ? tuning.slow : boostTimer > 0 ? tuning.boost : down ? tuning.brake : up ? tuning.max : tuning.cruise;
       }
-      const accel = stage === 'arrived' ? 4 : slowTimer > 0 ? 6 : 1.6;
+      const braking = stage === 'drive' && inputRef.current.down && slowTimer <= 0 && boostTimer <= 0;
+      const accel = stage === 'arrived' ? 4 : slowTimer > 0 || braking ? 5 : 1.6;
       speed += (target - speed) * Math.min(1, accel * dt);
 
       const input = stage === 'drive' ? (inputRef.current.right ? 1 : 0) - (inputRef.current.left ? 1 : 0) : 0;
-      const steerTarget = stage === 'arrived' ? -roverX * 2 : input * 13;
+      const steerTarget = stage === 'arrived' ? -roverX * 2 : input * tuning.steer;
       steerVel += (steerTarget - steerVel) * Math.min(1, 8 * dt);
       roverX = Math.max(-ROAD_LIMIT, Math.min(ROAD_LIMIT, roverX + steerVel * dt));
       if (Math.abs(roverX) >= ROAD_LIMIT) steerVel *= 0.5;
@@ -676,7 +722,7 @@ export default function RoverRescue3D() {
       if (stage === 'drive') {
         while (nextRowZ > -190) {
           spawnRow(nextRowZ); // nueva fila en el horizonte
-          nextRowZ -= 24 + Math.random() * 10;
+          nextRowZ -= tuning.rowGap[0] + Math.random() * (tuning.rowGap[1] - tuning.rowGap[0]);
         }
       }
       base.position.set(0, 0, -(remaining + STOP_GAP + 9));
@@ -698,9 +744,10 @@ export default function RoverRescue3D() {
         if (!r.hit && stage === 'drive') {
           const dz = Math.abs(r.mesh.position.z);
           const dx = Math.abs(r.mesh.position.x - roverX);
-          if (dz < 2.1 + r.r * 0.5 && dx < 1.45 + r.r * 0.6) {
+          if (dz < 2.1 + r.r * 0.5 + tuning.hitbox && dx < 1.45 + r.r * 0.6 + tuning.hitbox) {
             r.hit = true;
             slowTimer = HIT_SLOW_SECONDS;
+            integrity = Math.max(MIN_INTEGRITY, integrity - tuning.hitDamage);
             boostTimer = 0;
             shake = reducedMotion ? 0.1 : 0.6;
             speed *= 0.5;
@@ -732,7 +779,7 @@ export default function RoverRescue3D() {
 
       // ----- Rover: ruedas, suspensión, inclinación -----
       wheelSpin += step / 0.48;
-      const speedFactor = Math.min(1, speed / BASE_SPEED);
+      const speedFactor = Math.min(1, speed / tuning.cruise);
       rover.group.position.x = roverX;
       rover.wheels.forEach((w, i) => {
         w.rotation.x = -wheelSpin;
@@ -768,7 +815,7 @@ export default function RoverRescue3D() {
       dustGeo.attributes.position.needsUpdate = true;
 
       // ----- Cámara -----
-      if (stage === 'intro') {
+      if (stage === 'intro' || stage === 'waiting') {
         // Plano frontal para ver a los 3 astronautas y luego giro hasta detrás del rover
         const t = smoothstep(0.6, INTRO_SECONDS, elapsedIntro);
         const ang = t * Math.PI;
@@ -808,13 +855,26 @@ export default function RoverRescue3D() {
       if (clockT - lastHud > 0.1) {
         lastHud = clockT;
         const status: RoverStatus =
-          stage === 'intro' ? 'ready' : stage === 'arrived' ? 'arrived' : slowTimer > 0 ? 'hit' : boostTimer > 0 ? 'boost' : 'cruise';
+          stage === 'intro' || stage === 'waiting'
+            ? 'ready'
+            : stage === 'arrived'
+              ? 'arrived'
+              : slowTimer > 0
+                ? 'hit'
+                : boostTimer > 0
+                  ? 'boost'
+                  : inputRef.current.down
+                    ? 'brake'
+                    : inputRef.current.up
+                      ? 'fast'
+                      : 'cruise';
         setHud({
           remaining,
           elapsed: elapsedDrive,
           status,
           beacons: beaconsRef.current,
           countdown: Math.max(0, Math.ceil(INTRO_SECONDS - elapsedIntro)),
+          integrity,
         });
       }
     };
@@ -843,10 +903,11 @@ export default function RoverRescue3D() {
     };
   }, []);
 
-  // Cinemática de llegada: paso automático al informe final a los 2 s del cartel
+
+  // Cinemática de llegada: tras unos segundos ante la cúpula se abre la viñeta "Rescate completado"
   useEffect(() => {
     if (stage !== 'arrived') return;
-    const t = setTimeout(finish, 2000);
+    const t = setTimeout(complete, ARRIVAL_SECONDS * 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
@@ -857,63 +918,40 @@ export default function RoverRescue3D() {
   const statusText: Record<RoverStatus, string> = {
     ready: tr('Preparando motores', 'Warming up engines'),
     cruise: tr('En ruta', 'On route'),
+    fast: tr('Acelerando', 'Speeding up'),
+    brake: tr('Frenando', 'Braking'),
     boost: tr('¡Impulso!', 'Boost!'),
     hit: tr('¡Choque! Tracción reducida', 'Bump! Reduced traction'),
     arrived: tr('Llegada a la base', 'Arrived at the base'),
   };
-  const statusColor =
-    hud.status === 'hit' ? 'text-nasa-red' : hud.status === 'boost' ? 'text-emerald-600' : 'text-nasa-blue';
-
-  const press = (dir: 'left' | 'right', down: boolean) => {
-    inputRef.current[dir] = down;
-  };
-  const steerButton = (dir: 'left' | 'right') => (
-    <button
-      type="button"
-      aria-label={dir === 'left' ? tr('Girar a la izquierda', 'Steer left') : tr('Girar a la derecha', 'Steer right')}
-      onPointerDown={(e) => {
-        e.currentTarget.setPointerCapture(e.pointerId);
-        press(dir, true);
-      }}
-      onPointerUp={() => press(dir, false)}
-      onPointerCancel={() => press(dir, false)}
-      onLostPointerCapture={() => press(dir, false)}
-      onContextMenu={(e) => e.preventDefault()}
-      className="font-display pointer-events-auto flex touch-none select-none items-center gap-2 rounded-2xl border-[3px] border-white/80 bg-nasa-blue/85 px-5 py-4 text-base font-black tracking-wider text-white shadow-lg backdrop-blur active:scale-95 active:bg-nasa-blue sm:px-8 sm:py-5 sm:text-lg"
-    >
-      {dir === 'left' ? (
-        <>
-          <ArrowLeft size={28} strokeWidth={2.5} /> {tr('IZQUIERDA', 'LEFT')}
-        </>
-      ) : (
-        <>
-          {tr('DERECHA', 'RIGHT')} <ArrowRight size={28} strokeWidth={2.5} />
-        </>
-      )}
-    </button>
-  );
+  const statusColor = hud.status === 'hit' ? 'text-nasa-red' : hud.status === 'boost' ? 'text-emerald-600' : 'text-nasa-blue';
+  const integrityColor = hud.integrity >= 70 ? 'bg-emerald-500' : hud.integrity >= 45 ? 'bg-amber-500' : 'bg-nasa-red';
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-[#b8683f] select-none">
       <div ref={mountRef} className="absolute inset-0" />
 
       {webglFailed && (
+        /* Sin WebGL no se puede conducir: la misión se da por completada para no dejar la pantalla en blanco */
         <div className="absolute inset-0 flex items-center justify-center bg-slate-100 p-6">
           <div className="hw-panel max-w-md p-6 text-center">
-            <p className="font-display text-lg font-black text-nasa-blue">{tr('¡El rover ya ha llegado!', 'The rover has arrived!')}</p>
+            <p className="font-display text-lg font-black text-nasa-blue">{tr('Conexión con el rover perdida', 'Rover link lost')}</p>
             <p className="mt-2 text-sm text-slate-600">
-              {tr('Este navegador no puede mostrar la escena 3D, pero la Comandante Elena ya está en la base Ares-IV.', 'This browser cannot show the 3D scene, but Commander Elena is already at the Ares-IV base.')}
+              {tr(
+                'Este navegador no puede mostrar la escena 3D, pero el piloto automático del rover os lleva a la base Ares-IV.',
+                'This browser cannot show the 3D scene, but the rover autopilot takes you to the Ares-IV base.',
+              )}
             </p>
-            <button type="button" onClick={finish} className="font-display mt-4 rounded-xl bg-nasa-red px-6 py-3 text-base font-black tracking-wider text-white">
-              {tr('Ver Reporte Final', 'View Final Report')}
+            <button type="button" onClick={complete} className="font-display mt-4 rounded-xl bg-nasa-red px-6 py-3 text-base font-black tracking-wider text-white">
+              {tr('Continuar', 'Continue')}
             </button>
           </div>
         </div>
       )}
 
-      {/* HUD superior */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-wrap items-start justify-between gap-2 p-3 sm:p-4">
-        <div className="hw-panel pointer-events-auto w-full max-w-xl bg-white/90 px-4 py-3 backdrop-blur sm:w-auto sm:min-w-[24rem]">
+      {/* HUD superior: distancia, cronómetro, estado e integridad del rover */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 p-3 sm:p-4">
+        <div className="hw-panel w-full max-w-xl bg-white/90 px-4 py-3 backdrop-blur sm:w-auto sm:min-w-[26rem]">
           <div className="flex items-center justify-between gap-3">
             <p className="font-display flex items-center gap-2 text-sm font-black tracking-wider text-nasa-blue sm:text-base">
               <Flag size={18} strokeWidth={1.75} />
@@ -929,6 +967,15 @@ export default function RoverRescue3D() {
               style={{ width: `${progress * 100}%` }}
             />
           </div>
+          <div className="mt-2 flex items-center gap-2 text-sm">
+            <span className="flex shrink-0 items-center gap-1 font-bold text-slate-700" title={tr('Cada choque baja la integridad, pero el rover siempre llega', 'Each bump lowers integrity, but the rover always gets there')}>
+              <ShieldCheck size={16} strokeWidth={1.75} /> {tr('Integridad', 'Integrity')}
+            </span>
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-200">
+              <div className={`h-full rounded-full transition-[width] duration-300 ${integrityColor}`} style={{ width: `${hud.integrity}%` }} />
+            </div>
+            <span className="w-11 shrink-0 text-right font-bold text-slate-700">{Math.round(hud.integrity)}%</span>
+          </div>
           <div className="mt-2 flex items-center justify-between gap-3 text-sm">
             <span className={`flex items-center gap-1 font-bold ${statusColor}`}>
               <Gauge size={16} strokeWidth={1.75} /> {tr('Rover', 'Rover')}: {statusText[hud.status]}
@@ -938,66 +985,37 @@ export default function RoverRescue3D() {
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            playButtonClick();
-            finish();
-          }}
-          className="pointer-events-auto flex items-center gap-1 rounded-full border border-white/60 bg-black/35 px-3 py-1.5 text-xs font-bold tracking-wide text-white backdrop-blur hover:bg-black/55 sm:text-sm"
-        >
-          {tr('Saltar escena 3D', 'Skip 3D scene')} <FastForward size={14} />
-        </button>
       </div>
 
       {/* Cuenta atrás de salida */}
       {stage === 'intro' && !webglFailed && (
         <div className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center gap-2 px-4 text-center">
-          <p className="font-display text-base font-black tracking-[0.2em] text-white drop-shadow-lg sm:text-xl">
-            {tr('RESCATE DE LA COMANDANTE ELENA', "COMMANDER ELENA'S RESCUE RUN")}
-          </p>
+          <p className="font-display text-base font-black tracking-[0.2em] text-white drop-shadow-lg sm:text-xl">{tr('RUMBO A ARES-IV', 'HEADING TO ARES-IV')}</p>
           <p className="font-display text-6xl font-black text-white drop-shadow-xl sm:text-8xl">{hud.countdown > 0 ? hud.countdown : tr('¡YA!', 'GO!')}</p>
           <p className="rounded-full bg-black/40 px-4 py-1.5 text-sm font-semibold text-white">
-            {tr('Esquiva las rocas con las flechas o A / D. Pasa por las balizas verdes.', 'Dodge rocks with the arrow keys or A / D. Drive over green beacons.')}
+            {tr('W acelerar · S frenar · A / D girar (o las flechas). Pasa por las balizas verdes.', 'W speed up · S brake · A / D steer (or arrow keys). Drive over the green beacons.')}
           </p>
         </div>
       )}
 
-      {/* Controles táctiles grandes */}
+      {/* Recordatorio de controles durante la conducción */}
       {stage === 'drive' && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
-          {steerButton('left')}
-          {steerButton('right')}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <p className="rounded-full bg-black/40 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur">
+            {tr('W / ↑ acelerar · S / ↓ frenar · A / ← · D / → girar', 'W / ↑ speed up · S / ↓ brake · A / ← · D / → steer')}
+          </p>
         </div>
       )}
 
-      {/* Cartel de llegada */}
+      {/* Llegada (breve): luego se abre la viñeta "Rescate completado" */}
       {stage === 'arrived' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 p-4">
-          <div className="hw-panel max-w-xl rounded-[1.75rem] border-[3px] border-white bg-white/95 p-6 text-center shadow-2xl sm:p-8">
-            <p className="font-display text-2xl font-black tracking-wider text-nasa-red sm:text-4xl">{tr('¡RESCATE COMPLETADO!', 'RESCUE COMPLETE!')}</p>
-            <p className="font-display mt-2 text-base font-black tracking-wider text-nasa-blue sm:text-xl">{tr('LLEGADA A LA BASE ARES-IV', 'ARRIVAL AT ARES-IV BASE')}</p>
-            <p className="mt-3 text-sm text-slate-700 sm:text-base">
-              {tr('Leo, Vega y Max ya están a salvo con la Comandante Elena.', 'Leo, Vega and Max are now safe with Commander Elena.')}
-            </p>
-            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-1.5 text-sm font-bold text-emerald-700">
-              <Zap size={16} strokeWidth={1.75} />
-              {tr(`+${RESCUE_BONUS} de ciencia por rescate rápido`, `+${RESCUE_BONUS} science for a fast rescue`)}
-              {hud.beacons > 0 && tr(` · +${hud.beacons} por balizas`, ` · +${hud.beacons} from beacons`)}
-            </p>
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  playButtonClick();
-                  finish();
-                }}
-                className="font-display mt-5 inline-flex items-center gap-2 rounded-xl bg-nasa-red px-6 py-3 text-base font-black tracking-wider text-white"
-              >
-                {tr('Ver Reporte Final', 'View Final Report')} <ArrowRight size={18} />
-              </button>
-            </div>
-          </div>
+        <div className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center gap-2 px-4 text-center">
+          <p className="font-display text-3xl font-black tracking-wider text-white drop-shadow-xl sm:text-5xl">{tr('¡LLEGADA A ARES-IV!', 'ARRIVED AT ARES-IV!')}</p>
+          <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50/95 px-4 py-1.5 text-sm font-bold text-emerald-700">
+            <Zap size={16} strokeWidth={1.75} />
+            {tr(`+${ROVER_RESCUE_BONUS} de ciencia por el rescate`, `+${ROVER_RESCUE_BONUS} science for the rescue`)}
+            {hud.beacons > 0 && tr(` · +${hud.beacons} por balizas`, ` · +${hud.beacons} from beacons`)}
+          </p>
         </div>
       )}
     </div>

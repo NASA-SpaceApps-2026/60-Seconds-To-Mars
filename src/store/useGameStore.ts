@@ -110,6 +110,8 @@ import {
 export const PHASE1_SECONDS = QUIZ_SECONDS;
 export const TOTAL_SOLS = 10;
 export const EXPLORER_TOTAL_SOLS = 5;
+/** Ciencia por completar el rescate 3D en rover (se suma una sola vez; +1 extra por cada baliza verde). */
+export const ROVER_RESCUE_BONUS = 5;
 export const MIN_LOADING_MS = 700;
 
 /**
@@ -510,6 +512,8 @@ interface GameState {
   repairTried: string[];
   /** Fotos reales de Marte ya recibidas en notas de campo (álbum del Periscopio). */
   unlockedPhotoIds: string[];
+  /** Ciencia sumada por el rescate 3D en rover (null hasta que llega a Ares-IV). */
+  rescueBonus: number | null;
   /** Nota de campo con foto real pendiente de mostrar. */
   fieldNote: FieldNote | null;
   lastFieldNoteSol: number;
@@ -566,8 +570,8 @@ interface GameActions {
   loadSolEvent: () => Promise<void>;
   chooseOption: (optionId: string) => void;
   continueAfterReport: () => void;
-  /** Fin del minijuego 3D del rover (victoria): suma el bonus de ciencia y pasa a la pantalla final. */
-  finishRoverRescue: (scienceBonus: number) => void;
+  /** Llegada del rover 3D a Ares-IV: suma la ciencia (una sola vez) y abre la viñeta final del rescate. */
+  completeRoverRescue: (beacons: number) => void;
 
   loadDebrief: () => Promise<void>;
   closeStory: () => void;
@@ -623,6 +627,8 @@ const phase2Initial = (difficulty: MissionDifficulty = 'explorer') => ({
   brokenMachines: [] as ItemId[],
   repairTried: [] as string[],
   unlockedPhotoIds: [] as string[],
+  /** Ciencia sumada por el rescate 3D (null = aún no se ha sumado; evita contarla dos veces). */
+  rescueBonus: null as number | null,
   fieldNote: null as FieldNote | null,
   lastFieldNoteSol: 0,
 });
@@ -882,26 +888,22 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     set({ storyScene: null });
   },
 
-  finishRoverRescue: (scienceBonus) => {
+  completeRoverRescue: (beacons) => {
     const s = get();
-    if (s.gamePhase !== 'ROVER_RESCUE') return;
-    const science = s.scienceScore + Math.max(0, Math.round(scienceBonus));
-    const outcome = s.outcome ?? 'victory';
+    if (s.gamePhase !== 'ROVER_RESCUE' || s.outcome !== 'victory' || s.rescueBonus !== null) return;
+    const bonus = ROVER_RESCUE_BONUS + Math.max(0, Math.round(beacons));
+    const science = s.scienceScore + bonus;
     set({
-      gamePhase: 'GAME_OVER',
       scienceScore: science,
-      outcome,
-      rank: computeRank(outcome, science, s.vitals),
+      rescueBonus: bonus,
+      rank: computeRank('victory', science, s.vitals),
       debrief: null,
+      // Viñeta "Rescate completado": al cerrarla (closeStory) se pasa a la pantalla final
+      storyScene: 'rescue_complete',
     });
   },
 
   forceGameOver: (outcome) => {
-    // Ya en el rescate 3D: "final" salta directamente al informe final
-    if (get().gamePhase === 'ROVER_RESCUE' && outcome === 'victory') {
-      get().finishRoverRescue(5);
-      return;
-    }
     // Desde el menú, el selector o la trivia: montar antes una base espacial de demostración
     if (get().gamePhase !== 'PHASE_2_BUNKER') get().debugSkipToPhase2();
     const s = get();
@@ -912,8 +914,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       vitals = { ...vitals, [failedVital]: 0 };
     }
     set((st) => ({
-      // Victoria: primero el rescate en rover 3D (RoverRescue3D), luego la pantalla final
-      gamePhase: outcome === 'victory' ? 'ROVER_RESCUE' : 'GAME_OVER',
+      gamePhase: 'GAME_OVER',
       requestId: st.requestId + 1,
       storyScene: null,
       fieldNote: null,
@@ -937,6 +938,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       .trim()
       .split(' ');
     const command = words.join(' ');
+    // El rescate en rover no se puede saltar: durante él no hay órdenes rápidas
+    if (get().gamePhase === 'ROVER_RESCUE') return false;
     if (command === '10' || command === 'supervivencia' || command === 'survival') {
       get().debugSkipToPhase2();
       get().ariaSay(tr('Comando aceptado. Saltamos directamente a los 10 Soles en la base espacial.', 'Command accepted. Jumping straight to the 10-Sol mission in the space base.'));
@@ -1309,11 +1312,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   continueAfterReport: () => {
     const s = get();
-    if (s.solStage !== 'report') return;
+    if (s.gamePhase !== 'PHASE_2_BUNKER' || s.solStage !== 'report') return;
     if (s.pendingOutcome) {
+      // Rescate 3D SOLO si de verdad se han superado todos los Soles con todas las barras por encima de 0
+      const survivedAll = s.pendingOutcome === 'victory' && s.sol >= s.totalSols && !findFailedVital(s.vitals);
       set({
-        // Victoria: antes de la pantalla final, el rescate en rover 3D (RoverRescue3D)
-        gamePhase: s.pendingOutcome === 'victory' ? 'ROVER_RESCUE' : 'GAME_OVER',
+        gamePhase: survivedAll ? 'ROVER_RESCUE' : 'GAME_OVER',
+        storyScene: survivedAll ? 'rescue_intro' : s.storyScene,
+        rescueBonus: null,
         outcome: s.pendingOutcome,
         rank: computeRank(s.pendingOutcome, s.scienceScore, s.vitals),
         debrief: null,
@@ -1431,7 +1437,15 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   playAgain: () => get().startGame(),
 
   // ---------------- HISTORIA / DEEP SPACE NETWORK / INSIGNIAS ----------------
-  closeStory: () => set({ storyScene: null }),
+  closeStory: () => {
+    const s = get();
+    // Tras la viñeta "Rescate completado" llega la pantalla final original
+    if (s.storyScene === 'rescue_complete' && s.gamePhase === 'ROVER_RESCUE') {
+      set({ storyScene: null, gamePhase: 'GAME_OVER', debrief: null });
+      return;
+    }
+    set({ storyScene: null });
+  },
 
   orderHoustonPackage: (id) => {
     const s = get();
