@@ -10,6 +10,7 @@ import type {
   MissionNotice,
   RepairTarget,
   StoryScene,
+  RescueResult,
   DailyEvent,
   Debrief,
   Difficulty,
@@ -60,6 +61,34 @@ import {
 import { ariaVoice, type VoiceMode } from '../utils/ariaVoice';
 import { getLang, localizeRecord, setLangCore, tr, type Lang } from '../i18n/core';
 
+// ---- Credencial de Cadete (foto de la webcam + nombre + puesto). 100 % local: solo vive en este navegador. ----
+const CADET_STORAGE_KEY = 'ares-iv-cadet-v1';
+export const DEFAULT_CADET_ROLE = 'Especialista de Misión';
+function loadCadetProfile(): { cadetPhoto: string | null; cadetName: string; cadetRole: string } {
+  try {
+    const raw = localStorage.getItem(CADET_STORAGE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw) as { photo?: unknown; name?: unknown; role?: unknown };
+      return {
+        cadetPhoto: typeof p.photo === 'string' && p.photo.startsWith('data:image/') ? p.photo : null,
+        cadetName: typeof p.name === 'string' ? p.name.slice(0, 14) : '',
+        cadetRole: typeof p.role === 'string' && p.role ? p.role.slice(0, 40) : DEFAULT_CADET_ROLE,
+      };
+    }
+  } catch {
+    /* almacenamiento bloqueado: perfil vacío */
+  }
+  return { cadetPhoto: null, cadetName: '', cadetRole: DEFAULT_CADET_ROLE };
+}
+function saveCadetProfile(photo: string | null, name: string, role: string) {
+  try {
+    if (!photo && !name) localStorage.removeItem(CADET_STORAGE_KEY);
+    else localStorage.setItem(CADET_STORAGE_KEY, JSON.stringify({ photo, name, role }));
+  } catch {
+    /* sin almacenamiento: el perfil dura solo esta sesión */
+  }
+}
+
 const ARIA_GREETING = {
   es: 'Hola, soy A.R.I.A., la inteligencia de a bordo. ¡Estoy lista para ayudarte!',
   en: "Hi, I'm A.R.I.A., the onboard intelligence. I'm ready to help you!",
@@ -82,6 +111,8 @@ import {
 export const PHASE1_SECONDS = QUIZ_SECONDS;
 export const TOTAL_SOLS = 10;
 export const EXPLORER_TOTAL_SOLS = 5;
+/** Ciencia por completar el rescate 3D en rover (se suma una sola vez; +1 extra por cada baliza verde). */
+export const ROVER_RESCUE_BONUS = 5;
 export const MIN_LOADING_MS = 700;
 
 /**
@@ -423,6 +454,11 @@ interface GameState {
   voiceMuted: boolean;
   ariaMessage: string;
 
+  // Credencial de Cadete (se conserva al reiniciar partida)
+  cadetPhoto: string | null;
+  cadetName: string;
+  cadetRole: string;
+
   // Fase 1: trivia contrarreloj
   phase1Stage: Phase1Stage;
   quizQueue: TriviaQuestion[];
@@ -477,6 +513,10 @@ interface GameState {
   repairTried: string[];
   /** Fotos reales de Marte ya recibidas en notas de campo (álbum del Periscopio). */
   unlockedPhotoIds: string[];
+  /** Ciencia sumada por el rescate 3D en rover (null hasta que termina; 0 si falla). */
+  rescueBonus: number | null;
+  /** Desenlace del rescate 3D (null mientras no ha terminado o si no hubo rescate). */
+  rescueResult: RescueResult | null;
   /** Nota de campo con foto real pendiente de mostrar. */
   fieldNote: FieldNote | null;
   lastFieldNoteSol: number;
@@ -502,6 +542,9 @@ interface GameActions {
   setVoiceMode: (mode: VoiceMode) => void;
   /** Cambia el idioma de todo el juego (ES / EN) en tiempo real. */
   setLanguage: (language: Lang) => void;
+  /** Guarda la credencial del cadete (foto local en dataURL, nombre y puesto). */
+  setCadetProfile: (photo: string | null, name: string, role?: string) => void;
+  clearCadetProfile: () => void;
 
   // Fase 1
   enterMissionSelector: () => void;
@@ -530,8 +573,10 @@ interface GameActions {
   loadSolEvent: () => Promise<void>;
   chooseOption: (optionId: string) => void;
   continueAfterReport: () => void;
-  /** Fin del minijuego 3D del rover (victoria): suma el bonus de ciencia y pasa a la pantalla final. */
-  finishRoverRescue: (scienceBonus: number) => void;
+  /** Llegada del rover 3D a Ares-IV: suma la ciencia (una sola vez) y abre la viñeta final del rescate. */
+  completeRoverRescue: (beacons: number) => void;
+  /** Rescate 3D fallido (rover destruido o 60 s agotados): sin bonus; la partida sigue siendo una victoria. */
+  failRoverRescue: (reason: 'destroyed' | 'timeout') => void;
 
   loadDebrief: () => Promise<void>;
   closeStory: () => void;
@@ -587,6 +632,9 @@ const phase2Initial = (difficulty: MissionDifficulty = 'explorer') => ({
   brokenMachines: [] as ItemId[],
   repairTried: [] as string[],
   unlockedPhotoIds: [] as string[],
+  /** Ciencia sumada por el rescate 3D (null = aún no se ha sumado; evita contarla dos veces). */
+  rescueBonus: null as number | null,
+  rescueResult: null as RescueResult | null,
   fieldNote: null as FieldNote | null,
   lastFieldNoteSol: 0,
 });
@@ -623,6 +671,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   requestId: 0,
   storyScene: null,
   badges: [],
+  ...loadCadetProfile(),
   ...phase1Initial('explorer'),
   ...phase2Initial('explorer'),
   ...gameOverInitial(),
@@ -687,6 +736,21 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     get().ariaSay(tr('Idioma cambiado a español.', 'Language switched to English.'));
   },
 
+  setCadetProfile: (photo, name, role) => {
+    const cadetName = name.trim().slice(0, 14);
+    const cadetRole = (role ?? get().cadetRole).trim() || DEFAULT_CADET_ROLE;
+    saveCadetProfile(photo, cadetName, cadetRole);
+    set({ cadetPhoto: photo, cadetName, cadetRole });
+    if (cadetName)
+      get().ariaSay(
+        tr(`¡Credencial registrada! Bienvenido a bordo, Cadete ${cadetName.toUpperCase()}.`, `Badge registered! Welcome aboard, Cadet ${cadetName.toUpperCase()}.`),
+      );
+  },
+  clearCadetProfile: () => {
+    saveCadetProfile(null, '', DEFAULT_CADET_ROLE);
+    set({ cadetPhoto: null, cadetName: '', cadetRole: DEFAULT_CADET_ROLE });
+  },
+
   // ---------------- FASE 1: TRIVIA CONTRARRELOJ ----------------
   setMissionDifficulty: (missionDifficulty) => {
     if (get().gamePhase !== 'MENU' && get().gamePhase !== 'MISSION_SELECT') return;
@@ -712,10 +776,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     }));
     playAlarmBeep();
     const w = get().nasaWeather;
+    const cadet = get().cadetName.toUpperCase();
     get().ariaSay(
       tr(
-        `¡Alerta! NASA DONKI detecta una tormenta solar${w ? ` de clase ${w.flareClass}` : ''}. Tienes 60 segundos para responder preguntas: ¡cada acierto manda equipo a la base espacial!`,
-        `Alert! NASA DONKI detects a solar storm${w ? ` of class ${w.flareClass}` : ''}. You have 60 seconds to answer questions: every right answer sends equipment to the space base!`,
+        `${cadet ? `¡Atención, Cadete ${cadet}! ` : ''}¡Alerta! NASA DONKI detecta una tormenta solar${w ? ` de clase ${w.flareClass}` : ''}. Tienes 60 segundos para responder preguntas: ¡cada acierto manda equipo a la base espacial!`,
+        `${cadet ? `Attention, Cadet ${cadet}! ` : ''}Alert! NASA DONKI detects a solar storm${w ? ` of class ${w.flareClass}` : ''}. You have 60 seconds to answer questions: every right answer sends equipment to the space base!`,
       ),
     );
   },
@@ -829,28 +894,53 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     set({ storyScene: null });
   },
 
-  finishRoverRescue: (scienceBonus) => {
+  completeRoverRescue: (beacons) => {
     const s = get();
-    if (s.gamePhase !== 'ROVER_RESCUE') return;
-    const science = s.scienceScore + Math.max(0, Math.round(scienceBonus));
-    const outcome = s.outcome ?? 'victory';
+    if (s.gamePhase !== 'ROVER_RESCUE' || s.outcome !== 'victory' || s.rescueResult !== null) return;
+    const bonus = ROVER_RESCUE_BONUS + Math.max(0, Math.round(beacons));
+    const science = s.scienceScore + bonus;
     set({
-      gamePhase: 'GAME_OVER',
       scienceScore: science,
-      outcome,
-      rank: computeRank(outcome, science, s.vitals),
+      rescueBonus: bonus,
+      rescueResult: 'completed',
+      rank: computeRank('victory', science, s.vitals),
       debrief: null,
+      // Viñeta "Rescate completado": al cerrarla (closeStory) se pasa a la pantalla final
+      storyScene: 'rescue_complete',
     });
   },
 
+  failRoverRescue: (reason) => {
+    const s = get();
+    if (s.gamePhase !== 'ROVER_RESCUE' || s.outcome !== 'victory' || s.rescueResult !== null) return;
+    // Sin bonus de rescate; puntuación, rango, historial y barras se conservan tal cual
+    set({ rescueBonus: 0, rescueResult: reason, debrief: null, storyScene: 'rescue_failed' });
+  },
+
   forceGameOver: (outcome) => {
-    // Ya en el rescate 3D: "final" salta directamente al informe final
-    if (get().gamePhase === 'ROVER_RESCUE' && outcome === 'victory') {
-      get().finishRoverRescue(5);
-      return;
-    }
     // Desde el menú, el selector o la trivia: montar antes una base espacial de demostración
     if (get().gamePhase !== 'PHASE_2_BUNKER') get().debugSkipToPhase2();
+    if (outcome === 'victory') {
+      // Victoria de demostración ("final"): se da por superado el último Sol con todas las barras por
+      // encima de 0 y se sigue el MISMO camino que una partida ganada (viñetas → rover 3D → resultados).
+      const lifted = Object.fromEntries(
+        (Object.entries(get().vitals) as [VitalKey, number][]).map(([k, v]) => [k, Math.max(v, 20)]),
+      ) as unknown as Vitals;
+      set((st) => ({
+        requestId: st.requestId + 1,
+        storyScene: null,
+        fieldNote: null,
+        houstonLanding: false,
+        vitals: lifted,
+        failedVital: null,
+        sol: st.totalSols,
+        solStage: 'report',
+        pendingOutcome: 'victory',
+      }));
+      get().awardBadge('ares_hero');
+      get().continueAfterReport();
+      return;
+    }
     const s = get();
     let vitals = s.vitals;
     let failedVital: VitalKey | null = null;
@@ -859,8 +949,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       vitals = { ...vitals, [failedVital]: 0 };
     }
     set((st) => ({
-      // Victoria: primero el rescate en rover 3D (RoverRescue3D), luego la pantalla final
-      gamePhase: outcome === 'victory' ? 'ROVER_RESCUE' : 'GAME_OVER',
+      gamePhase: 'GAME_OVER',
       requestId: st.requestId + 1,
       storyScene: null,
       fieldNote: null,
@@ -884,6 +973,8 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       .trim()
       .split(' ');
     const command = words.join(' ');
+    // El rescate en rover no se puede saltar: durante él no hay órdenes rápidas
+    if (get().gamePhase === 'ROVER_RESCUE') return false;
     if (command === '10' || command === 'supervivencia' || command === 'survival') {
       get().debugSkipToPhase2();
       get().ariaSay(tr('Comando aceptado. Saltamos directamente a los 10 Soles en la base espacial.', 'Command accepted. Jumping straight to the 10-Sol mission in the space base.'));
@@ -1256,11 +1347,15 @@ export const useGameStore = create<GameStore>()((set, get) => ({
 
   continueAfterReport: () => {
     const s = get();
-    if (s.solStage !== 'report') return;
+    if (s.gamePhase !== 'PHASE_2_BUNKER' || s.solStage !== 'report') return;
     if (s.pendingOutcome) {
+      // Rescate 3D SOLO si de verdad se han superado todos los Soles con todas las barras por encima de 0
+      const survivedAll = s.pendingOutcome === 'victory' && s.sol >= s.totalSols && !findFailedVital(s.vitals);
       set({
-        // Victoria: antes de la pantalla final, el rescate en rover 3D (RoverRescue3D)
-        gamePhase: s.pendingOutcome === 'victory' ? 'ROVER_RESCUE' : 'GAME_OVER',
+        gamePhase: survivedAll ? 'ROVER_RESCUE' : 'GAME_OVER',
+        storyScene: survivedAll ? 'rescue_intro' : s.storyScene,
+        rescueBonus: null,
+        rescueResult: null,
         outcome: s.pendingOutcome,
         rank: computeRank(s.pendingOutcome, s.scienceScore, s.vitals),
         debrief: null,
@@ -1378,7 +1473,15 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   playAgain: () => get().startGame(),
 
   // ---------------- HISTORIA / DEEP SPACE NETWORK / INSIGNIAS ----------------
-  closeStory: () => set({ storyScene: null }),
+  closeStory: () => {
+    const s = get();
+    // Tras la viñeta "Rescate completado" llega la pantalla final original
+    if ((s.storyScene === 'rescue_complete' || s.storyScene === 'rescue_failed') && s.gamePhase === 'ROVER_RESCUE') {
+      set({ storyScene: null, gamePhase: 'GAME_OVER', debrief: null });
+      return;
+    }
+    set({ storyScene: null });
+  },
 
   orderHoustonPackage: (id) => {
     const s = get();

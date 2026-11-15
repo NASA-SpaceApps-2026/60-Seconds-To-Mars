@@ -5,7 +5,7 @@ import type { StoryScene, VitalKey } from '../types/game';
 import { COMPLICATIONS } from '../data/triviaQuestions';
 import { ITEMS_BY_ID } from '../data/stationItems';
 import { useGameStore } from '../store/useGameStore';
-import { playButtonClick, playDoorSeal, playIncoming } from '../utils/soundEffects';
+import { playButtonClick, playDoorSeal, playIncoming, playSuccess } from '../utils/soundEffects';
 import { ItemIcon, ResourceIcon } from './icons';
 import { tr } from '../i18n/core';
 
@@ -251,6 +251,179 @@ function ArtRadio({ progress }: { progress: number }) {
   );
 }
 
+/** Hábitat Ares-IV a lo lejos (cúpula + rótulo), con haz de luz cian opcional. */
+function BaseDome({ x, y, beam = false, scale = 1 }: { x: number; y: number; beam?: boolean; scale?: number }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      {beam && (
+        <motion.rect
+          x={-5}
+          y={-200}
+          width={10}
+          height={200}
+          fill="#67e8f9"
+          animate={{ opacity: [0.35, 0.8, 0.35] }}
+          transition={{ duration: 1.6, repeat: Infinity }}
+        />
+      )}
+      <path d="M-42 0 A42 34 0 0 1 42 0 Z" fill="#e2e8f0" stroke="#94a3b8" strokeWidth={2} />
+      <rect x={-8} y={-14} width={16} height={14} rx={2} fill="#0b3d91" />
+      <text x={0} y={-22} textAnchor="middle" fontSize={8} fontWeight={800} fill="#0b3d91" fontFamily="ui-monospace, monospace">ARES-IV</text>
+    </g>
+  );
+}
+
+/** Rover de rescate con 3 cascos a bordo. */
+function RescueRover({ helmets }: { helmets: string[] }) {
+  return (
+    <g>
+      <rect x={0} y={0} width={60} height={18} rx={4} fill="#f8fafc" stroke="#64748b" strokeWidth={1.5} />
+      <rect x={0} y={14} width={60} height={4} fill="#d4a12a" />
+      {helmets.map((c, i) => (
+        <g key={i} transform={`translate(${14 + i * 16} -6)`}>
+          <circle r={6.5} fill="#f8fafc" stroke="#cbd5e1" />
+          <ellipse cx={1.5} cy={0.5} rx={4.5} ry={4} fill="#d4a12a" />
+          <circle cx={0} cy={-7} r={1.6} fill={c} />
+        </g>
+      ))}
+      <path d="M54 0 v-14 h6" stroke="#64748b" strokeWidth={1.5} fill="none" />
+      <circle cx={60} cy={-14} r={2} fill="#fc3d21" />
+      {[10, 30, 50].map((cx) => (
+        <circle key={cx} cx={cx} cy={22} r={6} fill="#334155" stroke="#0f172a" strokeWidth={1.5} />
+      ))}
+    </g>
+  );
+}
+
+/** Rescate · viñeta 1: el equipo de astronautas regresa hacia la base. */
+function ArtRescueReturn() {
+  return (
+    <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
+      <MarsSky />
+      <circle cx={60} cy={40} r={14} fill="#fef3c7" opacity={0.8} />
+      <BaseDome x={262} y={128} />
+      <motion.g initial={{ x: -40 }} animate={{ x: 60 }} transition={{ duration: 3, ease: 'easeOut' }}>
+        <ellipse cx={60} cy={146} rx={44} ry={6} fill="#fdba74" opacity={0.6} />
+        <g transform="translate(30 118)">
+          <RescueRover helmets={['#fc3d21', '#0b3d91', '#0b3d91']} />
+        </g>
+      </motion.g>
+      <text x={300} y={190} textAnchor="end" fontSize={10} fontWeight={800} fill="#fff7ed" fontFamily="ui-monospace, monospace">ROVER-1 → ARES-IV</text>
+    </svg>
+  );
+}
+
+/** Rescate · viñeta 2: los cadetes cogen el rover; ruta con rocas hasta Ares-IV. */
+function ArtRescueDrive() {
+  return (
+    <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
+      <MarsSky dusk />
+      {[
+        [30, 20],
+        [120, 34],
+        [210, 16],
+        [290, 40],
+      ].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={1.2} fill="#ffffff" />
+      ))}
+      <BaseDome x={262} y={118} beam scale={0.7} />
+      {/* Camino con rocas y una baliza verde */}
+      <path d="M0 190 Q120 150 240 120" stroke="#fdba74" strokeWidth={10} fill="none" opacity={0.5} strokeDasharray="14 10" />
+      {[
+        [110, 160],
+        [176, 138],
+        [214, 128],
+      ].map(([x, y], i) => (
+        <path key={i} d={`M${x - 8} ${y} l4 -9 l9 -2 l5 8 l-3 5 Z`} fill="#7c2d12" stroke="#431407" />
+      ))}
+      <motion.circle cx={150} cy={148} r={5} fill="#22c55e" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 0.8, repeat: Infinity }} />
+      <motion.g initial={{ x: -10 }} animate={{ x: 6 }} transition={{ duration: 1.2, repeat: Infinity, repeatType: 'reverse' }}>
+        <g transform="translate(20 160)">
+          <RescueRover helmets={[CREW_COLORS.leo, CREW_COLORS.vega, CREW_COLORS.max]} />
+        </g>
+      </motion.g>
+      <rect x={8} y={8} width={96} height={22} rx={4} fill="#020617" opacity={0.85} />
+      <text x={56} y={23} textAnchor="middle" fontSize={10} fontWeight={800} fill="#86efac" fontFamily="ui-monospace, monospace">
+        ARES-IV · 800 M
+      </text>
+    </svg>
+  );
+}
+
+/** Rescate completado: cadetes y equipo de rescate juntos ante la base. */
+function ArtRescueComplete() {
+  return (
+    <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
+      <MarsSky />
+      <BaseDome x={160} y={118} beam />
+      {/* Estrellas de celebración */}
+      {[
+        [40, 40, '#facc15'],
+        [92, 24, '#22c55e'],
+        [228, 30, '#3b82f6'],
+        [282, 50, '#fc3d21'],
+      ].map(([x, y, c], i) => (
+        <motion.path
+          key={i}
+          d={`M${x} ${Number(y) - 7} l2 5 h5 l-4 3 l2 6 l-5 -4 l-5 4 l2 -6 l-4 -3 h5 Z`}
+          fill={String(c)}
+          animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.6, 1, 0.6] }}
+          transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }}
+          style={{ transformOrigin: `${x}px ${y}px` }}
+        />
+      ))}
+      <g transform="translate(232 150)">
+        <RescueRover helmets={['#fc3d21', '#0b3d91', '#0b3d91']} />
+      </g>
+      <Cadet x={70} y={150} color={CREW_COLORS.leo} mood="brave" scale={0.8} />
+      <Cadet x={110} y={146} color={CREW_COLORS.vega} mood="brave" scale={0.8} />
+      <Cadet x={150} y={150} color={CREW_COLORS.max} mood="brave" scale={0.8} />
+      <Cadet x={198} y={146} color="#fc3d21" mood="brave" scale={0.85} />
+      <rect x={96} y={182} width={128} height={16} rx={4} fill="#020617" opacity={0.85} />
+      <text x={160} y={194} textAnchor="middle" fontSize={9} fontWeight={800} fill="#86efac" fontFamily="ui-monospace, monospace">
+        MISIÓN CUMPLIDA
+      </text>
+    </svg>
+  );
+}
+
+/** Rescate fallido: el rover parado en el camino (averiado o sin tiempo) y la base a lo lejos. */
+function ArtRescueFailed({ destroyed }: { destroyed: boolean }) {
+  return (
+    <svg viewBox="0 0 320 200" className="h-full w-full" aria-hidden>
+      <MarsSky dusk />
+      <BaseDome x={270} y={118} beam scale={0.6} />
+      <g transform="translate(70 150) rotate(-6)">
+        <RescueRover helmets={[CREW_COLORS.leo, CREW_COLORS.vega, CREW_COLORS.max]} />
+      </g>
+      {destroyed ? (
+        <>
+          {[0, 1, 2].map((i) => (
+            <motion.circle
+              key={i}
+              cx={100}
+              cy={130}
+              r={8}
+              fill="#94a3b8"
+              animate={{ cy: [130, 90], opacity: [0.8, 0], r: [6, 16] }}
+              transition={{ duration: 2, repeat: Infinity, delay: i * 0.6 }}
+            />
+          ))}
+          <motion.path d="M120 140 l8 -10 l-4 0 l6 -10" stroke="#fde047" strokeWidth={3} fill="none" animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 0.6, repeat: Infinity }} />
+        </>
+      ) : (
+        <g transform="translate(160 60)">
+          <circle r={24} fill="#0f172a" stroke="#fc3d21" strokeWidth={3} />
+          <motion.line x1={0} y1={0} x2={0} y2={-16} stroke="#fc3d21" strokeWidth={3} strokeLinecap="round" animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} />
+          <text y={44} textAnchor="middle" fontSize={11} fontWeight={800} fill="#fca5a5" fontFamily="ui-monospace, monospace">00:00</text>
+        </g>
+      )}
+      {/* Equipo de rescate a pie hacia los cadetes */}
+      <Cadet x={232} y={150} color="#fc3d21" mood="brave" scale={0.7} />
+    </svg>
+  );
+}
+
 // ---------------------------------------------------------------------
 // Escenas
 // ---------------------------------------------------------------------
@@ -266,7 +439,13 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
   const weather = useGameStore((s) => s.nasaWeather);
   const inventory = useGameStore((s) => s.bunkerInventory);
   const complications = useGameStore((s) => s.complications);
+  const rescueResult = useGameStore((s) => s.rescueResult);
   const flare = weather?.flareClass ?? 'X';
+  // Credencial de Cadete: el jugador ocupa el 3.er puesto de la tripulación (en lugar de Max)
+  const cadetName = useGameStore((s) => s.cadetName).trim().toUpperCase();
+  const third = cadetName || 'Max';
+  const hey = cadetName ? tr(`¡Atención, Cadete ${cadetName}! `, `Attention, Cadet ${cadetName}! `) : '';
+  const heyRover = cadetName ? tr(`¡Aquí el rover, Cadete ${cadetName}! `, `Rover here, Cadet ${cadetName}! `) : '';
 
   switch (scene) {
     case 'prologue':
@@ -277,16 +456,16 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtRoverLeaving />,
             speaker: tr('Narrador', 'Narrator'),
             text: tr(
-              'Año 2038. Los astronautas adultos salen en el rover a explorar a 40 km de la base. En el hábitat se quedan los Cadetes Junior: Leo, Vega y Max.',
-              'Year 2038. The adult astronauts drive off in the rover to explore 40 km from the base. The Junior Cadets stay in the habitat: Leo, Vega and Max.',
+              `Año 2038. Los astronautas adultos salen en el rover a explorar a 40 km de la base. En el hábitat se quedan los Cadetes Junior: Leo, Vega y ${third}.`,
+              `Year 2038. The adult astronauts drive off in the rover to explore 40 km from the base. The Junior Cadets stay in the habitat: Leo, Vega and ${third}.`,
             ),
           },
           {
             art: <ArtSolarFlare flareClass={flare} />,
             speaker: 'A.R.I.A.',
             text: tr(
-              `¡Alerta! El satélite SOHO y NASA DONKI detectan una llamarada solar de clase ${flare} rumbo a Marte. La tormenta ha cortado el camino del rover.`,
-              `Alert! The SOHO satellite and NASA DONKI detect a class ${flare} solar flare heading for Mars. The storm has cut off the rover's path.`,
+              `${hey}¡Alerta! El satélite SOHO y NASA DONKI detectan una llamarada solar de clase ${flare} rumbo a Marte. La tormenta ha cortado el camino del rover.`,
+              `${hey}Alert! The SOHO satellite and NASA DONKI detect a class ${flare} solar flare heading for Mars. The storm has cut off the rover's path.`,
             ),
             sound: playIncoming,
           },
@@ -327,7 +506,7 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
           },
           {
             art: <ArtLockdown damaged={damaged} />,
-            speaker: 'Max',
+            speaker: third,
             text: damaged
               ? tr(
                   '¡La onda de choque ha dañado los sistemas donde fallamos preguntas! Podremos repararlos con los minijuegos de reparación de la base espacial.',
@@ -356,8 +535,8 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtRadio progress={0.35} />,
             speaker: tr('Rover de rescate', 'Rescue rover'),
             text: tr(
-              '¡Cadetes, resistid! Ya hemos cruzado el cañón, estamos a pocos Soles de la base. ¡Estamos muy orgullosos de vosotros!',
-              'Cadets, hold on! We have crossed the canyon and we are a few Sols from the base. We are so proud of you!',
+              `${heyRover}¡Cadetes, resistid! Ya hemos cruzado el cañón, estamos a pocos Soles de la base. ¡Estamos muy orgullosos de vosotros!`,
+              `${heyRover}Cadets, hold on! We have crossed the canyon and we are a few Sols from the base. We are so proud of you!`,
             ),
             sound: playIncoming,
           },
@@ -371,14 +550,83 @@ function useScenePanels(scene: StoryScene): { title: string; panels: Panel[] } {
             art: <ArtRadio progress={0.8} />,
             speaker: tr('Rover de rescate', 'Rescue rover'),
             text: tr(
-              '¡Ya vemos las luces de Ares-IV en el horizonte! Dos Soles más y llegamos. Mantened esas barras arriba, ¡casi lo tenéis!',
-              'We can see the lights of Ares-IV on the horizon! Two more Sols and we are there. Keep those bars up, you are almost there!',
+              `${heyRover}¡Ya vemos las luces de Ares-IV en el horizonte! Dos Soles más y llegamos. Mantened esas barras arriba, ¡casi lo tenéis!`,
+              `${heyRover}We can see the lights of Ares-IV on the horizon! Two more Sols and we are there. Keep those bars up, you are almost there!`,
             ),
             sound: playIncoming,
           },
         ],
       };
+    // Desenlace de las partidas ganadas: antes y después del rescate 3D en rover
+    case 'rescue_intro':
+      return {
+        title: tr('El regreso del equipo de rescate · La última misión', 'The rescue team returns · The final mission'),
+        panels: [
+          {
+            art: <ArtRescueReturn />,
+            speaker: 'A.R.I.A.',
+            text: tr(
+              '¡Lo habéis conseguido! Habéis sobrevivido a todos los soles en Marte. El equipo de astronautas que os dejó en la base está regresando para rescataros. ¡Vuestra aventura está a punto de terminar!',
+              'You did it! You survived every sol on Mars. The team of astronauts who left you at the base is coming back to rescue you. Your adventure is about to end!',
+            ),
+            sound: playIncoming,
+          },
+          {
+            art: <ArtRescueDrive />,
+            speaker: tr('Cmdte. Elena', 'Cmdr. Elena'),
+            text: tr(
+              '¡Rápido! Coged el rover y conducid hasta la base ARES-IV. Vuestros compañeros os están esperando. Esquivad las rocas y atravesad el terreno marciano para llegar hasta ellos. ¡El rescate depende de vosotros!',
+              'Quick! Take the rover and drive to the ARES-IV base. Your teammates are waiting for you. Dodge the rocks and cross the Martian terrain to reach them. The rescue depends on you!',
+            ),
+            sound: playIncoming,
+          },
+        ],
+      };
+    case 'rescue_complete':
+      return {
+        title: tr('Rescate completado · Base Ares-IV', 'Rescue complete · Ares-IV Base'),
+        panels: [
+          {
+            art: <ArtRescueComplete />,
+            speaker: tr('Narrador', 'Narrator'),
+            text: tr(
+              '¡Lo habéis conseguido! Habéis llegado sanos y salvos a la base ARES-IV. El equipo de rescate ha conseguido reunirse con vosotros y todos los cadetes están a salvo. ¡Habéis sobrevivido a Marte y completado vuestra misión con éxito!',
+              'You did it! You reached the ARES-IV base safe and sound. The rescue team has joined you and every cadet is safe. You survived Mars and completed your mission successfully!',
+            ),
+            sound: playSuccess,
+          },
+        ],
+      };
+    case 'rescue_failed': {
+      const destroyed = rescueResult === 'destroyed';
+      return {
+        title: tr('Rescate fallido · Cráter Jezero', 'Rescue failed · Jezero Crater'),
+        panels: [
+          {
+            art: <ArtRescueFailed destroyed={destroyed} />,
+            speaker: tr('Cmdte. Elena', 'Cmdr. Elena'),
+            text: destroyed
+              ? tr(
+                  '¡Oh, no! El rover ha chocado con demasiadas rocas y se ha averiado antes de llegar a ARES-IV. El rescate ha fallado, pero tranquilos: hemos ido a buscaros a pie con los trajes y todos estáis a salvo. ¡Sobrevivisteis a todos los soles!',
+                  'Oh no! The rover hit too many rocks and broke down before reaching ARES-IV. The rescue failed, but don\'t worry: we walked out in our suits to get you and everyone is safe. You survived every sol!',
+                )
+              : tr(
+                  '¡Se acabó el tiempo! No habéis llegado a ARES-IV en 60 segundos. El rescate ha fallado, pero tranquilos: hemos seguido la señal del rover y todos estáis a salvo. ¡Sobrevivisteis a todos los soles!',
+                  'Time is up! You did not reach ARES-IV within 60 seconds. The rescue failed, but don\'t worry: we followed the rover\'s signal and everyone is safe. You survived every sol!',
+                ),
+            sound: playIncoming,
+          },
+        ],
+      };
+    }
   }
+}
+
+/** Texto del botón de la última viñeta de cada escena. */
+function lastButtonLabel(scene: StoryScene): string {
+  if (scene === 'rescue_intro') return tr('¡A conducir!', "Let's drive!");
+  if (scene === 'rescue_complete' || scene === 'rescue_failed') return tr('Ver resultados', 'See results');
+  return tr('¡A la misión!', 'To the mission!');
 }
 
 /**
@@ -504,7 +752,7 @@ function StoryContent({ scene }: { scene: StoryScene }) {
           onClick={next}
           className="font-display glow-red flex items-center gap-2 rounded-xl bg-nasa-red px-8 py-4 text-lg font-black tracking-wider text-white"
         >
-          {last ? tr('¡A la misión!', 'To the mission!') : tr('Siguiente', 'Next')} <ArrowRight className="h-5 w-5" />
+          {last ? lastButtonLabel(scene) : tr('Siguiente', 'Next')} <ArrowRight className="h-5 w-5" />
         </motion.button>
       </div>
     </div>

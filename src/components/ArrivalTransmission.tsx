@@ -76,6 +76,7 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
   const photos = useGameStore((s) => s.marsPhotos);
   const unlocked = useGameStore((s) => s.unlockedPhotoIds.length);
   const dismiss = useGameStore((s) => s.dismissFieldNote);
+  const cadetName = useGameStore((s) => s.cadetName).trim().toUpperCase();
   const [loaded, setLoaded] = useState<string | null>(null);
   const [broken, setBroken] = useState<string | null>(null);
   /** Fotos cuya URL remota falló: se muestran desde public/mars/ (respaldo local infalible). */
@@ -134,7 +135,10 @@ export default function ArrivalTransmission({ visible, onOpenCrate }: { visible:
               <p className="font-mono text-xs font-bold tracking-[0.2em] text-nasa-blue">
                 {speaker.name.toUpperCase()} · {speaker.role.toUpperCase()}
               </p>
-              <p className="mt-0.5 text-base font-bold leading-snug text-slate-900 sm:text-[clamp(1rem,2.6dvh,1.25rem)]">{note.speech}</p>
+              <p className="mt-0.5 text-base font-bold leading-snug text-slate-900 sm:text-[clamp(1rem,2.6dvh,1.25rem)]">
+                {cadetName && <span className="text-nasa-blue">{tr(`¡Cadete ${cadetName}! `, `Cadet ${cadetName}! `)}</span>}
+                {note.speech}
+              </p>
             </motion.div>
 
             {/* La carta / transmisión con la foto real */}
