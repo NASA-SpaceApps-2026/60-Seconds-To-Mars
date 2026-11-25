@@ -2,6 +2,8 @@
 
 Juego web educativo para niños y niñas de **7 a 12 años** · NASA Space Apps Challenge — *Build a Junior Astronaut Mission Trainer*.
 
+🎮 **Juega aquí:** https://60-seconds-to-mars.pages.dev/
+
 ¡Una tormenta solar real (datos de **NASA DONKI**) viaja hacia Marte! Tienes **60 segundos** para meter lo más importante en una base espacial de **12 huecos** y después sobrevivir **10 Soles** equilibrando oxígeno, energía, comida, blindaje y salud. Cada objeto y cada dilema incluye ciencia real de **NASA OSDR**. Un Director de Juego con **Google Gemini** crea los retos de cada día (y si no hay IA, el juego sigue con eventos de respaldo).
 
 ---
